@@ -188,8 +188,19 @@ impl App {
             .into_iter()
             .filter_map(|e| e.ok())
         {
-            let path = entry.path().strip_prefix(music_folder).unwrap().to_owned();
-            self.song_paths.push(path);
+            if entry.file_type().is_file() {
+                let en_path = entry.path();
+                if let Some(ext) = en_path.extension().and_then(|ext| ext.to_str()) {
+                    if ["jpg", "png", "txt"]
+                        .into_iter()
+                        .any(|filter_ext| filter_ext == ext)
+                    {
+                        continue;
+                    }
+                }
+                let path = en_path.strip_prefix(music_folder).unwrap().to_owned();
+                self.song_paths.push(path);
+            }
         }
     }
 }
