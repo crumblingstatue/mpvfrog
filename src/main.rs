@@ -127,9 +127,7 @@ impl eframe::App for App {
                         &buf[..n_read],
                     );
                     if ui.button("stop").clicked() {
-                        child.pty().write_all(b"q").unwrap();
-                        child.wait().unwrap();
-                        self.mpv_child = None;
+                        Self::stop_music(&mut self.mpv_child);
                     }
                 }
             }
@@ -168,6 +166,7 @@ impl App {
         mpv_child: &mut Option<PtyChild>,
         volume: u8,
     ) {
+        Self::stop_music(mpv_child);
         child_out.clear();
         let child = Command::new("mpv")
             .arg("--no-video")
@@ -201,6 +200,13 @@ impl App {
                 let path = en_path.strip_prefix(music_folder).unwrap().to_owned();
                 self.song_paths.push(path);
             }
+        }
+    }
+    fn stop_music(mpv_child: &mut Option<PtyChild>) {
+        if let Some(child) = mpv_child {
+            child.pty().write_all(b"q").unwrap();
+            child.wait().unwrap();
+            *mpv_child = None;
         }
     }
 }
