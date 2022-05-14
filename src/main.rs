@@ -255,13 +255,23 @@ impl App {
                 },
             }
             let mut buf = [0u8; 256];
-            let n_read = child.pty().read(&mut buf).unwrap();
-            t_send
-                .send(ThreadMessage::MpvOut {
-                    buf: Box::new(buf),
-                    n_read,
-                })
-                .unwrap();
+            match child.pty().read(&mut buf) {
+                Ok(n_read) => {
+                    t_send
+                        .send(ThreadMessage::MpvOut {
+                            buf: Box::new(buf),
+                            n_read,
+                        })
+                        .unwrap();
+                }
+                Err(e) => {
+                    eprintln!("error reading from mpv process: {}", e);
+                    // Better terminate playback
+                    child.wait().unwrap();
+                    t_send.send(ThreadMessage::PlaybackStopped).unwrap();
+                    return;
+                }
+            }
         });
     }
     fn update_child_out(ansi_parser: &mut AnsiParser, out: &mut String, buf: &[u8]) {

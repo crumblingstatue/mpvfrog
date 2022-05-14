@@ -64,7 +64,7 @@ impl AnsiParser {
                             // Control sequence start
                             self.status = Status::ControlSeqStart;
                         }
-                        _ => panic!("[{:x}]", byte),
+                        _ => eprintln!("Unexpected ansi [{:x}]", byte),
                     }
                 }
                 Status::ControlSeqStart => {
@@ -77,7 +77,7 @@ impl AnsiParser {
                             self.status = Status::Init;
                             self.params.clear();
                         }
-                        _ => panic!("<{:x}>", byte),
+                        _ => eprintln!("Unexpected ansi <{:x}>", byte),
                     }
                 }
             }
