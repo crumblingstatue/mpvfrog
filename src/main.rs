@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 use std::{
     io::{Read as _, Write as _},
     path::{Path, PathBuf},
-    process::{Child, Command},
+    process::Command,
+    sync::mpsc,
 };
 use walkdir::WalkDir;
 
@@ -43,11 +44,25 @@ impl Config {
     }
 }
 
-type PtyChild = pty_process::Child<Child, <Command as pty_process::Command>::Pty>;
+type ThreadRecv = mpsc::Receiver<ThreadMessage>;
+type HostSend = mpsc::Sender<HostMessage>;
+
+enum ThreadMessage {
+    MpvOut { buf: Box<[u8; 256]>, n_read: usize },
+    PlaybackStopped,
+}
+
+enum HostMessage {
+    /// Keyboard string input
+    Input(String),
+    /// Stop playback
+    Stop,
+}
 
 struct App {
-    mpv_child: Option<PtyChild>,
     child_out: String,
+    from_thread_recv: Option<ThreadRecv>,
+    to_thread_send: Option<HostSend>,
     volume: u8,
     ansi_parser: AnsiParser,
     cfg: Config,
@@ -103,34 +118,55 @@ impl eframe::App for App {
                             Self::play_music(
                                 &path,
                                 &mut self.child_out,
-                                &mut self.mpv_child,
+                                &mut self.from_thread_recv,
+                                &mut self.to_thread_send,
                                 self.volume,
                             );
                             self.playing_index = Some(i);
                         }
                     }
                 });
-            ui.separator();
-            match &mut self.mpv_child {
+            match &mut self.from_thread_recv {
                 None => {}
-                Some(child) => {
+                Some(recv) => {
                     for ev in &ctx.input().raw.events {
                         if let Event::Text(s) = ev {
-                            child.pty().write_all(s.as_bytes()).unwrap();
+                            self.to_thread_send
+                                .as_mut()
+                                .unwrap()
+                                .send(HostMessage::Input(s.to_owned()))
+                                .unwrap();
                         }
                     }
-                    let mut buf = [0u8; 256];
-                    let n_read = child.pty().read(&mut buf).unwrap();
-                    Self::update_child_out(
-                        &mut self.ansi_parser,
-                        &mut self.child_out,
-                        &buf[..n_read],
-                    );
+
+                    match recv.try_recv() {
+                        Ok(msg) => match msg {
+                            ThreadMessage::MpvOut { buf, n_read } => {
+                                Self::update_child_out(
+                                    &mut self.ansi_parser,
+                                    &mut self.child_out,
+                                    &buf[..n_read],
+                                );
+                            }
+                            ThreadMessage::PlaybackStopped => {
+                                eprintln!("Playback stopped!");
+                                self.to_thread_send = None;
+                                self.from_thread_recv = None;
+                            }
+                        },
+                        Err(e) => match e {
+                            mpsc::TryRecvError::Empty => {}
+                            mpsc::TryRecvError::Disconnected => {
+                                eprintln!("Disconnected!");
+                            }
+                        },
+                    }
                     if ui.button("stop").clicked() {
-                        Self::stop_music(&mut self.mpv_child);
+                        Self::stop_music(&mut self.to_thread_send);
                     }
                 }
             }
+            ui.separator();
             ScrollArea::vertical()
                 .id_source("out_scroll")
                 .stick_to_bottom()
@@ -149,13 +185,14 @@ impl eframe::App for App {
 impl App {
     fn new(_cc: &CreationContext<'_>) -> Self {
         let mut this = App {
-            mpv_child: None,
             child_out: String::new(),
             volume: 50,
             ansi_parser: Default::default(),
             cfg: Config::load_or_default(),
             song_paths: Vec::new(),
             playing_index: None,
+            from_thread_recv: None,
+            to_thread_send: None,
         };
         this.read_songs();
         this
@@ -163,18 +200,65 @@ impl App {
     fn play_music(
         path: &Path,
         child_out: &mut String,
-        mpv_child: &mut Option<PtyChild>,
+        from_thread_recv: &mut Option<ThreadRecv>,
+        to_thread_send: &mut Option<HostSend>,
         volume: u8,
     ) {
-        Self::stop_music(mpv_child);
+        Self::stop_music(to_thread_send);
+        if let Some(recv) = from_thread_recv {
+            // Wait for mpv to exit
+            eprintln!("Waiting for mpv to exit...");
+            loop {
+                let msg = recv.recv().unwrap();
+                match msg {
+                    ThreadMessage::MpvOut { .. } => eprintln!("skipped mpv out..."),
+                    ThreadMessage::PlaybackStopped => {
+                        eprintln!("Okay, playback stopped!");
+                        break;
+                    }
+                }
+            }
+        }
         child_out.clear();
-        let child = Command::new("mpv")
+        let mut child = Command::new("mpv")
             .arg("--no-video")
             .arg(path)
             .arg(&format!("--volume={}", volume))
             .spawn_pty(Some(&pty_process::Size::new(30, 80)))
             .unwrap();
-        *mpv_child = Some(child);
+        // Thread sends, host receives
+        let (t_send, h_recv) = mpsc::channel();
+        // Host sends, thread receives
+        let (h_send, t_recv) = mpsc::channel();
+        *from_thread_recv = Some(h_recv);
+        *to_thread_send = Some(h_send);
+        std::thread::spawn(move || loop {
+            match t_recv.try_recv() {
+                Ok(msg) => match msg {
+                    HostMessage::Input(s) => {
+                        child.pty().write_all(s.as_bytes()).unwrap();
+                    }
+                    HostMessage::Stop => {
+                        child.pty().write_all(b"q").unwrap();
+                        child.wait().unwrap();
+                        t_send.send(ThreadMessage::PlaybackStopped).unwrap();
+                        return;
+                    }
+                },
+                Err(e) => match e {
+                    mpsc::TryRecvError::Empty => {}
+                    mpsc::TryRecvError::Disconnected => panic!("Disconnected!"),
+                },
+            }
+            let mut buf = [0u8; 256];
+            let n_read = child.pty().read(&mut buf).unwrap();
+            t_send
+                .send(ThreadMessage::MpvOut {
+                    buf: Box::new(buf),
+                    n_read,
+                })
+                .unwrap();
+        });
     }
     fn update_child_out(ansi_parser: &mut AnsiParser, out: &mut String, buf: &[u8]) {
         ansi_parser.advance_and_write(buf, out);
@@ -203,11 +287,9 @@ impl App {
         }
         self.sort_songs();
     }
-    fn stop_music(mpv_child: &mut Option<PtyChild>) {
-        if let Some(child) = mpv_child {
-            child.pty().write_all(b"q").unwrap();
-            child.wait().unwrap();
-            *mpv_child = None;
+    fn stop_music(to_thread_send: &mut Option<HostSend>) {
+        if let Some(sender) = to_thread_send {
+            sender.send(HostMessage::Stop).unwrap();
         }
     }
 
