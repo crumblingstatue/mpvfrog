@@ -201,6 +201,7 @@ impl App {
                 self.song_paths.push(path);
             }
         }
+        self.sort_songs();
     }
     fn stop_music(mpv_child: &mut Option<PtyChild>) {
         if let Some(child) = mpv_child {
@@ -208,6 +209,10 @@ impl App {
             child.wait().unwrap();
             *mpv_child = None;
         }
+    }
+
+    fn sort_songs(&mut self) {
+        self.song_paths.sort();
     }
 }
 
