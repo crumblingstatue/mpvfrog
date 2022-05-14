@@ -120,6 +120,7 @@ impl eframe::App for App {
                                 &mut self.child_out,
                                 &mut self.from_thread_recv,
                                 &mut self.to_thread_send,
+                                &mut self.ansi_parser,
                                 self.volume,
                             );
                             self.playing_index = Some(i);
@@ -202,6 +203,7 @@ impl App {
         child_out: &mut String,
         from_thread_recv: &mut Option<ThreadRecv>,
         to_thread_send: &mut Option<HostSend>,
+        ansi_parser: &mut AnsiParser,
         volume: u8,
     ) {
         Self::stop_music(to_thread_send);
@@ -219,6 +221,8 @@ impl App {
                 }
             }
         }
+        // Reset ansi parser and clear output
+        *ansi_parser = AnsiParser::default();
         child_out.clear();
         let mut child = Command::new("mpv")
             .arg("--no-video")
