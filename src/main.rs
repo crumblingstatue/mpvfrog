@@ -1,10 +1,10 @@
 #![feature(let_else)]
 
 mod ansi_parser;
+mod ansi_term_buf;
 
-use ansi_parser::AnsiParser;
+use ansi_term_buf::AnsiTermBuf;
 use directories::ProjectDirs;
-use egui_inspect::inspect;
 use pty_process::Command as _;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -60,24 +60,19 @@ enum HostMessage {
 }
 
 struct App {
-    child_out: String,
     from_thread_recv: Option<ThreadRecv>,
     to_thread_send: Option<HostSend>,
     volume: u8,
-    ansi_parser: AnsiParser,
     cfg: Config,
     song_paths: Vec<PathBuf>,
     playing_index: Option<usize>,
+    ansi_term_buf: AnsiTermBuf,
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
         CentralPanel::default().show(ctx, |ui| {
-            inspect! {
-                ui,
-                self.ansi_parser
-            }
             ui.horizontal(|ui| {
                 ui.label("Volume");
                 ui.add(DragValue::new(&mut self.volume));
@@ -117,10 +112,9 @@ impl eframe::App for App {
                                 .to_owned();
                             Self::play_music(
                                 &path,
-                                &mut self.child_out,
                                 &mut self.from_thread_recv,
                                 &mut self.to_thread_send,
-                                &mut self.ansi_parser,
+                                &mut self.ansi_term_buf,
                                 self.volume,
                             );
                             self.playing_index = Some(i);
@@ -143,11 +137,7 @@ impl eframe::App for App {
                     match recv.try_recv() {
                         Ok(msg) => match msg {
                             ThreadMessage::MpvOut { buf, n_read } => {
-                                Self::update_child_out(
-                                    &mut self.ansi_parser,
-                                    &mut self.child_out,
-                                    &buf[..n_read],
-                                );
+                                Self::update_child_out(&mut self.ansi_term_buf, &buf[..n_read]);
                             }
                             ThreadMessage::PlaybackStopped => {
                                 eprintln!("Playback stopped!");
@@ -172,7 +162,7 @@ impl eframe::App for App {
                 .id_source("out_scroll")
                 .stick_to_bottom()
                 .show(ui, |ui| {
-                    ui.label(&self.child_out);
+                    ui.label(self.ansi_term_buf.contents_to_string());
                 });
         });
     }
@@ -186,24 +176,22 @@ impl eframe::App for App {
 impl App {
     fn new(_cc: &CreationContext<'_>) -> Self {
         let mut this = App {
-            child_out: String::new(),
             volume: 50,
-            ansi_parser: Default::default(),
             cfg: Config::load_or_default(),
             song_paths: Vec::new(),
             playing_index: None,
             from_thread_recv: None,
             to_thread_send: None,
+            ansi_term_buf: AnsiTermBuf::new(80),
         };
         this.read_songs();
         this
     }
     fn play_music(
         path: &Path,
-        child_out: &mut String,
         from_thread_recv: &mut Option<ThreadRecv>,
         to_thread_send: &mut Option<HostSend>,
-        ansi_parser: &mut AnsiParser,
+        ansi_term_buf: &mut AnsiTermBuf,
         volume: u8,
     ) {
         Self::stop_music(to_thread_send);
@@ -221,9 +209,7 @@ impl App {
                 }
             }
         }
-        // Reset ansi parser and clear output
-        *ansi_parser = AnsiParser::default();
-        child_out.clear();
+        ansi_term_buf.reset();
         let mut child = Command::new("mpv")
             .arg("--no-video")
             .arg(path)
@@ -274,8 +260,8 @@ impl App {
             }
         });
     }
-    fn update_child_out(ansi_parser: &mut AnsiParser, out: &mut String, buf: &[u8]) {
-        ansi_parser.advance_and_write(buf, out);
+    fn update_child_out(ansi_term_buf: &mut AnsiTermBuf, buf: &[u8]) {
+        ansi_term_buf.feed(buf)
     }
     fn read_songs(&mut self) {
         let Some(music_folder) = &self.cfg.music_folder else {

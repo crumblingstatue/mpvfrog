@@ -7,10 +7,6 @@ const ESC: u8 = 0x1b;
 pub struct AnsiParser {
     status: Status,
     params: Vec<u8>,
-    cursor: usize,
-    last_newline: usize,
-    /// Carriange return (\r) was encountered
-    carriage_return: bool,
 }
 
 impl Default for AnsiParser {
@@ -18,9 +14,6 @@ impl Default for AnsiParser {
         Self {
             status: Status::Init,
             params: Vec::new(),
-            cursor: 0,
-            last_newline: 0,
-            carriage_return: false,
         }
     }
 }
@@ -32,27 +25,28 @@ enum Status {
     ControlSeqStart,
 }
 
+pub enum TermCmd {
+    PutChar(u8),
+    CarriageReturn,
+    LineFeed,
+    /// Move cursor up this many lines
+    CursorUp(u8),
+    /// Erase from cursor to the end of line
+    EraseFromCursorToEol,
+}
+
 impl AnsiParser {
-    pub fn advance_and_write(&mut self, bytes: &[u8], out_string: &mut String) {
+    pub fn advance(&mut self, bytes: &[u8], mut term_callback: impl FnMut(TermCmd)) {
         for &byte in bytes {
             match self.status {
                 Status::Init => match byte {
                     ESC => self.status = Status::Esc,
                     b'\r' => {
-                        self.carriage_return = true;
+                        term_callback(TermCmd::CarriageReturn);
                     }
-                    _ => {
-                        if byte == b'\n' {
-                            self.last_newline = self.cursor;
-                        }
-                        if self.carriage_return {
-                            self.cursor = self.last_newline + 1;
-                            out_string.truncate(self.last_newline + 1);
-                            self.carriage_return = false;
-                        }
-                        out_string.push(byte as char);
-                        self.cursor += 1;
-                    }
+                    b'\n' => term_callback(TermCmd::LineFeed),
+                    c if c.is_ascii() => term_callback(TermCmd::PutChar(c)),
+                    c => panic!("Unhandled byte: {}", c),
                 },
                 Status::Esc => {
                     match byte {
@@ -74,6 +68,19 @@ impl AnsiParser {
                         }
                         0x40..=0x7E => {
                             // Terminator byte
+                            match byte {
+                                // color/etc, ignore
+                                b'm' => {}
+                                b'K' => {
+                                    term_callback(TermCmd::EraseFromCursorToEol);
+                                }
+                                b'A' => {
+                                    // Move cursor up N lines
+                                    let n = self.params.get(0);
+                                    term_callback(TermCmd::CursorUp(n.cloned().unwrap_or(1)));
+                                }
+                                _ => eprintln!("terminator byte {} ({})", byte, byte as char),
+                            }
                             self.status = Status::Init;
                             self.params.clear();
                         }
