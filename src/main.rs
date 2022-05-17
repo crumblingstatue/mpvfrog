@@ -16,7 +16,7 @@ use std::{
 use walkdir::WalkDir;
 
 use eframe::{
-    egui::{CentralPanel, DragValue, Event, ScrollArea},
+    egui::{self, CentralPanel, DragValue, Event, ScrollArea},
     CreationContext, NativeOptions,
 };
 
@@ -262,7 +262,8 @@ impl Default for MpvHandler {
 }
 
 impl App {
-    fn new(_cc: &CreationContext<'_>) -> Self {
+    fn new(cc: &CreationContext<'_>) -> Self {
+        cc.egui_ctx.set_visuals(egui::Visuals::dark());
         let mut this = App {
             cfg: Config::load_or_default(),
             song_paths: Vec::new(),
