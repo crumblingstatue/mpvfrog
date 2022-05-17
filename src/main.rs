@@ -1,9 +1,9 @@
 #![feature(let_else)]
 
 mod ansi_parser;
-mod ansi_term_buf;
+mod ansi_term;
 
-use ansi_term_buf::AnsiTerm;
+use ansi_term::AnsiTerm;
 use directories::ProjectDirs;
 use pty_process::Command as _;
 use serde::{Deserialize, Serialize};
