@@ -60,142 +60,23 @@ enum HostMessage {
 }
 
 struct App {
-    from_thread_recv: Option<ThreadRecv>,
-    to_thread_send: Option<HostSend>,
-    volume: u8,
     cfg: Config,
     song_paths: Vec<PathBuf>,
     playing_index: Option<usize>,
+    mpv_handler: MpvHandler,
+}
+
+struct MpvHandler {
+    from_thread_recv: Option<ThreadRecv>,
+    to_thread_send: Option<HostSend>,
     ansi_term: AnsiTerm,
+    volume: u8,
 }
 
-impl eframe::App for App {
-    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        ctx.request_repaint();
-        CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Volume");
-                ui.add(DragValue::new(&mut self.volume));
-            });
-            ui.horizontal(|ui| {
-                if ui.button("Music folder").clicked() {
-                    self.cfg.music_folder = rfd::FileDialog::new().pick_folder();
-                    self.read_songs();
-                }
-                match &self.cfg.music_folder {
-                    Some(folder) => {
-                        ui.label(&folder.display().to_string());
-                    }
-                    None => {
-                        ui.label("<none>");
-                    }
-                }
-            });
-            ScrollArea::vertical()
-                .max_height(200.0)
-                .id_source("song_scroll")
-                .show(ui, |ui| {
-                    for (i, path) in self.song_paths.iter().enumerate() {
-                        if ui
-                            .selectable_label(
-                                self.playing_index == Some(i),
-                                path.display().to_string(),
-                            )
-                            .clicked()
-                        {
-                            let path: PathBuf = self
-                                .cfg
-                                .music_folder
-                                .as_ref()
-                                .unwrap()
-                                .join(path)
-                                .to_owned();
-                            Self::play_music(
-                                &path,
-                                &mut self.from_thread_recv,
-                                &mut self.to_thread_send,
-                                &mut self.ansi_term,
-                                self.volume,
-                            );
-                            self.playing_index = Some(i);
-                        }
-                    }
-                });
-            match &mut self.from_thread_recv {
-                None => {}
-                Some(recv) => {
-                    for ev in &ctx.input().raw.events {
-                        if let Event::Text(s) = ev {
-                            self.to_thread_send
-                                .as_mut()
-                                .unwrap()
-                                .send(HostMessage::Input(s.to_owned()))
-                                .unwrap();
-                        }
-                    }
-
-                    match recv.try_recv() {
-                        Ok(msg) => match msg {
-                            ThreadMessage::MpvOut { buf, n_read } => {
-                                Self::update_child_out(&mut self.ansi_term, &buf[..n_read]);
-                            }
-                            ThreadMessage::PlaybackStopped => {
-                                eprintln!("Playback stopped!");
-                                self.to_thread_send = None;
-                                self.from_thread_recv = None;
-                            }
-                        },
-                        Err(e) => match e {
-                            mpsc::TryRecvError::Empty => {}
-                            mpsc::TryRecvError::Disconnected => {
-                                eprintln!("Disconnected!");
-                            }
-                        },
-                    }
-                    if ui.button("stop").clicked() {
-                        Self::stop_music(&mut self.to_thread_send);
-                    }
-                }
-            }
-            ui.separator();
-            ScrollArea::vertical()
-                .id_source("out_scroll")
-                .stick_to_bottom()
-                .show(ui, |ui| {
-                    ui.label(self.ansi_term.contents_to_string());
-                });
-        });
-    }
-    fn on_exit_event(&mut self) -> bool {
-        let vec = serde_json::to_vec_pretty(&self.cfg).unwrap();
-        std::fs::write(cfg_path(), &vec).unwrap();
-        true
-    }
-}
-
-impl App {
-    fn new(_cc: &CreationContext<'_>) -> Self {
-        let mut this = App {
-            volume: 50,
-            cfg: Config::load_or_default(),
-            song_paths: Vec::new(),
-            playing_index: None,
-            from_thread_recv: None,
-            to_thread_send: None,
-            ansi_term: AnsiTerm::new(80),
-        };
-        this.read_songs();
-        this
-    }
-    fn play_music(
-        path: &Path,
-        from_thread_recv: &mut Option<ThreadRecv>,
-        to_thread_send: &mut Option<HostSend>,
-        ansi_term_buf: &mut AnsiTerm,
-        volume: u8,
-    ) {
-        Self::stop_music(to_thread_send);
-        if let Some(recv) = from_thread_recv {
+impl MpvHandler {
+    fn play_music(&mut self, path: &Path) {
+        self.stop_music();
+        if let Some(recv) = &mut self.from_thread_recv {
             // Wait for mpv to exit
             eprintln!("Waiting for mpv to exit...");
             loop {
@@ -209,19 +90,19 @@ impl App {
                 }
             }
         }
-        ansi_term_buf.reset();
+        self.ansi_term.reset();
         let mut child = Command::new("mpv")
             .arg("--no-video")
             .arg(path)
-            .arg(&format!("--volume={}", volume))
+            .arg(&format!("--volume={}", self.volume))
             .spawn_pty(Some(&pty_process::Size::new(30, 80)))
             .unwrap();
         // Thread sends, host receives
         let (t_send, h_recv) = mpsc::channel();
         // Host sends, thread receives
         let (h_send, t_recv) = mpsc::channel();
-        *from_thread_recv = Some(h_recv);
-        *to_thread_send = Some(h_send);
+        self.from_thread_recv = Some(h_recv);
+        self.to_thread_send = Some(h_send);
         std::thread::spawn(move || loop {
             match t_recv.try_recv() {
                 Ok(msg) => match msg {
@@ -260,8 +141,136 @@ impl App {
             }
         });
     }
-    fn update_child_out(ansi_term_buf: &mut AnsiTerm, buf: &[u8]) {
-        ansi_term_buf.feed(buf)
+    fn stop_music(&mut self) {
+        if let Some(sender) = &mut self.to_thread_send {
+            sender.send(HostMessage::Stop).unwrap();
+        }
+    }
+    fn update_child_out(&mut self, buf: &[u8]) {
+        self.ansi_term.feed(buf)
+    }
+}
+
+impl eframe::App for App {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+        ctx.request_repaint();
+        CentralPanel::default().show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Volume");
+                ui.add(DragValue::new(&mut self.mpv_handler.volume));
+            });
+            ui.horizontal(|ui| {
+                if ui.button("Music folder").clicked() {
+                    self.cfg.music_folder = rfd::FileDialog::new().pick_folder();
+                    self.read_songs();
+                }
+                match &self.cfg.music_folder {
+                    Some(folder) => {
+                        ui.label(&folder.display().to_string());
+                    }
+                    None => {
+                        ui.label("<none>");
+                    }
+                }
+            });
+            ScrollArea::vertical()
+                .max_height(200.0)
+                .id_source("song_scroll")
+                .show(ui, |ui| {
+                    for (i, path) in self.song_paths.iter().enumerate() {
+                        if ui
+                            .selectable_label(
+                                self.playing_index == Some(i),
+                                path.display().to_string(),
+                            )
+                            .clicked()
+                        {
+                            let path: PathBuf = self
+                                .cfg
+                                .music_folder
+                                .as_ref()
+                                .unwrap()
+                                .join(path)
+                                .to_owned();
+                            self.mpv_handler.play_music(&path);
+                            self.playing_index = Some(i);
+                        }
+                    }
+                });
+            match &mut self.mpv_handler.from_thread_recv {
+                None => {}
+                Some(recv) => {
+                    for ev in &ctx.input().raw.events {
+                        if let Event::Text(s) = ev {
+                            self.mpv_handler
+                                .to_thread_send
+                                .as_mut()
+                                .unwrap()
+                                .send(HostMessage::Input(s.to_owned()))
+                                .unwrap();
+                        }
+                    }
+
+                    match recv.try_recv() {
+                        Ok(msg) => match msg {
+                            ThreadMessage::MpvOut { buf, n_read } => {
+                                self.mpv_handler.update_child_out(&buf[..n_read]);
+                            }
+                            ThreadMessage::PlaybackStopped => {
+                                eprintln!("Playback stopped!");
+                                self.mpv_handler.to_thread_send = None;
+                                self.mpv_handler.from_thread_recv = None;
+                            }
+                        },
+                        Err(e) => match e {
+                            mpsc::TryRecvError::Empty => {}
+                            mpsc::TryRecvError::Disconnected => {
+                                eprintln!("Disconnected!");
+                            }
+                        },
+                    }
+                    if ui.button("stop").clicked() {
+                        self.mpv_handler.stop_music();
+                    }
+                }
+            }
+            ui.separator();
+            ScrollArea::vertical()
+                .id_source("out_scroll")
+                .stick_to_bottom()
+                .show(ui, |ui| {
+                    ui.label(self.mpv_handler.ansi_term.contents_to_string());
+                });
+        });
+    }
+    fn on_exit_event(&mut self) -> bool {
+        let vec = serde_json::to_vec_pretty(&self.cfg).unwrap();
+        std::fs::write(cfg_path(), &vec).unwrap();
+        true
+    }
+}
+
+impl Default for MpvHandler {
+    fn default() -> Self {
+        Self {
+            from_thread_recv: None,
+            to_thread_send: None,
+            ansi_term: AnsiTerm::new(80),
+            volume: 50,
+        }
+    }
+}
+
+impl App {
+    fn new(_cc: &CreationContext<'_>) -> Self {
+        let mut this = App {
+            cfg: Config::load_or_default(),
+            song_paths: Vec::new(),
+            playing_index: None,
+            mpv_handler: MpvHandler::default(),
+        };
+        this.read_songs();
+        this
     }
     fn read_songs(&mut self) {
         let Some(music_folder) = &self.cfg.music_folder else {
@@ -286,11 +295,6 @@ impl App {
             }
         }
         self.sort_songs();
-    }
-    fn stop_music(to_thread_send: &mut Option<HostSend>) {
-        if let Some(sender) = to_thread_send {
-            sender.send(HostMessage::Stop).unwrap();
-        }
     }
 
     fn sort_songs(&mut self) {
