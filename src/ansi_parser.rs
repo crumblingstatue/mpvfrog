@@ -1,9 +1,6 @@
-use eframe::egui;
-use egui_inspect::derive::Inspect;
-
 const ESC: u8 = 0x1b;
 
-#[derive(Inspect, Debug)]
+#[derive(Debug)]
 pub struct AnsiParser {
     status: Status,
     params: Vec<u8>,
@@ -18,7 +15,7 @@ impl Default for AnsiParser {
     }
 }
 
-#[derive(Debug, Inspect, PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Status {
     Init,
     Esc,

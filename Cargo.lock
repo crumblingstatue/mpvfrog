@@ -433,25 +433,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "egui-inspect"
-version = "0.1.0"
-source = "git+https://github.com/crumblingstatue/egui-inspect.git#93412e32c234a6ef75bc632b85136f3bdf0bdd21"
-dependencies = [
- "egui",
- "egui-inspect-derive",
-]
-
-[[package]]
-name = "egui-inspect-derive"
-version = "0.1.0"
-source = "git+https://github.com/crumblingstatue/egui-inspect.git#93412e32c234a6ef75bc632b85136f3bdf0bdd21"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "egui-winit"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -923,7 +904,6 @@ version = "0.1.0"
 dependencies = [
  "directories",
  "eframe",
- "egui-inspect",
  "pretty-hex",
  "pty-process",
  "rfd",
