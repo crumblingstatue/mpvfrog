@@ -1,6 +1,6 @@
 use crate::ansi_parser::{AnsiParser, TermCmd};
 
-pub struct AnsiTermBuf {
+pub struct AnsiTerm {
     width: u16,
     height: usize,
     cells: Vec<u8>,
@@ -20,7 +20,7 @@ impl Cursor {
     }
 }
 
-impl AnsiTermBuf {
+impl AnsiTerm {
     pub fn new(width: u16) -> Self {
         Self {
             width,

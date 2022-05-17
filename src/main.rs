@@ -3,7 +3,7 @@
 mod ansi_parser;
 mod ansi_term_buf;
 
-use ansi_term_buf::AnsiTermBuf;
+use ansi_term_buf::AnsiTerm;
 use directories::ProjectDirs;
 use pty_process::Command as _;
 use serde::{Deserialize, Serialize};
@@ -66,7 +66,7 @@ struct App {
     cfg: Config,
     song_paths: Vec<PathBuf>,
     playing_index: Option<usize>,
-    ansi_term_buf: AnsiTermBuf,
+    ansi_term: AnsiTerm,
 }
 
 impl eframe::App for App {
@@ -114,7 +114,7 @@ impl eframe::App for App {
                                 &path,
                                 &mut self.from_thread_recv,
                                 &mut self.to_thread_send,
-                                &mut self.ansi_term_buf,
+                                &mut self.ansi_term,
                                 self.volume,
                             );
                             self.playing_index = Some(i);
@@ -137,7 +137,7 @@ impl eframe::App for App {
                     match recv.try_recv() {
                         Ok(msg) => match msg {
                             ThreadMessage::MpvOut { buf, n_read } => {
-                                Self::update_child_out(&mut self.ansi_term_buf, &buf[..n_read]);
+                                Self::update_child_out(&mut self.ansi_term, &buf[..n_read]);
                             }
                             ThreadMessage::PlaybackStopped => {
                                 eprintln!("Playback stopped!");
@@ -162,7 +162,7 @@ impl eframe::App for App {
                 .id_source("out_scroll")
                 .stick_to_bottom()
                 .show(ui, |ui| {
-                    ui.label(self.ansi_term_buf.contents_to_string());
+                    ui.label(self.ansi_term.contents_to_string());
                 });
         });
     }
@@ -182,7 +182,7 @@ impl App {
             playing_index: None,
             from_thread_recv: None,
             to_thread_send: None,
-            ansi_term_buf: AnsiTermBuf::new(80),
+            ansi_term: AnsiTerm::new(80),
         };
         this.read_songs();
         this
@@ -191,7 +191,7 @@ impl App {
         path: &Path,
         from_thread_recv: &mut Option<ThreadRecv>,
         to_thread_send: &mut Option<HostSend>,
-        ansi_term_buf: &mut AnsiTermBuf,
+        ansi_term_buf: &mut AnsiTerm,
         volume: u8,
     ) {
         Self::stop_music(to_thread_send);
@@ -260,7 +260,7 @@ impl App {
             }
         });
     }
-    fn update_child_out(ansi_term_buf: &mut AnsiTermBuf, buf: &[u8]) {
+    fn update_child_out(ansi_term_buf: &mut AnsiTerm, buf: &[u8]) {
         ansi_term_buf.feed(buf)
     }
     fn read_songs(&mut self) {
