@@ -5,10 +5,11 @@ mod ansi_term;
 
 use ansi_term::AnsiTerm;
 use directories::ProjectDirs;
+use nonblock::NonBlockingReader;
 use pty_process::Command as _;
 use serde::{Deserialize, Serialize};
 use std::{
-    io::{Read as _, Write as _},
+    io::Write as _,
     path::{Path, PathBuf},
     process::Command,
     sync::mpsc,
@@ -48,7 +49,7 @@ type ThreadRecv = mpsc::Receiver<ThreadMessage>;
 type HostSend = mpsc::Sender<HostMessage>;
 
 enum ThreadMessage {
-    MpvOut { buf: Box<[u8; 256]>, n_read: usize },
+    MpvOut { buf: Vec<u8> },
     PlaybackStopped,
 }
 
@@ -121,15 +122,13 @@ impl MpvHandler {
                     mpsc::TryRecvError::Disconnected => panic!("Disconnected!"),
                 },
             }
-            let mut buf = [0u8; 256];
-            match child.pty().read(&mut buf) {
+            let mut buf = Vec::new();
+            let mut nbr = NonBlockingReader::from_fd((*child.pty()).try_clone().unwrap()).unwrap();
+            match nbr.read_available(&mut buf) {
                 Ok(n_read) => {
-                    t_send
-                        .send(ThreadMessage::MpvOut {
-                            buf: Box::new(buf),
-                            n_read,
-                        })
-                        .unwrap();
+                    if n_read != 0 {
+                        t_send.send(ThreadMessage::MpvOut { buf }).unwrap();
+                    }
                 }
                 Err(e) => {
                     eprintln!("error reading from mpv process: {}", e);
@@ -213,8 +212,8 @@ impl eframe::App for App {
 
                     match recv.try_recv() {
                         Ok(msg) => match msg {
-                            ThreadMessage::MpvOut { buf, n_read } => {
-                                self.mpv_handler.update_child_out(&buf[..n_read]);
+                            ThreadMessage::MpvOut { buf } => {
+                                self.mpv_handler.update_child_out(&buf);
                             }
                             ThreadMessage::PlaybackStopped => {
                                 eprintln!("Playback stopped!");

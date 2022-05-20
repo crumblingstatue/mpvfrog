@@ -904,6 +904,7 @@ version = "0.1.0"
 dependencies = [
  "directories",
  "eframe",
+ "nonblock",
  "pretty-hex",
  "pty-process",
  "rfd",
@@ -1042,6 +1043,15 @@ checksum = "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
 dependencies = [
  "memchr",
  "minimal-lexical",
+]
+
+[[package]]
+name = "nonblock"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "796141c8358fc4ce8cbe66b71b57c52eb510ee13289695e43db6843d6f202173"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
