@@ -22,6 +22,12 @@ struct Config {
     /// These should all wrap mpv, but could be different demuxers (like for midi)
     #[serde(default)]
     custom_players: Vec<CustomPlayerEntry>,
+    #[serde(default = "default_volume")]
+    volume: u8,
+}
+
+const fn default_volume() -> u8 {
+    50
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -60,7 +66,6 @@ struct App {
 
 struct MpvHandler {
     ansi_term: AnsiTerm,
-    volume: u8,
     child: Option<Child>,
 }
 
@@ -114,7 +119,7 @@ impl eframe::App for App {
         CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Volume");
-                ui.add(DragValue::new(&mut self.mpv_handler.volume));
+                ui.add(DragValue::new(&mut self.cfg.volume));
                 if ui.button("Custom players").clicked() {
                     self.custom_players_window_show ^= true;
                 }
@@ -165,7 +170,7 @@ impl eframe::App for App {
                                     [
                                         path.as_ref(),
                                         "--no-video".as_ref(),
-                                        format!("--volume={}", self.mpv_handler.volume).as_ref(),
+                                        format!("--volume={}", self.cfg.volume).as_ref(),
                                     ],
                                 ),
                             }
@@ -204,7 +209,6 @@ impl Default for MpvHandler {
     fn default() -> Self {
         Self {
             ansi_term: AnsiTerm::new(80),
-            volume: 50,
             child: None,
         }
     }
