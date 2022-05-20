@@ -96,7 +96,7 @@ impl MpvHandler {
             Err(e) => {
                 eprintln!("error reading from mpv process: {}", e);
                 // Better terminate playback
-                child.wait().unwrap();
+                self.stop_music();
             }
         }
     }
