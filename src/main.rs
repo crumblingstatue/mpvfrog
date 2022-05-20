@@ -6,13 +6,12 @@ mod ansi_term;
 use ansi_term::AnsiTerm;
 use directories::ProjectDirs;
 use nonblock::NonBlockingReader;
-use pty_process::Command as _;
+use pty_process::{std::Child, Command as _};
 use serde::{Deserialize, Serialize};
 use std::{
     io::Write as _,
     path::{Path, PathBuf},
     process::Command,
-    sync::mpsc,
 };
 use walkdir::WalkDir;
 
@@ -45,21 +44,6 @@ impl Config {
     }
 }
 
-type ThreadRecv = mpsc::Receiver<ThreadMessage>;
-type HostSend = mpsc::Sender<HostMessage>;
-
-enum ThreadMessage {
-    MpvOut { buf: Vec<u8> },
-    PlaybackStopped,
-}
-
-enum HostMessage {
-    /// Keyboard string input
-    Input(String),
-    /// Stop playback
-    Stop,
-}
-
 struct App {
     cfg: Config,
     song_paths: Vec<PathBuf>,
@@ -68,91 +52,60 @@ struct App {
 }
 
 struct MpvHandler {
-    from_thread_recv: Option<ThreadRecv>,
-    to_thread_send: Option<HostSend>,
     ansi_term: AnsiTerm,
     volume: u8,
+    child: Option<Child>,
 }
 
 impl MpvHandler {
     fn play_music(&mut self, path: &Path) {
         self.stop_music();
-        if let Some(recv) = &mut self.from_thread_recv {
-            // Wait for mpv to exit
-            eprintln!("Waiting for mpv to exit...");
-            loop {
-                let msg = recv.recv().unwrap();
-                match msg {
-                    ThreadMessage::MpvOut { .. } => eprintln!("skipped mpv out..."),
-                    ThreadMessage::PlaybackStopped => {
-                        eprintln!("Okay, playback stopped!");
-                        break;
-                    }
-                }
-            }
-        }
         self.ansi_term.reset();
-        let mut child = Command::new("mpv")
+        let child = Command::new("mpv")
             .arg("--no-video")
             .arg(path)
             .arg(&format!("--volume={}", self.volume))
             .spawn_pty(Some(&pty_process::Size::new(30, 80)))
             .unwrap();
-        // Thread sends, host receives
-        let (t_send, h_recv) = mpsc::channel();
-        // Host sends, thread receives
-        let (h_send, t_recv) = mpsc::channel();
-        self.from_thread_recv = Some(h_recv);
-        self.to_thread_send = Some(h_send);
-        std::thread::spawn(move || loop {
-            match t_recv.try_recv() {
-                Ok(msg) => match msg {
-                    HostMessage::Input(s) => {
-                        child.pty().write_all(s.as_bytes()).unwrap();
-                    }
-                    HostMessage::Stop => {
-                        child.pty().write_all(b"q").unwrap();
-                        child.wait().unwrap();
-                        t_send.send(ThreadMessage::PlaybackStopped).unwrap();
-                        return;
-                    }
-                },
-                Err(e) => match e {
-                    mpsc::TryRecvError::Empty => {}
-                    mpsc::TryRecvError::Disconnected => panic!("Disconnected!"),
-                },
-            }
-            let mut buf = Vec::new();
-            let mut nbr = NonBlockingReader::from_fd((*child.pty()).try_clone().unwrap()).unwrap();
-            match nbr.read_available(&mut buf) {
-                Ok(n_read) => {
-                    if n_read != 0 {
-                        t_send.send(ThreadMessage::MpvOut { buf }).unwrap();
-                    }
-                }
-                Err(e) => {
-                    eprintln!("error reading from mpv process: {}", e);
-                    // Better terminate playback
-                    child.wait().unwrap();
-                    t_send.send(ThreadMessage::PlaybackStopped).unwrap();
-                    return;
-                }
-            }
-        });
+        self.child = Some(child);
     }
     fn stop_music(&mut self) {
-        if let Some(sender) = &mut self.to_thread_send {
-            sender.send(HostMessage::Stop).unwrap();
-        }
+        let Some(child) = &mut self.child else { return };
+        child.pty().write_all(b"q").unwrap();
+        child.wait().unwrap();
+        self.child = None;
     }
     fn update_child_out(&mut self, buf: &[u8]) {
         self.ansi_term.feed(buf)
+    }
+    fn update(&mut self) {
+        let Some(child) = &mut self.child else { return; };
+        let mut buf = Vec::new();
+        let mut nbr = NonBlockingReader::from_fd((*child.pty()).try_clone().unwrap()).unwrap();
+        match nbr.read_available(&mut buf) {
+            Ok(n_read) => {
+                if n_read != 0 {
+                    self.update_child_out(&buf);
+                }
+            }
+            Err(e) => {
+                eprintln!("error reading from mpv process: {}", e);
+                // Better terminate playback
+                child.wait().unwrap();
+            }
+        }
+    }
+
+    fn input(&mut self, s: &str) {
+        let Some(child) = &mut self.child else { return };
+        child.pty().write_all(s.as_bytes()).unwrap();
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
+        self.mpv_handler.update();
         CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Volume");
@@ -196,41 +149,14 @@ impl eframe::App for App {
                         }
                     }
                 });
-            match &mut self.mpv_handler.from_thread_recv {
-                None => {}
-                Some(recv) => {
-                    for ev in &ctx.input().raw.events {
-                        if let Event::Text(s) = ev {
-                            self.mpv_handler
-                                .to_thread_send
-                                .as_mut()
-                                .unwrap()
-                                .send(HostMessage::Input(s.to_owned()))
-                                .unwrap();
-                        }
+            if self.mpv_handler.child.is_some() {
+                for ev in &ctx.input().raw.events {
+                    if let Event::Text(s) = ev {
+                        self.mpv_handler.input(s);
                     }
-
-                    match recv.try_recv() {
-                        Ok(msg) => match msg {
-                            ThreadMessage::MpvOut { buf } => {
-                                self.mpv_handler.update_child_out(&buf);
-                            }
-                            ThreadMessage::PlaybackStopped => {
-                                eprintln!("Playback stopped!");
-                                self.mpv_handler.to_thread_send = None;
-                                self.mpv_handler.from_thread_recv = None;
-                            }
-                        },
-                        Err(e) => match e {
-                            mpsc::TryRecvError::Empty => {}
-                            mpsc::TryRecvError::Disconnected => {
-                                eprintln!("Disconnected!");
-                            }
-                        },
-                    }
-                    if ui.button("stop").clicked() {
-                        self.mpv_handler.stop_music();
-                    }
+                }
+                if ui.button("stop").clicked() {
+                    self.mpv_handler.stop_music();
                 }
             }
             ui.separator();
@@ -252,10 +178,9 @@ impl eframe::App for App {
 impl Default for MpvHandler {
     fn default() -> Self {
         Self {
-            from_thread_recv: None,
-            to_thread_send: None,
             ansi_term: AnsiTerm::new(80),
             volume: 50,
+            child: None,
         }
     }
 }
