@@ -12,7 +12,7 @@ use std::{ffi::OsStr, io::Write as _, path::PathBuf, process::Command};
 use walkdir::WalkDir;
 
 use eframe::{
-    egui::{self, CentralPanel, DragValue, Event, ScrollArea, Window},
+    egui::{self, Button, CentralPanel, DragValue, Event, ScrollArea, TopBottomPanel, Window},
     CreationContext, NativeOptions,
 };
 
@@ -116,28 +116,28 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
         self.mpv_handler.update();
-        CentralPanel::default().show(ctx, |ui| {
+        TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.label("Volume");
-                ui.add(DragValue::new(&mut self.cfg.volume));
-                if ui.button("Custom players").clicked() {
+                ui.group(|ui| {
+                    if ui.button("Music folder").clicked() {
+                        self.cfg.music_folder = rfd::FileDialog::new().pick_folder();
+                        self.read_songs();
+                    }
+                    match &self.cfg.music_folder {
+                        Some(folder) => {
+                            ui.label(&folder.display().to_string());
+                        }
+                        None => {
+                            ui.label("<none>");
+                        }
+                    }
+                });
+                if ui.button("Custom players...").clicked() {
                     self.custom_players_window_show ^= true;
                 }
             });
-            ui.horizontal(|ui| {
-                if ui.button("Music folder").clicked() {
-                    self.cfg.music_folder = rfd::FileDialog::new().pick_folder();
-                    self.read_songs();
-                }
-                match &self.cfg.music_folder {
-                    Some(folder) => {
-                        ui.label(&folder.display().to_string());
-                    }
-                    None => {
-                        ui.label("<none>");
-                    }
-                }
-            });
+        });
+        CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical()
                 .max_height(200.0)
                 .id_source("song_scroll")
@@ -178,16 +178,27 @@ impl eframe::App for App {
                         }
                     }
                 });
-            if self.mpv_handler.child.is_some() {
+            let playing = self.mpv_handler.child.is_some();
+            if playing {
                 for ev in &ctx.input().raw.events {
                     if let Event::Text(s) = ev {
                         self.mpv_handler.input(s);
                     }
                 }
-                if ui.button("stop").clicked() {
-                    self.mpv_handler.stop_music();
-                }
             }
+            ui.separator();
+            ui.horizontal(|ui| {
+                ui.group(|ui| {
+                    if ui.add_enabled(!playing, Button::new("▶")).clicked() {}
+                    if ui.add_enabled(playing, Button::new("⏹")).clicked() {
+                        self.mpv_handler.stop_music();
+                    }
+                });
+                ui.group(|ui| {
+                    ui.label("🔈");
+                    ui.add(DragValue::new(&mut self.cfg.volume));
+                });
+            });
             ui.separator();
             ScrollArea::vertical()
                 .id_source("out_scroll")
