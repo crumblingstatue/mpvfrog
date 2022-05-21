@@ -41,6 +41,8 @@ impl eframe::App for App {
                 match ev {
                     Event::Text(s) => match s.as_str() {
                         " " => self.state.mpv_handler.toggle_pause(),
+                        "<" => self.state.play_prev(),
+                        ">" => self.state.play_next(),
                         s => {
                             match s {
                                 "9" => {
@@ -191,6 +193,27 @@ impl AppState {
                     format!("--speed={}", self.cfg.speed).as_ref(),
                 ],
             ),
+        }
+    }
+
+    fn play_prev(&mut self) {
+        if let Some(sel) = &mut self.selected_song {
+            if *sel == 0 {
+                *sel = self.playlist.len() - 1;
+            } else {
+                *sel -= 1;
+            }
+            self.play_selected_song();
+        }
+    }
+
+    fn play_next(&mut self) {
+        if let Some(sel) = &mut self.selected_song {
+            *sel += 1;
+            if *sel >= self.playlist.len() {
+                *sel = 0;
+            }
+            self.play_selected_song();
         }
     }
 
