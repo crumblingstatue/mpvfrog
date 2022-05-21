@@ -1,7 +1,8 @@
-use crate::mpv_handler::MpvHandler;
-use directories::ProjectDirs;
+use crate::{
+    config::{Config, CustomPlayerEntry},
+    mpv_handler::MpvHandler,
+};
 
-use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
@@ -12,46 +13,6 @@ use eframe::{
     },
     CreationContext,
 };
-
-#[derive(Serialize, Deserialize, Default)]
-struct Config {
-    music_folder: Option<PathBuf>,
-    /// These should all wrap mpv, but could be different demuxers (like for midi)
-    #[serde(default)]
-    custom_players: Vec<CustomPlayerEntry>,
-    #[serde(default = "default_volume")]
-    volume: u8,
-}
-
-const fn default_volume() -> u8 {
-    50
-}
-
-#[derive(Serialize, Deserialize, Default)]
-struct CustomPlayerEntry {
-    ext: String,
-    cmd: String,
-    args: Vec<String>,
-}
-
-fn cfg_path() -> PathBuf {
-    let proj_dirs = ProjectDirs::from("", "crumblingstatue", "mpv-egui-musicplayer").unwrap();
-    let cfg_dir = proj_dirs.config_dir();
-    std::fs::create_dir_all(cfg_dir).unwrap();
-    cfg_dir.join("config.json")
-}
-
-impl Config {
-    fn load_or_default() -> Self {
-        match std::fs::read_to_string(cfg_path()) {
-            Ok(string) => serde_json::from_str(&string).unwrap(),
-            Err(e) => {
-                eprintln!("{}", e);
-                Default::default()
-            }
-        }
-    }
-}
 
 pub struct App {
     cfg: Config,
@@ -177,7 +138,7 @@ impl eframe::App for App {
     }
     fn on_exit_event(&mut self) -> bool {
         let vec = serde_json::to_vec_pretty(&self.cfg).unwrap();
-        std::fs::write(cfg_path(), &vec).unwrap();
+        std::fs::write(Config::path(), &vec).unwrap();
         true
     }
 }
