@@ -153,6 +153,7 @@ impl AppState {
         let Some(music_folder) = &self.cfg.music_folder else {
             return;
         };
+        self.playlist.clear();
         for entry in WalkDir::new(music_folder)
             .into_iter()
             .filter_map(|e| e.ok())
