@@ -15,7 +15,7 @@ impl MpvHandler {
         self.ansi_term.reset();
         let child = Command::new(mpv_cmd)
             .args(args)
-            .spawn_pty(Some(&pty_process::Size::new(30, 80)))
+            .spawn_pty(Some(&pty_process::Size::new(30, 100)))
             .unwrap();
         self.child = Some(child);
     }
@@ -71,7 +71,7 @@ impl MpvHandler {
 impl Default for MpvHandler {
     fn default() -> Self {
         Self {
-            ansi_term: Term::new(80),
+            ansi_term: Term::new(100),
             child: None,
             paused: false,
         }
