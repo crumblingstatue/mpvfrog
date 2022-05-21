@@ -36,6 +36,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "000444226fcff248f2bc4c7625be32c63caccfecc2723a2b9f78a7487a49c407"
 
 [[package]]
+name = "ansi_term_buf"
+version = "0.1.0"
+source = "git+https://github.com/crumblingstatue/ansi_term_buf.git#ec5822c16bfe34ec07a83da5a45079d6377c3567"
+
+[[package]]
 name = "arboard"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -901,6 +906,7 @@ dependencies = [
 name = "mpv-egui-musicplayer"
 version = "0.1.0"
 dependencies = [
+ "ansi_term_buf",
  "directories",
  "eframe",
  "nonblock",

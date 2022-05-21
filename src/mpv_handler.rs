@@ -1,10 +1,10 @@
-use crate::ansi_term::AnsiTerm;
+use ansi_term_buf::Term;
 use nonblock::NonBlockingReader;
 use pty_process::{std::Child, Command as _};
 use std::{ffi::OsStr, io::Write as _, process::Command};
 
 pub struct MpvHandler {
-    ansi_term: AnsiTerm,
+    ansi_term: Term,
     child: Option<Child>,
     paused: bool,
 }
@@ -71,7 +71,7 @@ impl MpvHandler {
 impl Default for MpvHandler {
     fn default() -> Self {
         Self {
-            ansi_term: AnsiTerm::new(80),
+            ansi_term: Term::new(80),
             child: None,
             paused: false,
         }

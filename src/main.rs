@@ -1,7 +1,5 @@
 #![feature(let_else)]
 
-mod ansi_parser;
-mod ansi_term;
 mod app;
 mod config;
 mod mpv_handler;
