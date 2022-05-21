@@ -1,6 +1,6 @@
 mod custom_players_window;
 
-use eframe::egui::{self, Context};
+use eframe::egui::{self, ComboBox, Context};
 
 use eframe::egui::{
     Button, CentralPanel, DragValue, ScrollArea, TextEdit, TextStyle, TopBottomPanel,
@@ -8,7 +8,7 @@ use eframe::egui::{
 
 use self::custom_players_window::CustomPlayersWindow;
 
-use super::AppState;
+use super::{AppState, PlaylistBehavior};
 
 #[derive(Default)]
 struct Windows {
@@ -114,6 +114,25 @@ impl Ui {
                 ui.label("🔈");
                 ui.add(DragValue::new(&mut app.cfg.volume));
             });
+            ui.group(|ui| {
+                ComboBox::new("playlist_behavior_cb", "▶")
+                    .selected_text(app.playlist_behavior.label())
+                    .show_ui(ui, |ui| {
+                        use self::PlaylistBehavior::*;
+                        ui.selectable_value(&mut app.playlist_behavior, Stop, Stop.label());
+                        ui.selectable_value(&mut app.playlist_behavior, Continue, Continue.label());
+                        ui.selectable_value(
+                            &mut app.playlist_behavior,
+                            RepeatOne,
+                            RepeatOne.label(),
+                        );
+                        ui.selectable_value(
+                            &mut app.playlist_behavior,
+                            RepeatPlaylist,
+                            RepeatPlaylist.label(),
+                        );
+                    })
+            });
         });
         ui.separator();
         ScrollArea::vertical()
@@ -126,5 +145,16 @@ impl Ui {
                         .font(TextStyle::Monospace),
                 );
             });
+    }
+}
+
+impl PlaylistBehavior {
+    fn label(&self) -> &'static str {
+        match self {
+            PlaylistBehavior::Stop => "Stop",
+            PlaylistBehavior::Continue => "Continue",
+            PlaylistBehavior::RepeatOne => "Repeat one",
+            PlaylistBehavior::RepeatPlaylist => "Repeat playlist",
+        }
     }
 }

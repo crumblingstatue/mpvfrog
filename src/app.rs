@@ -20,6 +20,15 @@ struct AppState {
     song_paths: Vec<PathBuf>,
     selected_song: Option<usize>,
     mpv_handler: MpvHandler,
+    playlist_behavior: PlaylistBehavior,
+}
+
+#[derive(PartialEq)]
+enum PlaylistBehavior {
+    Stop,
+    Continue,
+    RepeatOne,
+    RepeatPlaylist,
 }
 
 impl eframe::App for App {
@@ -67,6 +76,7 @@ impl App {
             song_paths: Vec::new(),
             selected_song: None,
             mpv_handler: MpvHandler::default(),
+            playlist_behavior: PlaylistBehavior::Continue,
         };
         state.read_songs();
         App {
