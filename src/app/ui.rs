@@ -3,7 +3,7 @@ mod custom_players_window;
 use eframe::egui::{self, Context};
 
 use eframe::egui::{
-    Button, CentralPanel, DragValue, Event, ScrollArea, TextEdit, TextStyle, TopBottomPanel,
+    Button, CentralPanel, DragValue, ScrollArea, TextEdit, TextStyle, TopBottomPanel,
 };
 
 use self::custom_players_window::CustomPlayersWindow;
@@ -69,16 +69,6 @@ impl Ui {
                     }
                 }
             });
-        if app.mpv_handler.active() {
-            for ev in &ui.ctx().input().raw.events {
-                if let Event::Text(s) = ev {
-                    match s.as_str() {
-                        " " => app.mpv_handler.toggle_pause(),
-                        _ => app.mpv_handler.input(s),
-                    }
-                }
-            }
-        }
         ui.separator();
         ui.horizontal(|ui| {
             ui.group(|ui| {

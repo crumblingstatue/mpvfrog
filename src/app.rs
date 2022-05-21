@@ -5,7 +5,10 @@ use crate::{config::Config, mpv_handler::MpvHandler};
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-use eframe::{egui, CreationContext};
+use eframe::{
+    egui::{self, Event},
+    CreationContext,
+};
 
 pub struct App {
     state: AppState,
@@ -21,8 +24,21 @@ struct AppState {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Forward input to mpv child process
+        if self.state.mpv_handler.active() {
+            for ev in &ctx.input().raw.events {
+                if let Event::Text(s) = ev {
+                    match s.as_str() {
+                        " " => self.state.mpv_handler.toggle_pause(),
+                        _ => self.state.mpv_handler.input(s),
+                    }
+                }
+            }
+        }
+        // We need to constantly update in order to keep reading from mpv
         ctx.request_repaint();
         self.state.mpv_handler.update();
+        // Do the ui
         self.ui.update(&mut self.state, ctx);
     }
     fn on_exit_event(&mut self) -> bool {
