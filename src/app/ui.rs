@@ -34,8 +34,10 @@ impl Ui {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.button("Music folder").clicked() {
-                    app.cfg.music_folder = rfd::FileDialog::new().pick_folder();
-                    app.read_songs();
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        app.cfg.music_folder = Some(path);
+                        app.read_songs();
+                    }
                 }
                 match &app.cfg.music_folder {
                     Some(folder) => {

@@ -182,7 +182,13 @@ impl AppState {
         self.user_stopped = false;
         let selection = self.selected_song;
         let sel_path = &self.playlist[selection];
-        let path: PathBuf = self.cfg.music_folder.as_ref().unwrap().join(sel_path);
+        let path: PathBuf = match &self.cfg.music_folder {
+            Some(folder) => folder.join(sel_path),
+            None => {
+                eprintln!("Can't play song, there is no music folder");
+                return;
+            }
+        };
         let ext_str = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
         match self.cfg.custom_players.iter().find(|en| en.ext == ext_str) {
             Some(en) => self.mpv_handler.play_music(
