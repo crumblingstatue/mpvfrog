@@ -12,7 +12,10 @@ use std::{ffi::OsStr, io::Write as _, path::PathBuf, process::Command};
 use walkdir::WalkDir;
 
 use eframe::{
-    egui::{self, Button, CentralPanel, DragValue, Event, ScrollArea, TopBottomPanel, Window},
+    egui::{
+        self, Button, CentralPanel, DragValue, Event, ScrollArea, TextEdit, TextStyle,
+        TopBottomPanel, Window,
+    },
     emath::vec2,
     CreationContext, NativeOptions,
 };
@@ -232,7 +235,13 @@ impl eframe::App for App {
                 .id_source("out_scroll")
                 .stick_to_bottom()
                 .show(ui, |ui| {
-                    ui.label(self.mpv_handler.ansi_term.contents_to_string());
+                    ui.add(
+                        TextEdit::multiline(
+                            &mut self.mpv_handler.ansi_term.contents_to_string().as_str(),
+                        )
+                        .desired_width(620.0)
+                        .font(TextStyle::Monospace),
+                    );
                 });
         });
         self.custom_players_window_ui(ctx);
