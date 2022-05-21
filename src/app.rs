@@ -136,12 +136,17 @@ impl App {
                     key,
                     pressed: true,
                     modifiers: _,
-                } => {
-                    if *key == Key::Backspace {
+                } => match *key {
+                    Key::ArrowUp => self.state.mpv_handler.input("\x1b[A"),
+                    Key::ArrowDown => self.state.mpv_handler.input("\x1b[B"),
+                    Key::ArrowRight => self.state.mpv_handler.input("\x1b[C"),
+                    Key::ArrowLeft => self.state.mpv_handler.input("\x1b[D"),
+                    Key::Backspace => {
                         self.state.cfg.speed = 1.0;
                         self.state.mpv_handler.input("\x08");
                     }
-                }
+                    _ => (),
+                },
                 _ => (),
             }
         }
