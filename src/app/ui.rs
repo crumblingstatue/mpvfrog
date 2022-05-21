@@ -7,7 +7,7 @@ use eframe::emath::Align;
 
 use self::custom_players_window::CustomPlayersWindow;
 
-use super::{AppState, PlaylistBehavior};
+use super::{Core, PlaylistBehavior};
 
 #[derive(Default)]
 struct Windows {
@@ -15,7 +15,7 @@ struct Windows {
 }
 
 impl Windows {
-    fn update(&mut self, app: &mut AppState, ctx: &Context) {
+    fn update(&mut self, app: &mut Core, ctx: &Context) {
         self.custom_players.update(app, ctx);
     }
 }
@@ -26,12 +26,12 @@ pub struct Ui {
 }
 
 impl Ui {
-    pub(super) fn update(&mut self, app: &mut AppState, ctx: &Context) {
+    pub(super) fn update(&mut self, app: &mut Core, ctx: &Context) {
         TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(app, ui));
         CentralPanel::default().show(ctx, |ui| self.central_panel_ui(app, ui));
         self.windows.update(app, ctx);
     }
-    fn top_panel_ui(&mut self, app: &mut AppState, ui: &mut egui::Ui) {
+    fn top_panel_ui(&mut self, app: &mut Core, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.button("Music folder").clicked() {
@@ -54,7 +54,7 @@ impl Ui {
             }
         });
     }
-    fn central_panel_ui(&mut self, app: &mut AppState, ui: &mut egui::Ui) {
+    fn central_panel_ui(&mut self, app: &mut Core, ui: &mut egui::Ui) {
         ScrollArea::vertical()
             .max_height(200.0)
             .id_source("song_scroll")

@@ -1,6 +1,6 @@
 use eframe::egui::{Context, Ui, Window};
 
-use crate::{app::AppState, config::CustomPlayerEntry};
+use crate::{app::Core, config::CustomPlayerEntry};
 
 #[derive(Default)]
 pub struct CustomPlayersWindow {
@@ -8,14 +8,14 @@ pub struct CustomPlayersWindow {
 }
 
 impl CustomPlayersWindow {
-    pub(super) fn update(&mut self, app: &mut AppState, ctx: &Context) {
+    pub(super) fn update(&mut self, app: &mut Core, ctx: &Context) {
         Window::new("Custom players")
             .open(&mut self.open)
             .show(ctx, |ui| window_ui(app, ui));
     }
 }
 
-fn window_ui(app: &mut AppState, ui: &mut Ui) {
+fn window_ui(app: &mut Core, ui: &mut Ui) {
     for en in &mut app.cfg.custom_players {
         ui.group(|ui| {
             ui.label("extension");
