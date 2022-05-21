@@ -58,10 +58,10 @@ impl Ui {
             .show(ui, |ui| {
                 for (i, path) in app.playlist.iter().enumerate() {
                     if ui
-                        .selectable_label(app.selected_song == Some(i), path.display().to_string())
+                        .selectable_label(app.selected_song == i, path.display().to_string())
                         .clicked()
                     {
-                        app.selected_song = Some(i);
+                        app.selected_song = i;
                         app.play_selected_song();
                         break;
                     }
@@ -70,14 +70,8 @@ impl Ui {
         ui.separator();
         ui.horizontal(|ui| {
             ui.group(|ui| {
-                if ui
-                    .add_enabled(app.selected_song.is_some(), Button::new("⏪"))
-                    .clicked()
-                {
-                    if let Some(sel) = &mut app.selected_song {
-                        *sel = sel.saturating_sub(1);
-                        app.play_selected_song();
-                    }
+                if ui.add(Button::new("⏪")).clicked() {
+                    app.play_prev();
                 }
                 let active = app.mpv_handler.active();
                 let icon = if active && !app.mpv_handler.paused() {
@@ -85,10 +79,7 @@ impl Ui {
                 } else {
                     "▶"
                 };
-                if ui
-                    .add_enabled(app.selected_song.is_some(), Button::new(icon))
-                    .clicked()
-                {
+                if ui.add(Button::new(icon)).clicked() {
                     if active {
                         app.mpv_handler.toggle_pause();
                     } else {
@@ -98,14 +89,8 @@ impl Ui {
                 if ui.add_enabled(active, Button::new("⏹")).clicked() {
                     app.stop_music();
                 }
-                let can_forward = app
-                    .selected_song
-                    .map_or(false, |sel| sel + 1 < app.playlist.len());
-                if ui.add_enabled(can_forward, Button::new("⏩")).clicked() {
-                    if let Some(sel) = &mut app.selected_song {
-                        *sel += 1;
-                        app.play_selected_song();
-                    }
+                if ui.add(Button::new("⏩")).clicked() {
+                    app.play_next();
                 }
             });
             ui.group(|ui| {

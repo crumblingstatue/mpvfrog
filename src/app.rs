@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use eframe::{
-    egui::{self, Event, Key},
+    egui::{self, Context, Event, Key},
     CreationContext,
 };
 
@@ -18,7 +18,7 @@ pub struct App {
 struct AppState {
     cfg: Config,
     playlist: Vec<PathBuf>,
-    selected_song: Option<usize>,
+    selected_song: usize,
     mpv_handler: MpvHandler,
     playlist_behavior: PlaylistBehavior,
     /// This is `true` when the user has initiated a stop, rather than just mpv exiting
@@ -34,54 +34,8 @@ enum PlaylistBehavior {
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Forward input to mpv child process
-        if self.state.mpv_handler.active() {
-            for ev in &ctx.input().raw.events {
-                match ev {
-                    Event::Text(s) => match s.as_str() {
-                        " " => self.state.mpv_handler.toggle_pause(),
-                        "<" => self.state.play_prev(),
-                        ">" => self.state.play_next(),
-                        s => {
-                            match s {
-                                "9" => {
-                                    self.state.cfg.volume -= 2;
-                                }
-                                "0" => {
-                                    self.state.cfg.volume += 2;
-                                }
-                                "[" => {
-                                    self.state.cfg.speed -= 0.1;
-                                }
-                                "]" => {
-                                    self.state.cfg.speed += 0.1;
-                                }
-                                "{" => {
-                                    self.state.cfg.speed -= 0.01;
-                                }
-                                "}" => {
-                                    self.state.cfg.speed += 0.01;
-                                }
-                                _ => {}
-                            }
-                            self.state.mpv_handler.input(s);
-                        }
-                    },
-                    Event::Key {
-                        key,
-                        pressed: true,
-                        modifiers: _,
-                    } => {
-                        if *key == Key::Backspace {
-                            self.state.cfg.speed = 1.0;
-                            self.state.mpv_handler.input("\x08");
-                        }
-                    }
-                    _ => (),
-                }
-            }
-        }
+    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+        self.handle_egui_input(ctx);
         // We need to constantly update in order to keep reading from mpv
         ctx.request_repaint();
         self.state.mpv_handler.update();
@@ -103,10 +57,10 @@ impl App {
         let mut state = AppState {
             cfg: Config::load_or_default(),
             playlist: Vec::new(),
-            selected_song: None,
+            selected_song: 0,
             mpv_handler: MpvHandler::default(),
             playlist_behavior: PlaylistBehavior::Continue,
-            user_stopped: false,
+            user_stopped: true,
         };
         state.read_songs();
         App {
@@ -120,25 +74,76 @@ impl App {
             return;
         }
         if !self.state.mpv_handler.active() {
-            let Some(sel) = &mut self.state.selected_song else { return; };
             match self.state.playlist_behavior {
                 PlaylistBehavior::Stop => return,
                 PlaylistBehavior::Continue => {
-                    if *sel + 1 < self.state.playlist.len() {
-                        *sel += 1;
+                    if self.state.selected_song + 1 < self.state.playlist.len() {
+                        self.state.selected_song += 1;
                     } else {
                         return;
                     }
                 }
                 PlaylistBehavior::RepeatOne => {}
                 PlaylistBehavior::RepeatPlaylist => {
-                    *sel += 1;
-                    if *sel >= self.state.playlist.len() {
-                        *sel = 0;
+                    self.state.selected_song += 1;
+                    if self.state.selected_song >= self.state.playlist.len() {
+                        self.state.selected_song = 0;
                     }
                 }
             }
             self.state.play_selected_song();
+        }
+    }
+
+    fn handle_egui_input(&mut self, ctx: &Context) {
+        let input = ctx.input();
+        if input.key_pressed(Key::Space) && !self.state.mpv_handler.active() {
+            self.state.play_selected_song();
+            return;
+        }
+        for ev in &input.raw.events {
+            match ev {
+                Event::Text(s) => match s.as_str() {
+                    " " => self.state.mpv_handler.toggle_pause(),
+                    "<" => self.state.play_prev(),
+                    ">" => self.state.play_next(),
+                    s => {
+                        match s {
+                            "9" => {
+                                self.state.cfg.volume -= 2;
+                            }
+                            "0" => {
+                                self.state.cfg.volume += 2;
+                            }
+                            "[" => {
+                                self.state.cfg.speed -= 0.1;
+                            }
+                            "]" => {
+                                self.state.cfg.speed += 0.1;
+                            }
+                            "{" => {
+                                self.state.cfg.speed -= 0.01;
+                            }
+                            "}" => {
+                                self.state.cfg.speed += 0.01;
+                            }
+                            _ => {}
+                        }
+                        self.state.mpv_handler.input(s);
+                    }
+                },
+                Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers: _,
+                } => {
+                    if *key == Key::Backspace {
+                        self.state.cfg.speed = 1.0;
+                        self.state.mpv_handler.input("\x08");
+                    }
+                }
+                _ => (),
+            }
         }
     }
 }
@@ -175,7 +180,7 @@ impl AppState {
 
     fn play_selected_song(&mut self) {
         self.user_stopped = false;
-        let Some(selection) = self.selected_song else { return };
+        let selection = self.selected_song;
         let sel_path = &self.playlist[selection];
         let path: PathBuf = self.cfg.music_folder.as_ref().unwrap().join(sel_path);
         let ext_str = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
@@ -197,24 +202,20 @@ impl AppState {
     }
 
     fn play_prev(&mut self) {
-        if let Some(sel) = &mut self.selected_song {
-            if *sel == 0 {
-                *sel = self.playlist.len() - 1;
-            } else {
-                *sel -= 1;
-            }
-            self.play_selected_song();
+        if self.selected_song == 0 {
+            self.selected_song = self.playlist.len() - 1;
+        } else {
+            self.selected_song -= 1;
         }
+        self.play_selected_song();
     }
 
     fn play_next(&mut self) {
-        if let Some(sel) = &mut self.selected_song {
-            *sel += 1;
-            if *sel >= self.playlist.len() {
-                *sel = 0;
-            }
-            self.play_selected_song();
+        self.selected_song += 1;
+        if self.selected_song >= self.playlist.len() {
+            self.selected_song = 0;
         }
+        self.play_selected_song();
     }
 
     fn stop_music(&mut self) {
