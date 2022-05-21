@@ -43,7 +43,7 @@ impl eframe::App for App {
         // We need to constantly update in order to keep reading from mpv
         ctx.request_repaint();
         self.state.mpv_handler.update();
-        self.handle_mpv_not_active();
+        self.state.handle_mpv_not_active();
         // Do the ui
         self.ui.update(&mut self.state, ctx);
     }
@@ -71,32 +71,6 @@ impl App {
         App {
             ui: Default::default(),
             state,
-        }
-    }
-
-    fn handle_mpv_not_active(&mut self) {
-        if self.state.user_stopped {
-            return;
-        }
-        if !self.state.mpv_handler.active() {
-            match self.state.playlist_behavior {
-                PlaylistBehavior::Stop => return,
-                PlaylistBehavior::Continue => {
-                    if self.state.selected_song + 1 < self.state.playlist.len() {
-                        self.state.selected_song += 1;
-                    } else {
-                        return;
-                    }
-                }
-                PlaylistBehavior::RepeatOne => {}
-                PlaylistBehavior::RepeatPlaylist => {
-                    self.state.selected_song += 1;
-                    if self.state.selected_song >= self.state.playlist.len() {
-                        self.state.selected_song = 0;
-                    }
-                }
-            }
-            self.state.play_selected_song();
         }
     }
 
@@ -240,5 +214,33 @@ impl AppState {
     fn stop_music(&mut self) {
         self.mpv_handler.stop_music();
         self.user_stopped = true;
+    }
+
+    fn handle_mpv_not_active(&mut self) {
+        if self.user_stopped {
+            return;
+        }
+        if !self.mpv_handler.active() {
+            match self.playlist_behavior {
+                PlaylistBehavior::Stop => return,
+                PlaylistBehavior::Continue => {
+                    if self.selected_song + 1 < self.playlist.len() {
+                        self.selected_song += 1;
+                    } else {
+                        return;
+                    }
+                }
+                PlaylistBehavior::RepeatOne => {}
+                PlaylistBehavior::RepeatPlaylist => {
+                    self.selected_song += 1;
+                    if self.selected_song >= self.playlist.len() {
+                        self.selected_song = 0;
+                    }
+                }
+            }
+            // If we reached this point, we can take this as the song having been changed
+            self.song_change = true;
+            self.play_selected_song();
+        }
     }
 }
