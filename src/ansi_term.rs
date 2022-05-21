@@ -21,7 +21,7 @@ impl TermState {
             cursor: Cursor::default(),
         }
     }
-    pub fn contents_to_string(&self) -> String {
+    fn contents_to_string(&self) -> String {
         let mut s = String::new();
         for y in 0..self.height {
             s.push_str(std::str::from_utf8(self.line_slice(y)).unwrap().trim_end());
@@ -29,7 +29,7 @@ impl TermState {
         }
         s
     }
-    pub fn line_slice(&self, y: usize) -> &[u8] {
+    fn line_slice(&self, y: usize) -> &[u8] {
         let from = y * self.width as usize;
         let to = from + self.width as usize;
         &self.cells[from..to]
