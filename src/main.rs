@@ -59,7 +59,7 @@ impl Config {
 struct App {
     cfg: Config,
     song_paths: Vec<PathBuf>,
-    playing_index: Option<usize>,
+    selected_song: Option<usize>,
     mpv_handler: MpvHandler,
     custom_players_window_show: bool,
 }
@@ -67,6 +67,7 @@ struct App {
 struct MpvHandler {
     ansi_term: AnsiTerm,
     child: Option<Child>,
+    paused: bool,
 }
 
 impl MpvHandler {
@@ -110,6 +111,19 @@ impl MpvHandler {
         let Some(child) = &mut self.child else { return };
         child.pty().write_all(s.as_bytes()).unwrap();
     }
+
+    fn active(&self) -> bool {
+        self.child.is_some()
+    }
+
+    fn toggle_pause(&mut self) {
+        self.input(" ");
+        self.paused ^= true;
+    }
+
+    fn paused(&self) -> bool {
+        self.paused
+    }
 }
 
 impl eframe::App for App {
@@ -145,53 +159,66 @@ impl eframe::App for App {
                     for (i, path) in self.song_paths.iter().enumerate() {
                         if ui
                             .selectable_label(
-                                self.playing_index == Some(i),
+                                self.selected_song == Some(i),
                                 path.display().to_string(),
                             )
                             .clicked()
                         {
-                            let path: PathBuf = self
-                                .cfg
-                                .music_folder
-                                .as_ref()
-                                .unwrap()
-                                .join(path)
-                                .to_owned();
-                            let ext_str =
-                                path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
-                            match self.cfg.custom_players.iter().find(|en| en.ext == ext_str) {
-                                Some(en) => self.mpv_handler.play_music(
-                                    &en.cmd,
-                                    std::iter::once(path.as_ref())
-                                        .chain(en.args.iter().map(|s| s.as_ref())),
-                                ),
-                                None => self.mpv_handler.play_music(
-                                    "mpv",
-                                    [
-                                        path.as_ref(),
-                                        "--no-video".as_ref(),
-                                        format!("--volume={}", self.cfg.volume).as_ref(),
-                                    ],
-                                ),
-                            }
-                            self.playing_index = Some(i);
+                            self.selected_song = Some(i);
+                            self.play_selected_song();
+                            break;
                         }
                     }
                 });
-            let playing = self.mpv_handler.child.is_some();
-            if playing {
+            if self.mpv_handler.active() {
                 for ev in &ctx.input().raw.events {
                     if let Event::Text(s) = ev {
-                        self.mpv_handler.input(s);
+                        match s.as_str() {
+                            " " => self.mpv_handler.toggle_pause(),
+                            _ => self.mpv_handler.input(s),
+                        }
                     }
                 }
             }
             ui.separator();
             ui.horizontal(|ui| {
                 ui.group(|ui| {
-                    if ui.add_enabled(!playing, Button::new("▶")).clicked() {}
-                    if ui.add_enabled(playing, Button::new("⏹")).clicked() {
+                    if ui
+                        .add_enabled(self.selected_song.is_some(), Button::new("⏪"))
+                        .clicked()
+                    {
+                        if let Some(sel) = &mut self.selected_song {
+                            *sel = sel.saturating_sub(1);
+                            self.play_selected_song();
+                        }
+                    }
+                    let active = self.mpv_handler.active();
+                    let icon = if active && !self.mpv_handler.paused() {
+                        "⏸"
+                    } else {
+                        "▶"
+                    };
+                    if ui
+                        .add_enabled(self.selected_song.is_some(), Button::new(icon))
+                        .clicked()
+                    {
+                        if active {
+                            self.mpv_handler.toggle_pause();
+                        } else {
+                            self.play_selected_song();
+                        }
+                    }
+                    if ui.add_enabled(active, Button::new("⏹")).clicked() {
                         self.mpv_handler.stop_music();
+                    }
+                    let can_forward = self
+                        .selected_song
+                        .map_or(false, |sel| sel + 1 < self.song_paths.len());
+                    if ui.add_enabled(can_forward, Button::new("⏩")).clicked() {
+                        if let Some(sel) = &mut self.selected_song {
+                            *sel += 1;
+                            self.play_selected_song();
+                        }
                     }
                 });
                 ui.group(|ui| {
@@ -221,6 +248,7 @@ impl Default for MpvHandler {
         Self {
             ansi_term: AnsiTerm::new(80),
             child: None,
+            paused: false,
         }
     }
 }
@@ -231,7 +259,7 @@ impl App {
         let mut this = App {
             cfg: Config::load_or_default(),
             song_paths: Vec::new(),
-            playing_index: None,
+            selected_song: None,
             mpv_handler: MpvHandler::default(),
             custom_players_window_show: false,
         };
@@ -297,6 +325,27 @@ impl App {
                     self.cfg.custom_players.push(CustomPlayerEntry::default());
                 }
             });
+    }
+
+    fn play_selected_song(&mut self) {
+        let Some(selection) = self.selected_song else { return };
+        let sel_path = &self.song_paths[selection];
+        let path: PathBuf = self.cfg.music_folder.as_ref().unwrap().join(sel_path);
+        let ext_str = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+        match self.cfg.custom_players.iter().find(|en| en.ext == ext_str) {
+            Some(en) => self.mpv_handler.play_music(
+                &en.cmd,
+                std::iter::once(path.as_ref()).chain(en.args.iter().map(|s| s.as_ref())),
+            ),
+            None => self.mpv_handler.play_music(
+                "mpv",
+                [
+                    path.as_ref(),
+                    "--no-video".as_ref(),
+                    format!("--volume={}", self.cfg.volume).as_ref(),
+                ],
+            ),
+        }
     }
 }
 
