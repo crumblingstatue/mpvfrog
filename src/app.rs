@@ -49,6 +49,18 @@ impl eframe::App for App {
                                 "0" => {
                                     self.state.cfg.volume += 2;
                                 }
+                                "[" => {
+                                    self.state.cfg.speed -= 0.1;
+                                }
+                                "]" => {
+                                    self.state.cfg.speed += 0.1;
+                                }
+                                "{" => {
+                                    self.state.cfg.speed -= 0.01;
+                                }
+                                "}" => {
+                                    self.state.cfg.speed += 0.01;
+                                }
                                 _ => {}
                             }
                             self.state.mpv_handler.input(s);
@@ -60,6 +72,7 @@ impl eframe::App for App {
                         modifiers: _,
                     } => {
                         if *key == Key::Backspace {
+                            self.state.cfg.speed = 1.0;
                             self.state.mpv_handler.input("\x08");
                         }
                     }
@@ -175,6 +188,7 @@ impl AppState {
                     path.as_ref(),
                     "--no-video".as_ref(),
                     format!("--volume={}", self.cfg.volume).as_ref(),
+                    format!("--speed={}", self.cfg.speed).as_ref(),
                 ],
             ),
         }

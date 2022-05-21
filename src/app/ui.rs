@@ -2,9 +2,7 @@ mod custom_players_window;
 
 use eframe::egui::{self, ComboBox, Context};
 
-use eframe::egui::{
-    Button, CentralPanel, DragValue, ScrollArea, TextEdit, TextStyle, TopBottomPanel,
-};
+use eframe::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
 
 use self::custom_players_window::CustomPlayersWindow;
 
@@ -112,7 +110,11 @@ impl Ui {
             });
             ui.group(|ui| {
                 ui.label("🔈");
-                ui.add(DragValue::new(&mut app.cfg.volume));
+                ui.label(app.cfg.volume.to_string());
+            });
+            ui.group(|ui| {
+                ui.label("⏩");
+                ui.label(format!("{:.2}", app.cfg.speed));
             });
             ui.group(|ui| {
                 ComboBox::new("playlist_behavior_cb", "▶")

@@ -4,7 +4,7 @@ use directories::ProjectDirs;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct Config {
     pub music_folder: Option<PathBuf>,
     /// These should all wrap mpv, but could be different demuxers (like for midi)
@@ -12,10 +12,27 @@ pub struct Config {
     pub custom_players: Vec<CustomPlayerEntry>,
     #[serde(default = "default_volume")]
     pub volume: u8,
+    #[serde(default = "default_speed")]
+    pub speed: f64,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            music_folder: Default::default(),
+            custom_players: Default::default(),
+            volume: default_volume(),
+            speed: default_speed(),
+        }
+    }
 }
 
 const fn default_volume() -> u8 {
     50
+}
+
+const fn default_speed() -> f64 {
+    1.0
 }
 
 impl Config {
