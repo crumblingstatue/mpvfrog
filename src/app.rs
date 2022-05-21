@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use eframe::{
-    egui::{self, Event},
+    egui::{self, Event, Key},
     CreationContext,
 };
 
@@ -27,11 +27,21 @@ impl eframe::App for App {
         // Forward input to mpv child process
         if self.state.mpv_handler.active() {
             for ev in &ctx.input().raw.events {
-                if let Event::Text(s) = ev {
-                    match s.as_str() {
+                match ev {
+                    Event::Text(s) => match s.as_str() {
                         " " => self.state.mpv_handler.toggle_pause(),
                         _ => self.state.mpv_handler.input(s),
+                    },
+                    Event::Key {
+                        key,
+                        pressed: true,
+                        modifiers: _,
+                    } => {
+                        if *key == Key::Backspace {
+                            self.state.mpv_handler.input("\x08");
+                        }
                     }
+                    _ => (),
                 }
             }
         }
