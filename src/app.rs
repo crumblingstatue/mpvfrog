@@ -1,18 +1,11 @@
-use crate::{
-    config::{Config, CustomPlayerEntry},
-    mpv_handler::MpvHandler,
-};
+mod ui;
+
+use crate::{config::Config, mpv_handler::MpvHandler};
 
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-use eframe::{
-    egui::{
-        self, Button, CentralPanel, DragValue, Event, ScrollArea, TextEdit, TextStyle,
-        TopBottomPanel, Window,
-    },
-    CreationContext,
-};
+use eframe::{egui, CreationContext};
 
 pub struct App {
     cfg: Config,
@@ -23,118 +16,10 @@ pub struct App {
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
         self.mpv_handler.update();
-        TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.group(|ui| {
-                    if ui.button("Music folder").clicked() {
-                        self.cfg.music_folder = rfd::FileDialog::new().pick_folder();
-                        self.read_songs();
-                    }
-                    match &self.cfg.music_folder {
-                        Some(folder) => {
-                            ui.label(&folder.display().to_string());
-                        }
-                        None => {
-                            ui.label("<none>");
-                        }
-                    }
-                });
-                if ui.button("Custom players...").clicked() {
-                    self.custom_players_window_show ^= true;
-                }
-            });
-        });
-        CentralPanel::default().show(ctx, |ui| {
-            ScrollArea::vertical()
-                .max_height(200.0)
-                .id_source("song_scroll")
-                .show(ui, |ui| {
-                    for (i, path) in self.song_paths.iter().enumerate() {
-                        if ui
-                            .selectable_label(
-                                self.selected_song == Some(i),
-                                path.display().to_string(),
-                            )
-                            .clicked()
-                        {
-                            self.selected_song = Some(i);
-                            self.play_selected_song();
-                            break;
-                        }
-                    }
-                });
-            if self.mpv_handler.active() {
-                for ev in &ctx.input().raw.events {
-                    if let Event::Text(s) = ev {
-                        match s.as_str() {
-                            " " => self.mpv_handler.toggle_pause(),
-                            _ => self.mpv_handler.input(s),
-                        }
-                    }
-                }
-            }
-            ui.separator();
-            ui.horizontal(|ui| {
-                ui.group(|ui| {
-                    if ui
-                        .add_enabled(self.selected_song.is_some(), Button::new("⏪"))
-                        .clicked()
-                    {
-                        if let Some(sel) = &mut self.selected_song {
-                            *sel = sel.saturating_sub(1);
-                            self.play_selected_song();
-                        }
-                    }
-                    let active = self.mpv_handler.active();
-                    let icon = if active && !self.mpv_handler.paused() {
-                        "⏸"
-                    } else {
-                        "▶"
-                    };
-                    if ui
-                        .add_enabled(self.selected_song.is_some(), Button::new(icon))
-                        .clicked()
-                    {
-                        if active {
-                            self.mpv_handler.toggle_pause();
-                        } else {
-                            self.play_selected_song();
-                        }
-                    }
-                    if ui.add_enabled(active, Button::new("⏹")).clicked() {
-                        self.mpv_handler.stop_music();
-                    }
-                    let can_forward = self
-                        .selected_song
-                        .map_or(false, |sel| sel + 1 < self.song_paths.len());
-                    if ui.add_enabled(can_forward, Button::new("⏩")).clicked() {
-                        if let Some(sel) = &mut self.selected_song {
-                            *sel += 1;
-                            self.play_selected_song();
-                        }
-                    }
-                });
-                ui.group(|ui| {
-                    ui.label("🔈");
-                    ui.add(DragValue::new(&mut self.cfg.volume));
-                });
-            });
-            ui.separator();
-            ScrollArea::vertical()
-                .id_source("out_scroll")
-                .stick_to_bottom()
-                .show(ui, |ui| {
-                    ui.add(
-                        TextEdit::multiline(&mut self.mpv_handler.mpv_output().as_str())
-                            .desired_width(620.0)
-                            .font(TextStyle::Monospace),
-                    );
-                });
-        });
-        self.custom_players_window_ui(ctx);
+        ui::update(self, ctx);
     }
     fn on_exit_event(&mut self) -> bool {
         let vec = serde_json::to_vec_pretty(&self.cfg).unwrap();
@@ -184,38 +69,6 @@ impl App {
 
     fn sort_songs(&mut self) {
         self.song_paths.sort();
-    }
-
-    fn custom_players_window_ui(&mut self, ctx: &eframe::egui::Context) {
-        Window::new("Custom players")
-            .open(&mut self.custom_players_window_show)
-            .show(ctx, |ui| {
-                for en in &mut self.cfg.custom_players {
-                    ui.group(|ui| {
-                        ui.label("extension");
-                        ui.text_edit_singleline(&mut en.ext);
-                        ui.label("command");
-                        ui.text_edit_singleline(&mut en.cmd);
-                        ui.label("args");
-                        for arg in &mut en.args {
-                            ui.horizontal(|ui| {
-                                ui.text_edit_singleline(arg);
-                                if ui.button("...").clicked() {
-                                    if let Some(path) = rfd::FileDialog::new().pick_file() {
-                                        *arg = path.to_string_lossy().into_owned();
-                                    }
-                                }
-                            });
-                        }
-                        if ui.button("+").clicked() {
-                            en.args.push(String::new());
-                        }
-                    });
-                }
-                if ui.button("add new custom player").clicked() {
-                    self.cfg.custom_players.push(CustomPlayerEntry::default());
-                }
-            });
     }
 
     fn play_selected_song(&mut self) {
