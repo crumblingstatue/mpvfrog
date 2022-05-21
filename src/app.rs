@@ -8,21 +8,25 @@ use walkdir::WalkDir;
 use eframe::{egui, CreationContext};
 
 pub struct App {
+    state: AppState,
+    ui: ui::Ui,
+}
+
+struct AppState {
     cfg: Config,
     song_paths: Vec<PathBuf>,
     selected_song: Option<usize>,
     mpv_handler: MpvHandler,
-    custom_players_window_show: bool,
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.request_repaint();
-        self.mpv_handler.update();
-        ui::update(self, ctx);
+        self.state.mpv_handler.update();
+        self.ui.update(&mut self.state, ctx);
     }
     fn on_exit_event(&mut self) -> bool {
-        let vec = serde_json::to_vec_pretty(&self.cfg).unwrap();
+        let vec = serde_json::to_vec_pretty(&self.state.cfg).unwrap();
         std::fs::write(Config::path(), &vec).unwrap();
         true
     }
@@ -32,16 +36,21 @@ impl App {
     pub fn new(cc: &CreationContext<'_>) -> Self {
         cc.egui_ctx.set_visuals(egui::Visuals::dark());
 
-        let mut this = App {
+        let mut state = AppState {
             cfg: Config::load_or_default(),
             song_paths: Vec::new(),
             selected_song: None,
             mpv_handler: MpvHandler::default(),
-            custom_players_window_show: false,
         };
-        this.read_songs();
-        this
+        state.read_songs();
+        App {
+            ui: Default::default(),
+            state,
+        }
     }
+}
+
+impl AppState {
     fn read_songs(&mut self) {
         let Some(music_folder) = &self.cfg.music_folder else {
             return;
