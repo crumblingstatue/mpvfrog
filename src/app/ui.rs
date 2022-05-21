@@ -3,6 +3,7 @@ mod custom_players_window;
 use eframe::egui::{self, ComboBox, Context};
 
 use eframe::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
+use eframe::emath::Align;
 
 use self::custom_players_window::CustomPlayersWindow;
 
@@ -59,10 +60,13 @@ impl Ui {
             .id_source("song_scroll")
             .show(ui, |ui| {
                 for (i, path) in app.playlist.iter().enumerate() {
-                    if ui
-                        .selectable_label(app.selected_song == i, path.display().to_string())
-                        .clicked()
-                    {
+                    let re =
+                        ui.selectable_label(app.selected_song == i, path.display().to_string());
+                    if app.song_change && app.selected_song == i {
+                        re.scroll_to_me(Some(Align::Center));
+                        app.song_change = false;
+                    }
+                    if re.clicked() {
                         app.selected_song = i;
                         app.play_selected_song();
                         break;

@@ -23,6 +23,10 @@ struct AppState {
     playlist_behavior: PlaylistBehavior,
     /// This is `true` when the user has initiated a stop, rather than just mpv exiting
     user_stopped: bool,
+    /// True if a method of AppState caused the song to be changed
+    ///
+    /// We can use this to scroll to the changed song in the ui for example.
+    song_change: bool,
 }
 
 #[derive(PartialEq)]
@@ -61,6 +65,7 @@ impl App {
             mpv_handler: MpvHandler::default(),
             playlist_behavior: PlaylistBehavior::Continue,
             user_stopped: true,
+            song_change: false,
         };
         state.read_songs();
         App {
@@ -220,6 +225,7 @@ impl AppState {
             self.selected_song -= 1;
         }
         self.play_selected_song();
+        self.song_change = true;
     }
 
     fn play_next(&mut self) {
@@ -228,6 +234,7 @@ impl AppState {
             self.selected_song = 0;
         }
         self.play_selected_song();
+        self.song_change = true;
     }
 
     fn stop_music(&mut self) {
