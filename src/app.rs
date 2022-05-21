@@ -41,7 +41,18 @@ impl eframe::App for App {
                 match ev {
                     Event::Text(s) => match s.as_str() {
                         " " => self.state.mpv_handler.toggle_pause(),
-                        _ => self.state.mpv_handler.input(s),
+                        s => {
+                            match s {
+                                "9" => {
+                                    self.state.cfg.volume -= 2;
+                                }
+                                "0" => {
+                                    self.state.cfg.volume += 2;
+                                }
+                                _ => {}
+                            }
+                            self.state.mpv_handler.input(s);
+                        }
                     },
                     Event::Key {
                         key,
