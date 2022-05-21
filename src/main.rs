@@ -2,13 +2,13 @@
 
 mod ansi_parser;
 mod ansi_term;
+mod mpv_handler;
 
-use ansi_term::AnsiTerm;
 use directories::ProjectDirs;
-use nonblock::NonBlockingReader;
-use pty_process::{std::Child, Command as _};
+use mpv_handler::MpvHandler;
+
 use serde::{Deserialize, Serialize};
-use std::{ffi::OsStr, io::Write as _, path::PathBuf, process::Command};
+use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use eframe::{
@@ -66,68 +66,6 @@ struct App {
     selected_song: Option<usize>,
     mpv_handler: MpvHandler,
     custom_players_window_show: bool,
-}
-
-struct MpvHandler {
-    ansi_term: AnsiTerm,
-    child: Option<Child>,
-    paused: bool,
-}
-
-impl MpvHandler {
-    fn play_music<'a>(&mut self, mpv_cmd: &str, args: impl IntoIterator<Item = &'a OsStr>) {
-        self.stop_music();
-        self.ansi_term.reset();
-        let child = Command::new(mpv_cmd)
-            .args(args)
-            .spawn_pty(Some(&pty_process::Size::new(30, 80)))
-            .unwrap();
-        self.child = Some(child);
-    }
-    fn stop_music(&mut self) {
-        let Some(child) = &mut self.child else { return };
-        child.pty().write_all(b"q").unwrap();
-        child.wait().unwrap();
-        self.child = None;
-    }
-    fn update_child_out(&mut self, buf: &[u8]) {
-        self.ansi_term.feed(buf)
-    }
-    fn update(&mut self) {
-        let Some(child) = &mut self.child else { return; };
-        let mut buf = Vec::new();
-        let mut nbr = NonBlockingReader::from_fd((*child.pty()).try_clone().unwrap()).unwrap();
-        match nbr.read_available(&mut buf) {
-            Ok(n_read) => {
-                if n_read != 0 {
-                    self.update_child_out(&buf);
-                }
-            }
-            Err(e) => {
-                eprintln!("error reading from mpv process: {}", e);
-                // Better terminate playback
-                self.stop_music();
-            }
-        }
-    }
-
-    fn input(&mut self, s: &str) {
-        let Some(child) = &mut self.child else { return };
-        child.pty().write_all(s.as_bytes()).unwrap();
-    }
-
-    fn active(&self) -> bool {
-        self.child.is_some()
-    }
-
-    fn toggle_pause(&mut self) {
-        self.input(" ");
-        self.paused ^= true;
-    }
-
-    fn paused(&self) -> bool {
-        self.paused
-    }
 }
 
 impl eframe::App for App {
@@ -236,11 +174,9 @@ impl eframe::App for App {
                 .stick_to_bottom()
                 .show(ui, |ui| {
                     ui.add(
-                        TextEdit::multiline(
-                            &mut self.mpv_handler.ansi_term.contents_to_string().as_str(),
-                        )
-                        .desired_width(620.0)
-                        .font(TextStyle::Monospace),
+                        TextEdit::multiline(&mut self.mpv_handler.mpv_output().as_str())
+                            .desired_width(620.0)
+                            .font(TextStyle::Monospace),
                     );
                 });
         });
@@ -250,16 +186,6 @@ impl eframe::App for App {
         let vec = serde_json::to_vec_pretty(&self.cfg).unwrap();
         std::fs::write(cfg_path(), &vec).unwrap();
         true
-    }
-}
-
-impl Default for MpvHandler {
-    fn default() -> Self {
-        Self {
-            ansi_term: AnsiTerm::new(80),
-            child: None,
-            paused: false,
-        }
     }
 }
 
