@@ -19,7 +19,9 @@ pub struct App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        self.handle_egui_input(ctx);
+        if !ctx.wants_keyboard_input() {
+            self.handle_egui_input(ctx);
+        }
         // We need to constantly update in order to keep reading from mpv
         ctx.request_repaint();
         self.core.mpv_handler.update();
