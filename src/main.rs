@@ -13,6 +13,7 @@ use walkdir::WalkDir;
 
 use eframe::{
     egui::{self, Button, CentralPanel, DragValue, Event, ScrollArea, TopBottomPanel, Window},
+    emath::vec2,
     CreationContext, NativeOptions,
 };
 
@@ -256,6 +257,7 @@ impl Default for MpvHandler {
 impl App {
     fn new(cc: &CreationContext<'_>) -> Self {
         cc.egui_ctx.set_visuals(egui::Visuals::dark());
+
         let mut this = App {
             cfg: Config::load_or_default(),
             song_paths: Vec::new(),
@@ -350,7 +352,10 @@ impl App {
 }
 
 fn main() {
-    let native_opts = NativeOptions::default();
+    let native_opts = NativeOptions {
+        initial_window_size: Some(vec2(620., 440.)),
+        ..Default::default()
+    };
     eframe::run_native(
         "mpv-egui-musicplayer",
         native_opts,
