@@ -17,10 +17,12 @@ pub struct App {
 
 struct AppState {
     cfg: Config,
-    song_paths: Vec<PathBuf>,
+    playlist: Vec<PathBuf>,
     selected_song: Option<usize>,
     mpv_handler: MpvHandler,
     playlist_behavior: PlaylistBehavior,
+    /// This is `true` when the user has initiated a stop, rather than just mpv exiting
+    user_stopped: bool,
 }
 
 #[derive(PartialEq)]
@@ -57,6 +59,7 @@ impl eframe::App for App {
         // We need to constantly update in order to keep reading from mpv
         ctx.request_repaint();
         self.state.mpv_handler.update();
+        self.handle_mpv_not_active();
         // Do the ui
         self.ui.update(&mut self.state, ctx);
     }
@@ -73,15 +76,43 @@ impl App {
 
         let mut state = AppState {
             cfg: Config::load_or_default(),
-            song_paths: Vec::new(),
+            playlist: Vec::new(),
             selected_song: None,
             mpv_handler: MpvHandler::default(),
             playlist_behavior: PlaylistBehavior::Continue,
+            user_stopped: false,
         };
         state.read_songs();
         App {
             ui: Default::default(),
             state,
+        }
+    }
+
+    fn handle_mpv_not_active(&mut self) {
+        if self.state.user_stopped {
+            return;
+        }
+        if !self.state.mpv_handler.active() {
+            let Some(sel) = &mut self.state.selected_song else { return; };
+            match self.state.playlist_behavior {
+                PlaylistBehavior::Stop => return,
+                PlaylistBehavior::Continue => {
+                    if *sel + 1 < self.state.playlist.len() {
+                        *sel += 1;
+                    } else {
+                        return;
+                    }
+                }
+                PlaylistBehavior::RepeatOne => {}
+                PlaylistBehavior::RepeatPlaylist => {
+                    *sel += 1;
+                    if *sel >= self.state.playlist.len() {
+                        *sel = 0;
+                    }
+                }
+            }
+            self.state.play_selected_song();
         }
     }
 }
@@ -106,19 +137,20 @@ impl AppState {
                     }
                 }
                 let path = en_path.strip_prefix(music_folder).unwrap().to_owned();
-                self.song_paths.push(path);
+                self.playlist.push(path);
             }
         }
         self.sort_songs();
     }
 
     fn sort_songs(&mut self) {
-        self.song_paths.sort();
+        self.playlist.sort();
     }
 
     fn play_selected_song(&mut self) {
+        self.user_stopped = false;
         let Some(selection) = self.selected_song else { return };
-        let sel_path = &self.song_paths[selection];
+        let sel_path = &self.playlist[selection];
         let path: PathBuf = self.cfg.music_folder.as_ref().unwrap().join(sel_path);
         let ext_str = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
         match self.cfg.custom_players.iter().find(|en| en.ext == ext_str) {
@@ -135,5 +167,10 @@ impl AppState {
                 ],
             ),
         }
+    }
+
+    fn stop_music(&mut self) {
+        self.mpv_handler.stop_music();
+        self.user_stopped = true;
     }
 }

@@ -58,7 +58,7 @@ impl Ui {
             .max_height(200.0)
             .id_source("song_scroll")
             .show(ui, |ui| {
-                for (i, path) in app.song_paths.iter().enumerate() {
+                for (i, path) in app.playlist.iter().enumerate() {
                     if ui
                         .selectable_label(app.selected_song == Some(i), path.display().to_string())
                         .clicked()
@@ -98,11 +98,11 @@ impl Ui {
                     }
                 }
                 if ui.add_enabled(active, Button::new("⏹")).clicked() {
-                    app.mpv_handler.stop_music();
+                    app.stop_music();
                 }
                 let can_forward = app
                     .selected_song
-                    .map_or(false, |sel| sel + 1 < app.song_paths.len());
+                    .map_or(false, |sel| sel + 1 < app.playlist.len());
                 if ui.add_enabled(can_forward, Button::new("⏩")).clicked() {
                     if let Some(sel) = &mut app.selected_song {
                         *sel += 1;
