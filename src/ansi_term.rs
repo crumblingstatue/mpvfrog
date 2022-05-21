@@ -24,7 +24,7 @@ impl TermState {
     pub fn contents_to_string(&self) -> String {
         let mut s = String::new();
         for y in 0..self.height {
-            s.push_str(std::str::from_utf8(self.line_slice(y)).unwrap());
+            s.push_str(std::str::from_utf8(self.line_slice(y)).unwrap().trim_end());
             s.push('\n');
         }
         s
