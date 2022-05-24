@@ -8,6 +8,7 @@ use eframe::{
     egui::{self, Context, Event, Key},
     CreationContext,
 };
+use tray_item::TrayItem;
 
 use self::core::Core;
 pub use playlist_behavior::PlaylistBehavior;
@@ -15,6 +16,7 @@ pub use playlist_behavior::PlaylistBehavior;
 pub struct App {
     core: Core,
     ui: ui::Ui,
+    tray_item: TrayItem,
 }
 
 impl eframe::App for App {
@@ -50,9 +52,22 @@ impl App {
             song_change: false,
         };
         state.read_songs();
+        let mut tray_item = TrayItem::new(
+            "mpv-egui-musicplayer",
+            tray_item::IconSource::Data {
+                height: 32,
+                width: 32,
+                data: include_bytes!("../icon.argb32").to_vec(),
+            },
+        )
+        .unwrap();
+        tray_item
+            .add_menu_item("Show", || eprintln!("Wow I should show"))
+            .unwrap();
         App {
             ui: Default::default(),
             core: state,
+            tray_item,
         }
     }
 
