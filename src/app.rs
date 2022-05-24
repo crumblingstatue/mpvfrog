@@ -2,6 +2,11 @@ mod core;
 mod playlist_behavior;
 mod ui;
 
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
+
 use crate::{config::Config, mpv_handler::MpvHandler};
 
 use egui_sfml::egui::{self, Context, Event, Key};
@@ -13,7 +18,9 @@ pub use playlist_behavior::PlaylistBehavior;
 pub struct App {
     core: Core,
     ui: ui::Ui,
-    tray_item: TrayItem,
+    _tray_item: TrayItem,
+    pub should_quit: Arc<AtomicBool>,
+    pub should_toggle_window: Arc<AtomicBool>,
 }
 
 impl App {
@@ -39,13 +46,26 @@ impl App {
             },
         )
         .unwrap();
+        let should_quit = Arc::new(AtomicBool::new(false));
+        let should_quit_clone = should_quit.clone();
+        let should_toggle_window = Arc::new(AtomicBool::new(false));
+        let should_toggle_window_clone = should_toggle_window.clone();
         tray_item
-            .add_menu_item("Show", || eprintln!("Wow I should show"))
+            .add_menu_item("Toggle window", move || {
+                should_toggle_window_clone.store(true, Ordering::Relaxed)
+            })
+            .unwrap();
+        tray_item
+            .add_menu_item("Quit", move || {
+                should_quit_clone.store(true, Ordering::Relaxed)
+            })
             .unwrap();
         App {
             ui: Default::default(),
             core: state,
-            tray_item,
+            _tray_item: tray_item,
+            should_quit,
+            should_toggle_window,
         }
     }
 
@@ -57,6 +77,12 @@ impl App {
         self.core.handle_mpv_not_active();
         // Do the ui
         self.ui.update(&mut self.core, ctx);
+    }
+
+    /// Update when in the background (window not open)
+    pub fn bg_update(&mut self) {
+        self.core.mpv_handler.update();
+        self.core.handle_mpv_not_active();
     }
 
     pub fn save(&mut self) {
