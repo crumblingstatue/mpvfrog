@@ -4,10 +4,7 @@ mod ui;
 
 use crate::{config::Config, mpv_handler::MpvHandler};
 
-use eframe::{
-    egui::{self, Context, Event, Key},
-    CreationContext,
-};
+use egui_sfml::egui::{self, Context, Event, Key};
 use tray_item::TrayItem;
 
 use self::core::Core;
@@ -19,28 +16,9 @@ pub struct App {
     tray_item: TrayItem,
 }
 
-impl eframe::App for App {
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        if !ctx.wants_keyboard_input() {
-            self.handle_egui_input(ctx);
-        }
-        // We need to constantly update in order to keep reading from mpv
-        ctx.request_repaint();
-        self.core.mpv_handler.update();
-        self.core.handle_mpv_not_active();
-        // Do the ui
-        self.ui.update(&mut self.core, ctx);
-    }
-    fn on_exit_event(&mut self) -> bool {
-        let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
-        std::fs::write(Config::path(), &vec).unwrap();
-        true
-    }
-}
-
 impl App {
-    pub fn new(cc: &CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_visuals(egui::Visuals::dark());
+    pub fn new(ctx: &Context) -> Self {
+        ctx.set_visuals(egui::Visuals::dark());
 
         let mut state = Core {
             cfg: Config::load_or_default(),
@@ -69,6 +47,21 @@ impl App {
             core: state,
             tray_item,
         }
+    }
+
+    pub fn update(&mut self, ctx: &Context) {
+        if !ctx.wants_keyboard_input() {
+            self.handle_egui_input(ctx);
+        }
+        self.core.mpv_handler.update();
+        self.core.handle_mpv_not_active();
+        // Do the ui
+        self.ui.update(&mut self.core, ctx);
+    }
+
+    pub fn save(&mut self) {
+        let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
+        std::fs::write(Config::path(), &vec).unwrap();
     }
 
     fn handle_egui_input(&mut self, ctx: &Context) {

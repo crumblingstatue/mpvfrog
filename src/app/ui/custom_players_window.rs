@@ -1,4 +1,4 @@
-use eframe::egui::{Context, Ui, Window};
+use egui_sfml::egui::{Context, Ui, Window};
 
 use crate::{app::Core, config::CustomPlayerEntry};
 

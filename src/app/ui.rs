@@ -1,9 +1,8 @@
 mod custom_players_window;
 
-use eframe::egui::{self, ComboBox, Context};
+use egui_sfml::egui::{self, Align, ComboBox, Context};
 
-use eframe::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
-use eframe::emath::Align;
+use egui_sfml::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
 
 use self::custom_players_window::CustomPlayersWindow;
 
