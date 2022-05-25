@@ -1,4 +1,4 @@
-use std::{sync::atomic::Ordering, time::Duration};
+use std::time::Duration;
 
 use egui_sfml::{
     sfml::{
@@ -16,12 +16,25 @@ pub fn run(w: u32, h: u32, title: &str) {
     let mut sf_egui = SfEgui::new(&rw);
     let mut app = App::new(sf_egui.context());
     let mut win_visible = true;
-    while !app.should_quit.load(Ordering::Relaxed) {
-        if app.should_toggle_window.load(Ordering::Relaxed) {
+    loop {
+        let mut should_toggle_window = false;
+        let mut should_quit = false;
+        app.tray_handle.update(|tray| {
+            if tray.should_toggle_window {
+                should_toggle_window = true;
+                tray.should_toggle_window = false;
+            }
+            if tray.should_quit {
+                should_quit = true;
+                tray.should_quit = false;
+            }
+        });
+        if should_quit {
+            break;
+        }
+        if should_toggle_window {
             win_visible ^= true;
             rw.set_visible(win_visible);
-            // This is an event flag, reset it to false
-            app.should_toggle_window.store(false, Ordering::Relaxed);
         }
         if win_visible {
             while let Some(event) = rw.poll_event() {

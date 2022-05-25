@@ -15,7 +15,7 @@ rfd = "0.8.2"
 walkdir = "2.3.2"
 nonblock = "0.1.0"
 ansi_term_buf = { git = "https://github.com/crumblingstatue/ansi_term_buf.git" }
-tray-item = { git = "https://github.com/njust/tray-item-rs.git" }
+ksni = { git = "https://github.com/crumblingstatue/ksni.git" }
 
 [profile.dev.package."*"]
 opt-level = 2

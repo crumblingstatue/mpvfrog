@@ -2,15 +2,10 @@ mod core;
 mod playlist_behavior;
 mod ui;
 
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
-
 use crate::{config::Config, mpv_handler::MpvHandler};
 
 use egui_sfml::egui::{self, Context, Event, Key};
-use tray_item::TrayItem;
+use ksni::{menu::StandardItem, Tray, TrayService};
 
 use self::core::Core;
 pub use playlist_behavior::PlaylistBehavior;
@@ -18,9 +13,36 @@ pub use playlist_behavior::PlaylistBehavior;
 pub struct App {
     core: Core,
     ui: ui::Ui,
-    _tray_item: TrayItem,
-    pub should_quit: Arc<AtomicBool>,
-    pub should_toggle_window: Arc<AtomicBool>,
+    pub tray_handle: ksni::Handle<AppTray>,
+}
+
+#[derive(Default)]
+pub struct AppTray {
+    pub should_toggle_window: bool,
+    pub should_quit: bool,
+}
+
+impl Tray for AppTray {
+    fn activate(&mut self, _x: i32, _y: i32) {
+        self.should_toggle_window = true;
+    }
+    fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
+        vec![StandardItem {
+            label: "Quit".into(),
+            activate: Box::new(|this: &mut Self| {
+                this.should_quit = true;
+            }),
+            ..Default::default()
+        }
+        .into()]
+    }
+    fn icon_pixmap(&self) -> Vec<ksni::Icon> {
+        vec![ksni::Icon {
+            width: 32,
+            height: 32,
+            data: include_bytes!("../icon.argb32").to_vec(),
+        }]
+    }
 }
 
 impl App {
@@ -37,35 +59,13 @@ impl App {
             song_change: false,
         };
         state.read_songs();
-        let mut tray_item = TrayItem::new(
-            "mpv-egui-musicplayer",
-            tray_item::IconSource::Data {
-                height: 32,
-                width: 32,
-                data: include_bytes!("../icon.argb32").to_vec(),
-            },
-        )
-        .unwrap();
-        let should_quit = Arc::new(AtomicBool::new(false));
-        let should_quit_clone = should_quit.clone();
-        let should_toggle_window = Arc::new(AtomicBool::new(false));
-        let should_toggle_window_clone = should_toggle_window.clone();
-        tray_item
-            .add_menu_item("Toggle window", move || {
-                should_toggle_window_clone.store(true, Ordering::Relaxed)
-            })
-            .unwrap();
-        tray_item
-            .add_menu_item("Quit", move || {
-                should_quit_clone.store(true, Ordering::Relaxed)
-            })
-            .unwrap();
+        let tray_service = TrayService::new(AppTray::default());
+        let tray_handle = tray_service.handle();
+        tray_service.spawn();
         App {
             ui: Default::default(),
             core: state,
-            _tray_item: tray_item,
-            should_quit,
-            should_toggle_window,
+            tray_handle,
         }
     }
 
