@@ -20,6 +20,8 @@ pub struct App {
 pub struct AppTray {
     pub should_toggle_window: bool,
     pub should_quit: bool,
+    pub paused: bool,
+    pub should_pause_resume: bool,
 }
 
 impl Tray for AppTray {
@@ -27,14 +29,24 @@ impl Tray for AppTray {
         self.should_toggle_window = true;
     }
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
-        vec![StandardItem {
-            label: "Quit".into(),
-            activate: Box::new(|this: &mut Self| {
-                this.should_quit = true;
-            }),
-            ..Default::default()
-        }
-        .into()]
+        vec![
+            StandardItem {
+                label: if self.paused { "▶" } else { " ⏸" }.into(),
+                activate: Box::new(|this: &mut Self| {
+                    this.should_pause_resume = true;
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Quit".into(),
+                activate: Box::new(|this: &mut Self| {
+                    this.should_quit = true;
+                }),
+                ..Default::default()
+            }
+            .into(),
+        ]
     }
     fn icon_pixmap(&self) -> Vec<ksni::Icon> {
         vec![ksni::Icon {
@@ -69,7 +81,10 @@ impl App {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context) {
+    pub fn update(&mut self, ctx: &Context, toggle_pause: bool) {
+        if toggle_pause {
+            self.core.play_or_toggle_pause();
+        }
         if !ctx.wants_keyboard_input() {
             self.handle_egui_input(ctx);
         }
@@ -80,7 +95,10 @@ impl App {
     }
 
     /// Update when in the background (window not open)
-    pub fn bg_update(&mut self) {
+    pub fn bg_update(&mut self, toggle_pause: bool) {
+        if toggle_pause {
+            self.core.play_or_toggle_pause();
+        }
         self.core.mpv_handler.update();
         self.core.handle_mpv_not_active();
     }
@@ -99,7 +117,7 @@ impl App {
         for ev in &input.raw.events {
             match ev {
                 Event::Text(s) => match s.as_str() {
-                    " " => self.core.mpv_handler.toggle_pause(),
+                    " " => self.core.play_or_toggle_pause(),
                     "<" => self.core.play_prev(),
                     ">" => self.core.play_next(),
                     s => {
@@ -145,5 +163,9 @@ impl App {
                 _ => (),
             }
         }
+    }
+
+    pub(crate) fn paused_or_stopped(&self) -> bool {
+        !self.core.mpv_handler.active() || self.core.mpv_handler.paused()
     }
 }

@@ -104,6 +104,15 @@ impl Core {
         self.user_stopped = true;
     }
 
+    /// Plays the selected song, or toggles the pause state if already playing
+    pub fn play_or_toggle_pause(&mut self) {
+        if self.mpv_handler.active() {
+            self.mpv_handler.toggle_pause();
+        } else {
+            self.play_selected_song();
+        }
+    }
+
     pub(super) fn handle_mpv_not_active(&mut self) {
         if self.user_stopped {
             return;
