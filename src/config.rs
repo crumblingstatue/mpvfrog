@@ -1,7 +1,13 @@
-use std::path::PathBuf;
+#![allow(clippy::extra_unused_lifetimes)] // For the EnumKind derive
+
+use std::{
+    fmt::Display,
+    path::{Path, PathBuf},
+};
 
 use directories::ProjectDirs;
 
+use enum_kinds::EnumKind;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -53,9 +59,114 @@ impl Config {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, EnumKind)]
+#[enum_kind(PredicateKind)]
+pub enum Predicate {
+    BeginsWith(String),
+    HasExt(String),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CustomPlayerEntry {
-    pub ext: String,
-    pub cmd: String,
-    pub args: Vec<String>,
+    pub predicate: Predicate,
+    pub reader_cmd: Command,
+    pub extra_mpv_args: Vec<String>,
+}
+
+impl Default for CustomPlayerEntry {
+    fn default() -> Self {
+        Self {
+            predicate: Predicate::HasExt(String::new()),
+            reader_cmd: Default::default(),
+            extra_mpv_args: Default::default(),
+        }
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[error("parse error: {kind}")]
+pub struct CommandParseError {
+    kind: CommandParseErrorKind,
+}
+
+#[derive(thiserror::Error, Debug)]
+enum CommandParseErrorKind {
+    #[error("Expected {what}, but reached end.")]
+    ExpectedButEnd { what: &'static str },
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Command {
+    pub name: String,
+    pub args: Vec<ArgType>,
+}
+
+impl Command {
+    pub fn to_string(&self) -> Result<String, std::fmt::Error> {
+        use std::fmt::Write;
+        let mut buf = String::new();
+        write!(&mut buf, "{} ", self.name)?;
+        for arg in &self.args {
+            write!(&mut buf, "{} ", arg)?;
+        }
+        Ok(buf)
+    }
+}
+
+impl Command {
+    pub fn from_str(src: &str) -> Result<Self, CommandParseError> {
+        let mut tokens = src.split_whitespace();
+        let cmd_name = tokens.next().ok_or(CommandParseError {
+            kind: CommandParseErrorKind::ExpectedButEnd { what: "command" },
+        })?;
+        let mut args = Vec::new();
+        for token in tokens {
+            if token == "{}" {
+                args.push(ArgType::SongPath);
+            } else {
+                args.push(ArgType::Custom(token.to_string()));
+            }
+        }
+        Ok(Self {
+            name: cmd_name.to_string(),
+            args,
+        })
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ArgType {
+    Custom(String),
+    SongPath,
+}
+
+impl Display for ArgType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ArgType::Custom(string) => write!(f, "{}", string),
+            ArgType::SongPath => write!(f, "{{}}"),
+        }
+    }
+}
+impl Predicate {
+    pub(crate) fn matches(&self, path: &Path) -> bool {
+        match self {
+            Predicate::BeginsWith(fragment) => Self::matches_begin(fragment, path),
+            Predicate::HasExt(ext) => Self::matches_ext(ext, path),
+        }
+    }
+
+    fn matches_begin(fragment: &str, path: &Path) -> bool {
+        match path.file_name().and_then(|path| path.to_str()) {
+            Some(path_str) => path_str.starts_with(fragment),
+            None => false,
+        }
+    }
+
+    fn matches_ext(ext: &str, path: &Path) -> bool {
+        match path.extension() {
+            Some(path_ext) => path_ext == ext,
+            None => false,
+        }
+    }
 }

@@ -269,6 +269,17 @@ version = "0.18.0"
 source = "git+https://github.com/emilk/egui.git#f5cca2a28888dde7d7bb9605f16c7b61aa55b13d"
 
 [[package]]
+name = "enum-kinds"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e40a16955681d469ab3da85aaa6b42ff656b3c67b52e1d8d3dd36afe97fd462"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "epaint"
 version = "0.18.1"
 source = "git+https://github.com/emilk/egui.git#f5cca2a28888dde7d7bb9605f16c7b61aa55b13d"
@@ -522,12 +533,14 @@ dependencies = [
  "ansi_term_buf",
  "directories",
  "egui-sfml",
+ "enum-kinds",
  "ksni",
  "nonblock",
  "pty-process",
  "rfd",
  "serde",
  "serde_json",
+ "thiserror",
  "walkdir",
 ]
 
@@ -672,8 +685,7 @@ dependencies = [
 [[package]]
 name = "pty-process"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5c0159357669a990d96531d7095fd9d5eaa9f59d3d7d522f65b438dc8d1c109"
+source = "git+https://github.com/crumblingstatue/pty-process.git?branch=quickfix#c1f7aeaaf8e238224157168e0333f97daf53b942"
 dependencies = [
  "libc",
  "nix",

@@ -1,8 +1,11 @@
-use std::path::PathBuf;
+use std::{ffi::OsStr, path::PathBuf};
 
 use walkdir::WalkDir;
 
-use crate::{config::Config, mpv_handler::MpvHandler};
+use crate::{
+    config::Config,
+    mpv_handler::{CustomDemuxer, MpvHandler},
+};
 
 use super::PlaylistBehavior;
 
@@ -62,24 +65,32 @@ impl Core {
                 return;
             }
         };
-        let ext_str = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
-        match self.cfg.custom_players.iter().find(|en| en.ext == ext_str) {
-            Some(en) => self.mpv_handler.play_music(
-                &en.cmd,
-                std::iter::once(path.as_ref()).chain(en.args.iter().map(|s| s.as_ref())),
-            ),
-            None => self.mpv_handler.play_music(
-                "mpv",
-                [
+        let vol_arg = format!("--volume={}", self.cfg.volume);
+        let speed_arg = format!("--speed={}", self.cfg.speed);
+        let mut mpv_args = vec![
+            path.as_ref(),
+            "--no-video".as_ref(),
+            vol_arg.as_ref(),
+            speed_arg.as_ref(),
+        ];
+        let demuxer = match self
+            .cfg
+            .custom_players
+            .iter()
+            .find(|en| en.predicate.matches(&path))
+        {
+            Some(en) => {
+                mpv_args.remove(0);
+                mpv_args.extend(en.extra_mpv_args.iter().map(<_ as AsRef<OsStr>>::as_ref));
+                Some(CustomDemuxer::from_config_cmd(
+                    &en.reader_cmd,
                     path.as_ref(),
-                    "--no-video".as_ref(),
-                    format!("--volume={}", self.cfg.volume).as_ref(),
-                    format!("--speed={}", self.cfg.speed).as_ref(),
-                ],
-            ),
-        }
+                ))
+            }
+            None => None,
+        };
+        self.mpv_handler.play_music("mpv", mpv_args, demuxer)
     }
-
     pub(super) fn play_prev(&mut self) {
         if self.selected_song == 0 {
             self.selected_song = self.playlist.len() - 1;

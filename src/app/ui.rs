@@ -63,7 +63,7 @@ impl Ui {
                     }
                 }
             });
-            if ui.button("Custom players...").clicked() {
+            if ui.button("Custom demuxers...").clicked() {
                 self.windows.custom_players.open ^= true;
             }
             ui.label("🔎");
