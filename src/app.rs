@@ -22,6 +22,7 @@ pub struct AppTray {
     pub should_quit: bool,
     pub paused: bool,
     pub should_pause_resume: bool,
+    pub more_info_label: String,
 }
 
 impl Tray for AppTray {
@@ -54,6 +55,17 @@ impl Tray for AppTray {
             height: 32,
             data: include_bytes!("../icon.argb32").to_vec(),
         }]
+    }
+    fn tool_tip(&self) -> ksni::ToolTip {
+        let title = if !self.more_info_label.is_empty() {
+            format!("mpv-egui\n{}", self.more_info_label)
+        } else {
+            "mpv-egui".into()
+        };
+        ksni::ToolTip {
+            title,
+            ..Default::default()
+        }
     }
 }
 
@@ -167,5 +179,22 @@ impl App {
 
     pub(crate) fn paused_or_stopped(&self) -> bool {
         !self.core.mpv_handler.active() || self.core.mpv_handler.paused()
+    }
+
+    fn currently_playing_name(&self) -> Option<&str> {
+        self.core.playlist[self.core.selected_song]
+            .file_name()
+            .and_then(|name| name.to_str())
+    }
+
+    pub(crate) fn write_more_info(&self, buf: &mut String) {
+        buf.clear();
+        if let Some(currently_playing) = self.currently_playing_name() {
+            buf.push_str(currently_playing);
+            buf.push('\n');
+        }
+        if let Some(last) = self.core.mpv_handler.mpv_output().lines().last() {
+            buf.push_str(last);
+        }
     }
 }

@@ -24,6 +24,7 @@ pub fn run(w: u32, h: u32, title: &str) {
         let mut should_quit = false;
         let mut should_pause_resume = false;
         app.tray_handle.update(|tray| {
+            app.write_more_info(&mut tray.more_info_label);
             tray.paused = app.paused_or_stopped();
             if tray.should_toggle_window {
                 should_toggle_window = true;
