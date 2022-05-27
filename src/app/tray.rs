@@ -2,23 +2,39 @@ use ksni::{menu::StandardItem, Tray, TrayService};
 
 #[derive(Default)]
 pub struct AppTray {
-    pub should_toggle_window: bool,
-    pub should_quit: bool,
+    pub event_flags: EventFlags,
+    pub app_state: AppState,
+}
+
+#[derive(Default)]
+pub struct EventFlags {
+    pub activated: bool,
+    pub quit_clicked: bool,
+    pub pause_resume_clicked: bool,
+}
+
+impl EventFlags {
+    pub fn take(&mut self) -> Self {
+        std::mem::take(self)
+    }
+}
+
+#[derive(Default)]
+pub struct AppState {
+    pub tray_info: String,
     pub paused: bool,
-    pub should_pause_resume: bool,
-    pub more_info_label: String,
 }
 
 impl Tray for AppTray {
     fn activate(&mut self, _x: i32, _y: i32) {
-        self.should_toggle_window = true;
+        self.event_flags.activated = true;
     }
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
         vec![
             StandardItem {
-                label: if self.paused { "▶" } else { " ⏸" }.into(),
+                label: if self.app_state.paused { "▶" } else { " ⏸" }.into(),
                 activate: Box::new(|this: &mut Self| {
-                    this.should_pause_resume = true;
+                    this.event_flags.pause_resume_clicked = true;
                 }),
                 ..Default::default()
             }
@@ -26,7 +42,7 @@ impl Tray for AppTray {
             StandardItem {
                 label: "Quit".into(),
                 activate: Box::new(|this: &mut Self| {
-                    this.should_quit = true;
+                    this.event_flags.quit_clicked = true;
                 }),
                 ..Default::default()
             }
@@ -41,8 +57,8 @@ impl Tray for AppTray {
         }]
     }
     fn tool_tip(&self) -> ksni::ToolTip {
-        let title = if !self.more_info_label.is_empty() {
-            format!("mpv-egui\n{}", self.more_info_label)
+        let title = if !self.app_state.tray_info.is_empty() {
+            format!("mpv-egui\n{}", self.app_state.tray_info)
         } else {
             "mpv-egui".into()
         };

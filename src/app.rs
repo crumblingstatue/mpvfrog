@@ -1,6 +1,6 @@
 mod core;
 mod playlist_behavior;
-mod tray;
+pub mod tray;
 mod ui;
 
 use crate::{config::Config, mpv_handler::MpvHandler};

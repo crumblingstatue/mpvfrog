@@ -1,6 +1,7 @@
 #![feature(let_else)]
 
 mod app;
+mod bool_ext;
 mod config;
 mod mpv_handler;
 mod runner;

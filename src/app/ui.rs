@@ -7,6 +7,7 @@ use egui_sfml::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, Top
 use self::custom_players_window::CustomPlayersWindow;
 
 use super::{Core, PlaylistBehavior};
+use crate::bool_ext::BoolExt;
 
 #[derive(Default)]
 struct Windows {
@@ -27,16 +28,6 @@ pub struct Ui {
     ///
     /// When this happens, we'll try to scroll to the selected song if we can
     filter_changed: bool,
-}
-
-trait BoolExt {
-    fn take(&mut self) -> bool;
-}
-
-impl BoolExt for bool {
-    fn take(&mut self) -> bool {
-        std::mem::take(self)
-    }
 }
 
 impl Ui {
