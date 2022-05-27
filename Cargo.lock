@@ -433,7 +433,7 @@ dependencies = [
 [[package]]
 name = "ksni"
 version = "0.2.0"
-source = "git+https://github.com/crumblingstatue/ksni.git#a6a18bcf2e256faa8664d7a84eb06def76db64f5"
+source = "git+https://github.com/iovxw/ksni.git#5e38db934cb7432ff81a75e7d203a8df76113a1e"
 dependencies = [
  "dbus",
  "dbus-codegen",

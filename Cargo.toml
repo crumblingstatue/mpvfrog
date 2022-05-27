@@ -15,7 +15,7 @@ rfd = "0.8.2"
 walkdir = "2.3.2"
 nonblock = "0.1.0"
 ansi_term_buf = { git = "https://github.com/crumblingstatue/ansi_term_buf.git" }
-ksni = { git = "https://github.com/crumblingstatue/ksni.git" }
+ksni = { git = "https://github.com/iovxw/ksni.git" }
 thiserror = "1.0.31"
 enum-kinds = "0.5.1"
 
