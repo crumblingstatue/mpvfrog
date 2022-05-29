@@ -41,7 +41,7 @@ dependencies = [
 [[package]]
 name = "ansi_term_buf"
 version = "0.1.0"
-source = "git+https://github.com/crumblingstatue/ansi_term_buf.git#ec5822c16bfe34ec07a83da5a45079d6377c3567"
+source = "git+https://github.com/crumblingstatue/ansi_term_buf.git#ba62d226aed66f09bd2d17aad91d72b35f1fca60"
 
 [[package]]
 name = "atk-sys"
@@ -157,9 +157,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clang-sys"
-version = "1.3.2"
+version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf6b561dcf059c85bbe388e0a7b0a1469acb3934cc0cfa148613a830629e3049"
+checksum = "5a050e2153c5be08febd6734e29298e844fdb0fa21aeddd63b4eb7baa106c69b"
 dependencies = [
  "glob",
  "libc",
@@ -246,7 +246,7 @@ checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 [[package]]
 name = "egui"
 version = "0.18.1"
-source = "git+https://github.com/emilk/egui.git#f5cca2a28888dde7d7bb9605f16c7b61aa55b13d"
+source = "git+https://github.com/emilk/egui.git#e6cfa5028e2dd222ead311cf790d192ff401d0b9"
 dependencies = [
  "ahash",
  "epaint",
@@ -266,7 +266,7 @@ dependencies = [
 [[package]]
 name = "emath"
 version = "0.18.0"
-source = "git+https://github.com/emilk/egui.git#f5cca2a28888dde7d7bb9605f16c7b61aa55b13d"
+source = "git+https://github.com/emilk/egui.git#e6cfa5028e2dd222ead311cf790d192ff401d0b9"
 
 [[package]]
 name = "enum-kinds"
@@ -282,7 +282,7 @@ dependencies = [
 [[package]]
 name = "epaint"
 version = "0.18.1"
-source = "git+https://github.com/emilk/egui.git#f5cca2a28888dde7d7bb9605f16c7b61aa55b13d"
+source = "git+https://github.com/emilk/egui.git#e6cfa5028e2dd222ead311cf790d192ff401d0b9"
 dependencies = [
  "ab_glyph",
  "ahash",
@@ -613,9 +613,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.11.0"
+version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b10983b38c53aebdf33f542c6275b0f58a238129d00c4ae0e6fb59738d783ca"
+checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
 
 [[package]]
 name = "owned_ttf_parser"
