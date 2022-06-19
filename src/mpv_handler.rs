@@ -135,6 +135,11 @@ impl MpvHandler {
             inner.ipc_bridge.set_volume(vol);
         }
     }
+    pub fn set_speed(&mut self, speed: f64) {
+        if let Some(inner) = &mut self.inner {
+            inner.ipc_bridge.set_speed(speed);
+        }
+    }
 }
 
 impl Default for MpvHandler {

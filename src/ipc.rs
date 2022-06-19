@@ -22,6 +22,7 @@ enum Command<'a> {
     SetPaused(bool),
     ObserveProperty(&'a str),
     SetVolume(u8),
+    SetSpeed(f64),
 }
 
 impl<'a> Command<'a> {
@@ -35,6 +36,9 @@ impl<'a> Command<'a> {
             }
             Command::SetVolume(vol) => {
                 vec!["set_property".into(), "volume".into(), vol.into()]
+            }
+            Command::SetSpeed(speed) => {
+                vec!["set_property".into(), "speed".into(), speed.into()]
             }
         };
         CommandJson { command: vec }
@@ -115,5 +119,8 @@ impl Bridge {
     }
     pub fn set_volume(&mut self, vol: u8) {
         self.write_command(Command::SetVolume(vol));
+    }
+    pub fn set_speed(&mut self, speed: f64) {
+        self.write_command(Command::SetSpeed(speed));
     }
 }

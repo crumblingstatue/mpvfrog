@@ -139,6 +139,17 @@ impl Ui {
             });
             ui.group(|ui| {
                 ui.label("⏩");
+                match app.mpv_handler.speed() {
+                    Some(mut speed) => {
+                        let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0));
+                        if re.changed() {
+                            app.mpv_handler.set_speed(speed);
+                        }
+                    }
+                    None => {
+                        ui.add(egui::Slider::new(&mut app.cfg.speed, 0.3..=2.0));
+                    }
+                }
                 ui.label(format!("{:.2}", app.speed()));
             });
             ui.group(|ui| {
