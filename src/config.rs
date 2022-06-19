@@ -20,6 +20,8 @@ pub struct Config {
     pub volume: u8,
     #[serde(default = "default_speed")]
     pub speed: f64,
+    #[serde(default)]
+    pub video: bool,
 }
 
 impl Default for Config {
@@ -29,6 +31,7 @@ impl Default for Config {
             custom_players: Default::default(),
             volume: default_volume(),
             speed: default_speed(),
+            video: false,
         }
     }
 }

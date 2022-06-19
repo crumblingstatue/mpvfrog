@@ -71,10 +71,12 @@ impl Core {
         let mut mpv_args = vec![
             path.as_ref(),
             "--input-ipc-server=/tmp/mpv-egui-musicplayer.sock".as_ref(),
-            "--no-video".as_ref(),
             vol_arg.as_ref(),
             speed_arg.as_ref(),
         ];
+        if !self.cfg.video {
+            mpv_args.push("--no-video".as_ref());
+        }
         let demuxer = match self
             .cfg
             .custom_players
