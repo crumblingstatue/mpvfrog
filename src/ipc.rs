@@ -26,6 +26,7 @@ enum Command<'a> {
     SetVolume(u8),
     SetSpeed(f64),
     Seek(f64),
+    SetVideo(bool),
 }
 
 impl<'a> Command<'a> {
@@ -45,6 +46,13 @@ impl<'a> Command<'a> {
             }
             Command::Seek(pos) => {
                 vec!["set_property".into(), "time-pos".into(), pos.into()]
+            }
+            Command::SetVideo(show) => {
+                vec![
+                    "set_property".into(),
+                    "vid".into(),
+                    if show { 1.into() } else { false.into() },
+                ]
             }
         };
         CommandJson { command: vec }
@@ -143,5 +151,8 @@ impl Bridge {
     }
     pub fn seek(&mut self, pos: f64) {
         self.write_command(Command::Seek(pos));
+    }
+    pub fn set_video(&mut self, show: bool) {
+        self.write_command(Command::SetVideo(show));
     }
 }

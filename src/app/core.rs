@@ -169,4 +169,8 @@ impl Core {
     pub(crate) fn seek(&mut self, pos: f64) {
         self.mpv_handler.seek(pos)
     }
+
+    pub fn set_video(&mut self, show: bool) {
+        self.mpv_handler.set_video(show);
+    }
 }

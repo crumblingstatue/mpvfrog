@@ -154,7 +154,9 @@ impl Ui {
                     }
                 }
             });
-            ui.checkbox(&mut app.cfg.video, "video");
+            if ui.checkbox(&mut app.cfg.video, "video").clicked() {
+                app.set_video(app.cfg.video);
+            }
         });
         ui.horizontal(|ui| {
             if let Some(mut info) = app.mpv_handler.time_info() {

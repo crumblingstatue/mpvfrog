@@ -153,6 +153,12 @@ impl MpvHandler {
             inner.ipc_bridge.seek(pos);
         }
     }
+
+    pub(crate) fn set_video(&mut self, show: bool) {
+        if let Some(inner) = &mut self.inner {
+            inner.ipc_bridge.set_video(show);
+        }
+    }
 }
 
 pub struct TimeInfo {
