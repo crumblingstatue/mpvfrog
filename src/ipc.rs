@@ -102,7 +102,7 @@ impl Bridge {
                             match name {
                                 "speed" => self.observed.speed = data.as_f64().unwrap(),
                                 "volume" => self.observed.volume = data.as_f64().unwrap() as u8,
-                                name => eprintln!("Unhandled property: {}", name),
+                                name => eprintln!("Unhandled property: {} = {}", name, data),
                             }
                         }
                         _ => eprintln!("Unhandled event: {}", event),
