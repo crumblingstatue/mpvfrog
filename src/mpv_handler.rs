@@ -10,11 +10,15 @@ use std::{
 
 use crate::config::ArgType;
 
+struct MpvHandlerInner {
+    child: Child,
+    pty: Pty,
+}
+
 pub struct MpvHandler {
     ansi_term: Term,
-    child: Option<Child>,
-    pty: Option<Pty>,
     paused: bool,
+    inner: Option<MpvHandlerInner>,
 }
 
 pub struct CustomDemuxer {
@@ -43,7 +47,6 @@ impl MpvHandler {
         self.ansi_term.reset();
         let pty = Pty::new().unwrap();
         let pts = pty.pts().unwrap();
-        self.pty = Some(pty);
         let mut mpv_command = PtyCommand::new(mpv_cmd);
         mpv_command.args(mpv_args);
         if let Some(demuxer) = custom_demuxer {
@@ -57,21 +60,21 @@ impl MpvHandler {
             mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
         let child = mpv_command.spawn(&pts).unwrap();
-        self.child = Some(child);
+        self.inner = Some(MpvHandlerInner { child, pty });
     }
     pub fn stop_music(&mut self) {
-        let Some(child) = &mut self.child else { return };
-        self.pty.as_mut().unwrap().write_all(b"q").unwrap();
-        child.wait().unwrap();
-        self.child = None;
+        let Some(inner) = &mut self.inner else { return };
+        inner.pty.write_all(b"q").unwrap();
+        inner.child.wait().unwrap();
+        self.inner = None;
     }
     fn update_child_out(&mut self, buf: &[u8]) {
         self.ansi_term.feed(buf)
     }
     pub fn update(&mut self) {
-        let Some(pty) = &mut self.pty else { return; };
+        let Some(inner) = &mut self.inner else { return; };
         let mut buf = Vec::new();
-        let mut nbr = NonBlockingReader::from_fd(pty).unwrap();
+        let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
         match nbr.read_available(&mut buf) {
             Ok(n_read) => {
                 if n_read != 0 {
@@ -87,12 +90,12 @@ impl MpvHandler {
     }
 
     pub fn input(&mut self, s: &str) {
-        let Some(pty) = &mut self.pty else { return };
-        pty.write_all(s.as_bytes()).unwrap();
+        let Some(inner) = &mut self.inner else { return };
+        inner.pty.write_all(s.as_bytes()).unwrap();
     }
 
     pub fn active(&self) -> bool {
-        self.child.is_some()
+        self.inner.is_some()
     }
 
     pub fn toggle_pause(&mut self) {
@@ -112,9 +115,8 @@ impl Default for MpvHandler {
     fn default() -> Self {
         Self {
             ansi_term: Term::new(100),
-            child: None,
             paused: false,
-            pty: None,
+            inner: None,
         }
     }
 }
