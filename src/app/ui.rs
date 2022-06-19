@@ -125,11 +125,11 @@ impl Ui {
             });
             ui.group(|ui| {
                 ui.label("🔈");
-                ui.label(app.cfg.volume.to_string());
+                ui.label(app.volume().to_string());
             });
             ui.group(|ui| {
                 ui.label("⏩");
-                ui.label(format!("{:.2}", app.cfg.speed));
+                ui.label(format!("{:.2}", app.speed()));
             });
             ui.group(|ui| {
                 ComboBox::new("playlist_behavior_cb", "▶")

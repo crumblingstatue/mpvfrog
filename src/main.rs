@@ -3,6 +3,7 @@
 mod app;
 mod bool_ext;
 mod config;
+mod ipc;
 mod mpv_handler;
 mod runner;
 

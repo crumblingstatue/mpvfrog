@@ -55,6 +55,7 @@ impl Core {
     }
 
     pub(super) fn play_selected_song(&mut self) {
+        self.save_mpv_values_to_cfg();
         self.user_stopped = false;
         let selection = self.selected_song;
         let sel_path = &self.playlist[selection];
@@ -69,6 +70,7 @@ impl Core {
         let speed_arg = format!("--speed={}", self.cfg.speed);
         let mut mpv_args = vec![
             path.as_ref(),
+            "--input-ipc-server=/tmp/mpv-egui-musicplayer.sock".as_ref(),
             "--no-video".as_ref(),
             vol_arg.as_ref(),
             speed_arg.as_ref(),
@@ -111,8 +113,18 @@ impl Core {
     }
 
     pub(super) fn stop_music(&mut self) {
+        self.save_mpv_values_to_cfg();
         self.mpv_handler.stop_music();
         self.user_stopped = true;
+    }
+
+    fn save_mpv_values_to_cfg(&mut self) {
+        if let Some(vol) = self.mpv_handler.volume() {
+            self.cfg.volume = vol;
+        }
+        if let Some(speed) = self.mpv_handler.speed() {
+            self.cfg.speed = speed;
+        }
     }
 
     /// Plays the selected song, or toggles the pause state if already playing
@@ -150,5 +162,13 @@ impl Core {
             self.song_change = true;
             self.play_selected_song();
         }
+    }
+
+    pub fn volume(&self) -> u8 {
+        self.mpv_handler.volume().unwrap_or(self.cfg.volume)
+    }
+
+    pub fn speed(&self) -> f64 {
+        self.mpv_handler.speed().unwrap_or(self.cfg.speed)
     }
 }

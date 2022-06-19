@@ -8,16 +8,16 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
-use crate::config::ArgType;
+use crate::{config::ArgType, ipc};
 
 struct MpvHandlerInner {
     child: Child,
     pty: Pty,
+    ipc_bridge: ipc::Bridge,
 }
 
 pub struct MpvHandler {
     ansi_term: Term,
-    paused: bool,
     inner: Option<MpvHandlerInner>,
 }
 
@@ -60,7 +60,13 @@ impl MpvHandler {
             mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
         let child = mpv_command.spawn(&pts).unwrap();
-        self.inner = Some(MpvHandlerInner { child, pty });
+        // Wait for socket (todo: Find better solution)
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        self.inner = Some(MpvHandlerInner {
+            child,
+            pty,
+            ipc_bridge: ipc::Bridge::connect(),
+        });
     }
     pub fn stop_music(&mut self) {
         let Some(inner) = &mut self.inner else { return };
@@ -73,6 +79,7 @@ impl MpvHandler {
     }
     pub fn update(&mut self) {
         let Some(inner) = &mut self.inner else { return; };
+        inner.ipc_bridge.handle_responses();
         let mut buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
         match nbr.read_available(&mut buf) {
@@ -99,15 +106,29 @@ impl MpvHandler {
     }
 
     pub fn toggle_pause(&mut self) {
-        self.input(" ");
-        self.paused ^= true;
+        if let Some(inner) = &mut self.inner {
+            inner.ipc_bridge.toggle_pause();
+        }
     }
 
     pub fn paused(&self) -> bool {
-        self.paused
+        match &self.inner {
+            Some(inner) => inner.ipc_bridge.observed.paused,
+            None => true,
+        }
     }
     pub fn mpv_output(&self) -> String {
         self.ansi_term.contents_to_string()
+    }
+    pub fn volume(&self) -> Option<u8> {
+        self.inner
+            .as_ref()
+            .map(|inner| inner.ipc_bridge.observed.volume)
+    }
+    pub fn speed(&self) -> Option<f64> {
+        self.inner
+            .as_ref()
+            .map(|inner| inner.ipc_bridge.observed.speed)
     }
 }
 
@@ -115,7 +136,6 @@ impl Default for MpvHandler {
     fn default() -> Self {
         Self {
             ansi_term: Term::new(100),
-            paused: false,
             inner: None,
         }
     }

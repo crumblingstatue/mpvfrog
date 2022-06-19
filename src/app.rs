@@ -77,27 +77,6 @@ impl App {
                     "<" => self.core.play_prev(),
                     ">" => self.core.play_next(),
                     s => {
-                        match s {
-                            "9" => {
-                                self.core.cfg.volume -= 2;
-                            }
-                            "0" => {
-                                self.core.cfg.volume += 2;
-                            }
-                            "[" => {
-                                self.core.cfg.speed -= 0.1;
-                            }
-                            "]" => {
-                                self.core.cfg.speed += 0.1;
-                            }
-                            "{" => {
-                                self.core.cfg.speed -= 0.01;
-                            }
-                            "}" => {
-                                self.core.cfg.speed += 0.01;
-                            }
-                            _ => {}
-                        }
                         self.core.mpv_handler.input(s);
                     }
                 },
