@@ -127,8 +127,6 @@ impl Bridge {
                         }
                         _ => eprintln!("Unhandled event: {}", event),
                     }
-                } else if let Some(req_id) = map.get("request_id") {
-                    eprintln!("Request id: {}", req_id);
                 }
             }
             Err(e) => {
