@@ -85,6 +85,10 @@ impl Bridge {
             let mut buf = [0; 1000];
             match self.ipc_stream.read(&mut buf) {
                 Ok(amount) => {
+                    if amount == 0 {
+                        // Assume EOF and return
+                        return;
+                    }
                     let string = std::str::from_utf8(&buf[..amount]).unwrap();
                     for line in string.lines() {
                         self.handle_response_line(line)
