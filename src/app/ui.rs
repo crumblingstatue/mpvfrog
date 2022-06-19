@@ -153,7 +153,6 @@ impl Ui {
                         ui.add(egui::Slider::new(&mut app.cfg.speed, 0.3..=2.0));
                     }
                 }
-                ui.label(format!("{:.2}", app.speed()));
             });
         });
         ui.horizontal(|ui| {

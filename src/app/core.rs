@@ -164,10 +164,6 @@ impl Core {
         }
     }
 
-    pub fn speed(&self) -> f64 {
-        self.mpv_handler.speed().unwrap_or(self.cfg.speed)
-    }
-
     pub(crate) fn seek(&mut self, pos: f64) {
         self.mpv_handler.seek(pos)
     }
