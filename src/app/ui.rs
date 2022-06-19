@@ -125,7 +125,17 @@ impl Ui {
             });
             ui.group(|ui| {
                 ui.label("🔈");
-                ui.label(app.volume().to_string());
+                match app.mpv_handler.volume() {
+                    Some(mut vol) => {
+                        let re = ui.add(egui::Slider::new(&mut vol, 0..=100));
+                        if re.changed() {
+                            app.mpv_handler.set_volume(vol);
+                        }
+                    }
+                    None => {
+                        ui.add(egui::Slider::new(&mut app.cfg.volume, 0..=100));
+                    }
+                }
             });
             ui.group(|ui| {
                 ui.label("⏩");

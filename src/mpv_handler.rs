@@ -130,6 +130,11 @@ impl MpvHandler {
             .as_ref()
             .map(|inner| inner.ipc_bridge.observed.speed)
     }
+    pub fn set_volume(&mut self, vol: u8) {
+        if let Some(inner) = &mut self.inner {
+            inner.ipc_bridge.set_volume(vol);
+        }
+    }
 }
 
 impl Default for MpvHandler {

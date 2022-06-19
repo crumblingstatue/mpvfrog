@@ -21,6 +21,7 @@ pub struct Properties {
 enum Command<'a> {
     SetPaused(bool),
     ObserveProperty(&'a str),
+    SetVolume(u8),
 }
 
 impl<'a> Command<'a> {
@@ -31,6 +32,9 @@ impl<'a> Command<'a> {
             }
             Command::ObserveProperty(which) => {
                 vec!["observe_property".into(), 1.into(), which.into()]
+            }
+            Command::SetVolume(vol) => {
+                vec!["set_property".into(), "volume".into(), vol.into()]
             }
         };
         CommandJson { command: vec }
@@ -108,5 +112,8 @@ impl Bridge {
                 eprintln!("Unserialized event: {}", line);
             }
         }
+    }
+    pub fn set_volume(&mut self, vol: u8) {
+        self.write_command(Command::SetVolume(vol));
     }
 }

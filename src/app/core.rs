@@ -164,10 +164,6 @@ impl Core {
         }
     }
 
-    pub fn volume(&self) -> u8 {
-        self.mpv_handler.volume().unwrap_or(self.cfg.volume)
-    }
-
     pub fn speed(&self) -> f64 {
         self.mpv_handler.speed().unwrap_or(self.cfg.speed)
     }
