@@ -16,6 +16,8 @@ pub struct Properties {
     pub paused: bool,
     pub volume: u8,
     pub speed: f64,
+    pub duration: f64,
+    pub time_pos: f64,
 }
 
 enum Command<'a> {
@@ -23,6 +25,7 @@ enum Command<'a> {
     ObserveProperty(&'a str),
     SetVolume(u8),
     SetSpeed(f64),
+    Seek(f64),
 }
 
 impl<'a> Command<'a> {
@@ -39,6 +42,9 @@ impl<'a> Command<'a> {
             }
             Command::SetSpeed(speed) => {
                 vec!["set_property".into(), "speed".into(), speed.into()]
+            }
+            Command::Seek(pos) => {
+                vec!["set_property".into(), "time-pos".into(), pos.into()]
             }
         };
         CommandJson { command: vec }
@@ -60,6 +66,8 @@ impl Bridge {
         };
         this.write_command(Command::ObserveProperty("speed"));
         this.write_command(Command::ObserveProperty("volume"));
+        this.write_command(Command::ObserveProperty("time-pos"));
+        this.write_command(Command::ObserveProperty("duration"));
         this
     }
     pub fn toggle_pause(&mut self) {
@@ -98,10 +106,18 @@ impl Bridge {
                         "unpause" => self.observed.paused = false,
                         "property-change" => {
                             let name = map.get("name").unwrap().as_str().unwrap();
-                            let data = map.get("data").unwrap();
+                            let data = match map.get("data") {
+                                Some(data) => data,
+                                None => {
+                                    eprintln!("data-less property change: {}", name);
+                                    return;
+                                }
+                            };
                             match name {
                                 "speed" => self.observed.speed = data.as_f64().unwrap(),
                                 "volume" => self.observed.volume = data.as_f64().unwrap() as u8,
+                                "duration" => self.observed.duration = data.as_f64().unwrap(),
+                                "time-pos" => self.observed.time_pos = data.as_f64().unwrap(),
                                 name => eprintln!("Unhandled property: {} = {}", name, data),
                             }
                         }
@@ -122,5 +138,8 @@ impl Bridge {
     }
     pub fn set_speed(&mut self, speed: f64) {
         self.write_command(Command::SetSpeed(speed));
+    }
+    pub fn seek(&mut self, pos: f64) {
+        self.write_command(Command::Seek(pos));
     }
 }

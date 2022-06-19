@@ -140,6 +140,24 @@ impl MpvHandler {
             inner.ipc_bridge.set_speed(speed);
         }
     }
+
+    pub(crate) fn time_info(&self) -> Option<TimeInfo> {
+        self.inner.as_ref().map(|inner| TimeInfo {
+            pos: inner.ipc_bridge.observed.time_pos,
+            duration: inner.ipc_bridge.observed.duration,
+        })
+    }
+
+    pub(crate) fn seek(&mut self, pos: f64) {
+        if let Some(inner) = &mut self.inner {
+            inner.ipc_bridge.seek(pos);
+        }
+    }
+}
+
+pub struct TimeInfo {
+    pub pos: f64,
+    pub duration: f64,
 }
 
 impl Default for MpvHandler {

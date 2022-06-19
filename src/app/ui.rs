@@ -1,5 +1,7 @@
 mod custom_players_window;
 
+use std::fmt;
+
 use egui_sfml::egui::{self, Align, ComboBox, Context};
 
 use egui_sfml::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
@@ -153,7 +155,23 @@ impl Ui {
                 }
                 ui.label(format!("{:.2}", app.speed()));
             });
+        });
+        ui.horizontal(|ui| {
+            if let Some(mut info) = app.mpv_handler.time_info() {
+                ui.style_mut().spacing.slider_width = 420.0;
+                ui.label(format!(
+                    "{}/{}",
+                    HumanSecs(info.pos),
+                    HumanSecs(info.duration)
+                ));
+                let re =
+                    ui.add(egui::Slider::new(&mut info.pos, 0.0..=info.duration).show_value(false));
+                if re.drag_released() {
+                    app.seek(info.pos);
+                }
+            }
             ui.group(|ui| {
+                ui.style_mut().spacing.slider_width = 100.0;
                 ComboBox::new("playlist_behavior_cb", "▶")
                     .selected_text(app.playlist_behavior.label())
                     .show_ui(ui, |ui| {
@@ -196,5 +214,16 @@ impl PlaylistBehavior {
             PlaylistBehavior::RepeatOne => "Repeat one",
             PlaylistBehavior::RepeatPlaylist => "Repeat playlist",
         }
+    }
+}
+
+struct HumanSecs(f64);
+
+impl fmt::Display for HumanSecs {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let secs = self.0;
+        let remaining_secs = secs % 60.0;
+        let minutes = secs / 60.0;
+        write!(f, "{:02}:{:.02}", minutes.floor(), remaining_secs)
     }
 }
