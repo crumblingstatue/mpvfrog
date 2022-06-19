@@ -80,9 +80,9 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "bindgen"
-version = "0.59.2"
+version = "0.60.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bd2a9a458e8f4304c52c43ebb0cfbd520289f8379a52e329a38afda99bf8eb8"
+checksum = "062dddbc1ba4aca46de6338e2bf87771414c335f7b2f2036e8f3e9befebf88e6"
 dependencies = [
  "bitflags",
  "cexpr",
@@ -246,7 +246,7 @@ checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 [[package]]
 name = "egui"
 version = "0.18.1"
-source = "git+https://github.com/emilk/egui.git#e6cfa5028e2dd222ead311cf790d192ff401d0b9"
+source = "git+https://github.com/emilk/egui.git#f5b2363fff0bed860b034092e81776a513817452"
 dependencies = [
  "ahash",
  "epaint",
@@ -256,7 +256,7 @@ dependencies = [
 [[package]]
 name = "egui-sfml"
 version = "0.1.0"
-source = "git+https://github.com/crumblingstatue/egui-sfml.git#8e34593cc66f5f8a21e52ea8e2b7db8d1b995778"
+source = "git+https://github.com/crumblingstatue/egui-sfml.git#be7e09a5f1cfe9895f7bc7ab1abb0c4896ade50c"
 dependencies = [
  "egui",
  "glu-sys",
@@ -266,7 +266,7 @@ dependencies = [
 [[package]]
 name = "emath"
 version = "0.18.0"
-source = "git+https://github.com/emilk/egui.git#e6cfa5028e2dd222ead311cf790d192ff401d0b9"
+source = "git+https://github.com/emilk/egui.git#f5b2363fff0bed860b034092e81776a513817452"
 
 [[package]]
 name = "enum-kinds"
@@ -282,7 +282,7 @@ dependencies = [
 [[package]]
 name = "epaint"
 version = "0.18.1"
-source = "git+https://github.com/emilk/egui.git#e6cfa5028e2dd222ead311cf790d192ff401d0b9"
+source = "git+https://github.com/emilk/egui.git#f5b2363fff0bed860b034092e81776a513817452"
 dependencies = [
  "ab_glyph",
  "ahash",
@@ -595,6 +595,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-traits"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "objc"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -841,12 +850,13 @@ dependencies = [
 [[package]]
 name = "sfml"
 version = "0.16.0"
-source = "git+https://github.com/jeremyletang/rust-sfml.git#7cc48d5781cacf85f31aa65a0b79eced5da3941f"
+source = "git+https://github.com/jeremyletang/rust-sfml.git#eb5d938324ade26e5568ce668c5907600e0708ac"
 dependencies = [
  "bindgen",
  "bitflags",
  "cc",
  "link-cplusplus",
+ "num-traits",
  "once_cell",
  "widestring",
 ]

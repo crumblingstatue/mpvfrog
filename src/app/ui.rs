@@ -70,6 +70,7 @@ impl Ui {
     fn central_panel_ui(&mut self, app: &mut Core, ui: &mut egui::Ui) {
         ScrollArea::vertical()
             .max_height(200.0)
+            .auto_shrink([false; 2])
             .id_source("song_scroll")
             .show(ui, |ui| {
                 for (i, path) in app.playlist.iter().enumerate() {
@@ -174,6 +175,7 @@ impl Ui {
         });
         ui.separator();
         ScrollArea::vertical()
+            .auto_shrink([false; 2])
             .id_source("out_scroll")
             .stick_to_bottom()
             .show(ui, |ui| {

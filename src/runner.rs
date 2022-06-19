@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use egui_sfml::{
     sfml::{
-        graphics::RenderWindow,
+        graphics::{FloatRect, RenderTarget, RenderWindow, View},
         window::{Event, Style},
     },
     SfEgui,
@@ -11,7 +11,7 @@ use egui_sfml::{
 use crate::app::{tray::AppTray, App};
 
 pub fn run(w: u32, h: u32, title: &str) {
-    let mut rw = RenderWindow::new((w, h), title, Style::CLOSE, &Default::default());
+    let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default());
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
     let mut app = App::new(sf_egui.context());
@@ -33,9 +33,20 @@ pub fn run(w: u32, h: u32, title: &str) {
         if win_visible {
             while let Some(event) = rw.poll_event() {
                 sf_egui.add_event(&event);
-                if event == Event::Closed {
-                    rw.set_visible(false);
-                    win_visible = false;
+                match event {
+                    Event::Closed => {
+                        rw.set_visible(false);
+                        win_visible = false;
+                    }
+                    Event::Resized { width, height } => {
+                        rw.set_view(&View::from_rect(&FloatRect::new(
+                            0.,
+                            0.,
+                            width as f32,
+                            height as f32,
+                        )));
+                    }
+                    _ => {}
                 }
             }
             sf_egui.do_frame(|ctx| {

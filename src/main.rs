@@ -8,5 +8,5 @@ mod mpv_handler;
 mod runner;
 
 fn main() {
-    runner::run(620, 440, "mpv-egui-musicplayer");
+    runner::run(700, 500, "mpv-egui-musicplayer");
 }
