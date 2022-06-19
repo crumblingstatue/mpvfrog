@@ -1,4 +1,4 @@
-#![feature(let_else)]
+#![feature(let_else, associated_type_defaults)]
 
 mod app;
 mod bool_ext;
