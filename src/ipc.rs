@@ -6,6 +6,8 @@ use std::{
 use interprocess::local_socket::LocalSocketStream;
 use serde::Serialize;
 
+use crate::warn_dialog;
+
 pub struct Bridge {
     ipc_stream: LocalSocketStream,
     pub observed: Properties,
@@ -123,7 +125,9 @@ impl Bridge {
         let mut serialized = serde_json::to_vec(&command_json).unwrap();
         // Commands need to be terminated with newline
         serialized.push(b'\n');
-        self.ipc_stream.write_all(&serialized).unwrap();
+        if let Err(e) = self.ipc_stream.write_all(&serialized) {
+            warn_dialog("IPC error", &format!("Failed to send IPC message: {}", e));
+        }
     }
     pub fn handle_responses(&mut self) -> anyhow::Result<()> {
         loop {

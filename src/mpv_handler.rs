@@ -8,7 +8,7 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
-use crate::{config::ArgType, ipc};
+use crate::{config::ArgType, ipc, warn_dialog};
 
 struct MpvHandlerInner {
     child: Child,
@@ -51,12 +51,18 @@ impl MpvHandler {
         mpv_command.args(mpv_args);
         if let Some(demuxer) = custom_demuxer {
             eprintln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
-            let mut demux_child = Command::new(demuxer.cmd)
+            let mut demux_child = match Command::new(demuxer.cmd)
                 .args(demuxer.args)
                 .stdout(Stdio::piped())
                 .stdin(Stdio::null())
                 .spawn()
-                .unwrap();
+            {
+                Ok(child) => child,
+                Err(e) => {
+                    warn_dialog("Play error", &format!("Failed to spawn demuxer: {}", e));
+                    return;
+                }
+            };
             mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
         let child = mpv_command.spawn(&pts).unwrap();
@@ -171,14 +177,6 @@ impl MpvHandler {
             inner.ipc_bridge.set_video(show);
         }
     }
-}
-
-fn warn_dialog(title: &str, desc: &str) {
-    rfd::MessageDialog::new()
-        .set_title(title)
-        .set_level(rfd::MessageLevel::Warning)
-        .set_description(desc)
-        .show();
 }
 
 pub struct TimeInfo {
