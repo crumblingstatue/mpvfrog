@@ -62,10 +62,20 @@ impl MpvHandler {
         let child = mpv_command.spawn(&pts).unwrap();
         // Wait for socket (todo: Find better solution)
         std::thread::sleep(std::time::Duration::from_millis(100));
+        let ipc_bridge = match ipc::Bridge::connect() {
+            Ok(bridge) => bridge,
+            Err(e) => {
+                warn_dialog(
+                    "Play error",
+                    &format!("Failed to establish connection with mpv: {}", e),
+                );
+                return;
+            }
+        };
         self.inner = Some(MpvHandlerInner {
             child,
             pty,
-            ipc_bridge: ipc::Bridge::connect(),
+            ipc_bridge,
         });
     }
     pub fn stop_music(&mut self) {
@@ -79,7 +89,9 @@ impl MpvHandler {
     }
     pub fn update(&mut self) {
         let Some(inner) = &mut self.inner else { return; };
-        inner.ipc_bridge.handle_responses();
+        if let Err(e) = inner.ipc_bridge.handle_responses() {
+            warn_dialog("IPC error", &format!("Mpv IPC error: {}", e));
+        }
         let mut buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
         match nbr.read_available(&mut buf) {
@@ -159,6 +171,14 @@ impl MpvHandler {
             inner.ipc_bridge.set_video(show);
         }
     }
+}
+
+fn warn_dialog(title: &str, desc: &str) {
+    rfd::MessageDialog::new()
+        .set_title(title)
+        .set_level(rfd::MessageLevel::Warning)
+        .set_description(desc)
+        .show();
 }
 
 pub struct TimeInfo {

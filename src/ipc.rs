@@ -102,9 +102,9 @@ struct CommandJson<T: Serialize> {
 }
 
 impl Bridge {
-    pub fn connect() -> Self {
-        let ipc_stream = LocalSocketStream::connect("/tmp/mpv-egui-musicplayer.sock").unwrap();
-        ipc_stream.set_nonblocking(true).unwrap();
+    pub fn connect() -> anyhow::Result<Self> {
+        let ipc_stream = LocalSocketStream::connect("/tmp/mpv-egui-musicplayer.sock")?;
+        ipc_stream.set_nonblocking(true)?;
         let mut this = Self {
             ipc_stream,
             observed: Default::default(),
@@ -113,7 +113,7 @@ impl Bridge {
         this.write_command(ObserveProperty("volume"));
         this.write_command(ObserveProperty("time-pos"));
         this.write_command(ObserveProperty("duration"));
-        this
+        Ok(this)
     }
     pub fn toggle_pause(&mut self) {
         self.write_command(SetPaused(!self.observed.paused));
@@ -125,14 +125,14 @@ impl Bridge {
         serialized.push(b'\n');
         self.ipc_stream.write_all(&serialized).unwrap();
     }
-    pub fn handle_responses(&mut self) {
+    pub fn handle_responses(&mut self) -> anyhow::Result<()> {
         loop {
             let mut buf = [0; 1000];
             match self.ipc_stream.read(&mut buf) {
                 Ok(amount) => {
                     if amount == 0 {
                         // Assume EOF and return
-                        return;
+                        return Ok(());
                     }
                     let string = std::str::from_utf8(&buf[..amount]).unwrap();
                     for line in string.lines() {
@@ -140,8 +140,8 @@ impl Bridge {
                     }
                 }
                 Err(e) => match e.kind() {
-                    std::io::ErrorKind::WouldBlock => return,
-                    _ => panic!("ipc bridge io error: {}", e),
+                    std::io::ErrorKind::WouldBlock => return Ok(()),
+                    _ => anyhow::bail!("ipc bridge io error: {}", e),
                 },
             }
         }
