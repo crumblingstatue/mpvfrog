@@ -1,4 +1,4 @@
-mod custom_players_window;
+mod custom_demuxers_window;
 
 use std::fmt;
 
@@ -6,19 +6,19 @@ use egui_sfml::egui::{self, Align, ComboBox, Context};
 
 use egui_sfml::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
 
-use self::custom_players_window::CustomPlayersWindow;
+use self::custom_demuxers_window::CustomDemuxersWindow;
 
 use super::{Core, PlaylistBehavior};
 use crate::bool_ext::BoolExt;
 
 #[derive(Default)]
 struct Windows {
-    custom_players: CustomPlayersWindow,
+    custom_demuxers: CustomDemuxersWindow,
 }
 
 impl Windows {
     fn update(&mut self, app: &mut Core, ctx: &Context) {
-        self.custom_players.update(app, ctx);
+        self.custom_demuxers.update(app, ctx);
     }
 }
 
@@ -57,7 +57,7 @@ impl Ui {
                 }
             });
             if ui.button("Custom demuxers...").clicked() {
-                self.windows.custom_players.open ^= true;
+                self.windows.custom_demuxers.open ^= true;
             }
             ui.label("🔎");
             if ui

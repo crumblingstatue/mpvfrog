@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Default)]
-pub struct CustomPlayersWindow {
+pub struct CustomDemuxersWindow {
     pub open: bool,
     edit_buffer: String,
     edit_target: Option<EditTarget>,
@@ -32,7 +32,7 @@ impl PredicateKind {
     }
 }
 
-impl CustomPlayersWindow {
+impl CustomDemuxersWindow {
     pub(super) fn update(&mut self, app: &mut Core, ctx: &Context) {
         let mut open = self.open;
         Window::new("Custom demuxers")
