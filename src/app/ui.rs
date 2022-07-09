@@ -8,7 +8,7 @@ use egui_sfml::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, Top
 
 use self::custom_demuxers_window::CustomDemuxersWindow;
 
-use super::{Core, PlaylistBehavior};
+use super::{Core, PlaylistBehavior, LOG};
 use crate::bool_ext::BoolExt;
 
 #[derive(Default)]
@@ -30,6 +30,15 @@ pub struct Ui {
     ///
     /// When this happens, we'll try to scroll to the selected song if we can
     filter_changed: bool,
+    output_source: OutputSource,
+}
+
+#[derive(Default, PartialEq, Eq)]
+enum OutputSource {
+    #[default]
+    Mpv,
+    Demuxer,
+    Log,
 }
 
 impl Ui {
@@ -194,13 +203,23 @@ impl Ui {
             });
         });
         ui.separator();
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.output_source, OutputSource::Mpv, "Mpv");
+            ui.selectable_value(&mut self.output_source, OutputSource::Demuxer, "Demuxer");
+            ui.selectable_value(&mut self.output_source, OutputSource::Log, "Log");
+        });
         ScrollArea::vertical()
             .auto_shrink([false; 2])
             .id_source("out_scroll")
             .stick_to_bottom()
             .show(ui, |ui| {
+                let out = match self.output_source {
+                    OutputSource::Mpv => app.mpv_handler.mpv_output(),
+                    OutputSource::Demuxer => app.mpv_handler.demux_term.contents_to_string(),
+                    OutputSource::Log => LOG.lock().unwrap().clone(),
+                };
                 ui.add(
-                    TextEdit::multiline(&mut app.mpv_handler.mpv_output().as_str())
+                    TextEdit::multiline(&mut out.as_str())
                         .desired_width(620.0)
                         .font(TextStyle::Monospace),
                 );

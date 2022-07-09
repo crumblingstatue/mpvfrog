@@ -3,12 +3,22 @@ mod playlist_behavior;
 pub mod tray;
 mod ui;
 
+use std::sync::Mutex;
+
 use crate::{config::Config, mpv_handler::MpvHandler};
 
 use egui_sfml::egui::{self, Context, Event, Key};
 
 use self::{core::Core, tray::AppTray};
 pub use playlist_behavior::PlaylistBehavior;
+
+pub static LOG: Mutex<String> = Mutex::new(String::new());
+
+pub macro logln($($arg:tt)*) {{
+    use std::fmt::Write;
+    let mut log = LOG.lock().unwrap();
+    writeln!(log, $($arg)*).unwrap();
+}}
 
 pub struct App {
     core: Core,

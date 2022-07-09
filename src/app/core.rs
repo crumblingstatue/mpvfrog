@@ -3,6 +3,7 @@ use std::{ffi::OsStr, path::PathBuf};
 use walkdir::WalkDir;
 
 use crate::{
+    app::logln,
     config::Config,
     mpv_handler::{CustomDemuxer, MpvHandler},
 };
@@ -62,7 +63,7 @@ impl Core {
         let path: PathBuf = match &self.cfg.music_folder {
             Some(folder) => folder.join(sel_path),
             None => {
-                eprintln!("Can't play song, there is no music folder");
+                logln!("Can't play song, there is no music folder");
                 return;
             }
         };

@@ -6,7 +6,7 @@ use std::{
 use interprocess::local_socket::LocalSocketStream;
 use serde::Serialize;
 
-use crate::warn_dialog;
+use crate::{app::logln, warn_dialog};
 
 pub struct Bridge {
     ipc_stream: LocalSocketStream,
@@ -162,7 +162,7 @@ impl Bridge {
                             let data = match map.get("data") {
                                 Some(data) => data,
                                 None => {
-                                    eprintln!("data-less property change: {}", name);
+                                    logln!("data-less property change: {}", name);
                                     return;
                                 }
                             };
@@ -171,16 +171,16 @@ impl Bridge {
                                 "volume" => self.observed.volume = data.as_f64().unwrap() as u8,
                                 "duration" => self.observed.duration = data.as_f64().unwrap(),
                                 "time-pos" => self.observed.time_pos = data.as_f64().unwrap(),
-                                name => eprintln!("Unhandled property: {} = {}", name, data),
+                                name => logln!("Unhandled property: {} = {}", name, data),
                             }
                         }
-                        _ => eprintln!("Unhandled event: {}", event),
+                        _ => logln!("Unhandled event: {}", event),
                     }
                 }
             }
             Err(e) => {
-                eprintln!("Serialize error: {}", e);
-                eprintln!("Unserialized event: {}", line);
+                logln!("Serialize error: {}", e);
+                logln!("Unserialized event: {}", line);
             }
         }
     }

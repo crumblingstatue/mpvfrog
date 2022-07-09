@@ -10,6 +10,8 @@ use directories::ProjectDirs;
 use enum_kinds::EnumKind;
 use serde::{Deserialize, Serialize};
 
+use crate::app::logln;
+
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub music_folder: Option<PathBuf>,
@@ -49,7 +51,7 @@ impl Config {
         match std::fs::read_to_string(Self::path()) {
             Ok(string) => serde_json::from_str(&string).unwrap(),
             Err(e) => {
-                eprintln!("{}", e);
+                logln!("{}", e);
                 Default::default()
             }
         }

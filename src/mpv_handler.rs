@@ -5,20 +5,27 @@ use std::{
     ffi::{OsStr, OsString},
     io::Write as _,
     os::unix::prelude::AsRawFd,
-    process::{Child, Command, Stdio},
+    process::{Child, Stdio},
 };
 
-use crate::{config::ArgType, ipc, warn_dialog};
+use crate::{
+    app::{logln, LOG},
+    config::ArgType,
+    ipc, warn_dialog,
+};
 
 struct MpvHandlerInner {
     child: Child,
     pty: Pty,
+    demuxer_pty: Pty,
     ipc_bridge: ipc::Bridge,
 }
 
 pub struct MpvHandler {
-    ansi_term: Term,
+    mpv_term: Term,
+    pub demux_term: Term,
     inner: Option<MpvHandlerInner>,
+    read_demuxer: bool,
 }
 
 pub struct CustomDemuxer {
@@ -43,19 +50,23 @@ impl MpvHandler {
         mpv_args: impl IntoIterator<Item = &'a OsStr>,
         custom_demuxer: Option<CustomDemuxer>,
     ) {
+        LOG.lock().unwrap().clear();
+        self.read_demuxer = true;
         self.stop_music();
-        self.ansi_term.reset();
+        self.mpv_term.reset();
+        self.demux_term.reset();
         let pty = Pty::new().unwrap();
         let pts = pty.pts().unwrap();
         let mut mpv_command = PtyCommand::new(mpv_cmd);
+        let demuxer_pty = Pty::new().unwrap();
+        let demux_pts = demuxer_pty.pts().unwrap();
         mpv_command.args(mpv_args);
         if let Some(demuxer) = custom_demuxer {
-            eprintln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
-            let mut demux_child = match Command::new(demuxer.cmd)
+            logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
+            let mut demux_child = match PtyCommand::new(demuxer.cmd)
                 .args(demuxer.args)
                 .stdout(Stdio::piped())
-                .stdin(Stdio::null())
-                .spawn()
+                .spawn(&demux_pts)
             {
                 Ok(child) => child,
                 Err(e) => {
@@ -81,6 +92,7 @@ impl MpvHandler {
         self.inner = Some(MpvHandlerInner {
             child,
             pty,
+            demuxer_pty,
             ipc_bridge,
         });
     }
@@ -90,9 +102,6 @@ impl MpvHandler {
         inner.child.wait().unwrap();
         self.inner = None;
     }
-    fn update_child_out(&mut self, buf: &[u8]) {
-        self.ansi_term.feed(buf)
-    }
     pub fn update(&mut self) {
         let Some(inner) = &mut self.inner else { return; };
         if let Err(e) = inner.ipc_bridge.handle_responses() {
@@ -100,16 +109,31 @@ impl MpvHandler {
         }
         let mut buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
+        let mut demux_nbr = NonBlockingReader::from_fd(&mut inner.demuxer_pty).unwrap();
         match nbr.read_available(&mut buf) {
             Ok(n_read) => {
                 if n_read != 0 {
-                    self.update_child_out(&buf);
+                    self.mpv_term.feed(&buf);
                 }
             }
             Err(e) => {
-                eprintln!("error reading from mpv process: {}", e);
+                logln!("error reading from mpv process: {}", e);
                 // Better terminate playback
                 self.stop_music();
+                return;
+            }
+        }
+        if self.read_demuxer {
+            match demux_nbr.read_available(&mut buf) {
+                Ok(n_read) => {
+                    if n_read != 0 {
+                        self.demux_term.feed(&buf);
+                    }
+                }
+                Err(e) => {
+                    logln!("Demuxer pty read error: {}", e);
+                    self.read_demuxer = false;
+                }
             }
         }
     }
@@ -136,7 +160,7 @@ impl MpvHandler {
         }
     }
     pub fn mpv_output(&self) -> String {
-        self.ansi_term.contents_to_string()
+        self.mpv_term.contents_to_string()
     }
     pub fn volume(&self) -> Option<u8> {
         self.inner
@@ -187,8 +211,10 @@ pub struct TimeInfo {
 impl Default for MpvHandler {
     fn default() -> Self {
         Self {
-            ansi_term: Term::new(100),
+            mpv_term: Term::new(100),
+            demux_term: Term::new(100),
             inner: None,
+            read_demuxer: true,
         }
     }
 }
