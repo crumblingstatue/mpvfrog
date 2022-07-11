@@ -139,6 +139,7 @@ impl Ui {
                 ui.label("🔈");
                 match app.mpv_handler.volume() {
                     Some(mut vol) => {
+                        ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut vol, 0..=100));
                         if re.changed() {
                             app.mpv_handler.set_volume(vol);
@@ -153,6 +154,7 @@ impl Ui {
                 ui.label("⏩");
                 match app.mpv_handler.speed() {
                     Some(mut speed) => {
+                        ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0));
                         if re.changed() {
                             app.mpv_handler.set_speed(speed);
