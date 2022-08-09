@@ -140,13 +140,13 @@ impl Ui {
                 match app.mpv_handler.volume() {
                     Some(mut vol) => {
                         ui.style_mut().spacing.slider_width = 160.0;
-                        let re = ui.add(egui::Slider::new(&mut vol, 0..=100));
+                        let re = ui.add(egui::Slider::new(&mut vol, 0..=150));
                         if re.changed() {
                             app.mpv_handler.set_volume(vol);
                         }
                     }
                     None => {
-                        ui.add(egui::Slider::new(&mut app.cfg.volume, 0..=100));
+                        ui.add(egui::Slider::new(&mut app.cfg.volume, 0..=150));
                     }
                 }
             });
