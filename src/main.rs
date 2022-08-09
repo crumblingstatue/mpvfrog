@@ -16,5 +16,5 @@ fn warn_dialog(title: &str, desc: &str) {
 }
 
 fn main() {
-    runner::run(700, 500, "mpv-egui-musicplayer");
+    runner::run(740, 500, "mpv-egui-musicplayer");
 }
