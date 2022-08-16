@@ -213,7 +213,7 @@ impl Ui {
         ScrollArea::vertical()
             .auto_shrink([false; 2])
             .id_source("out_scroll")
-            .stick_to_bottom()
+            .stick_to_bottom(true)
             .show(ui, |ui| {
                 let out = match self.output_source {
                     OutputSource::Mpv => app.mpv_handler.mpv_output(),
