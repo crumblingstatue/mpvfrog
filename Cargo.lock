@@ -20,10 +20,11 @@ checksum = "a13739d7177fbd22bb0ed28badfff9f372f8bef46c863db4e1c6248f6b223b6e"
 
 [[package]]
 name = "ahash"
-version = "0.7.6"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
+checksum = "57e6e951cfbb2db8de1828d49073a113a29fd7117b1596caa781a258c7e38d72"
 dependencies = [
+ "cfg-if",
  "getrandom",
  "once_cell",
  "version_check",
@@ -213,8 +214,9 @@ checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 
 [[package]]
 name = "egui"
-version = "0.18.1"
-source = "git+https://github.com/emilk/egui.git#9c58f12a6ca8202185ed391bd1aec0443db04467"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc9fcd393c3daaaf5909008a1d948319d538b79c51871e4df0993260260a94e4"
 dependencies = [
  "ahash",
  "epaint",
@@ -223,8 +225,9 @@ dependencies = [
 
 [[package]]
 name = "egui-sfml"
-version = "0.1.0"
-source = "git+https://github.com/crumblingstatue/egui-sfml.git#e3a941b6d2cf1d61b81317e18fbc9a6dafd5c2e5"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "898debd0065408c11bd9b4dd7ba9b1e10600eec7dd8a4e0f967d1d2a016009ce"
 dependencies = [
  "egui",
  "glu-sys",
@@ -233,8 +236,9 @@ dependencies = [
 
 [[package]]
 name = "emath"
-version = "0.18.0"
-source = "git+https://github.com/emilk/egui.git#9c58f12a6ca8202185ed391bd1aec0443db04467"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9542a40106fdba943a055f418d1746a050e1a903a049b030c2b097d4686a33cf"
 
 [[package]]
 name = "enum-kinds"
@@ -249,8 +253,9 @@ dependencies = [
 
 [[package]]
 name = "epaint"
-version = "0.18.1"
-source = "git+https://github.com/emilk/egui.git#9c58f12a6ca8202185ed391bd1aec0443db04467"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ba04741be7f6602b1a1b28f1082cce45948a7032961c52814f8946b28493300"
 dependencies = [
  "ab_glyph",
  "ahash",
@@ -757,8 +762,9 @@ dependencies = [
 
 [[package]]
 name = "sfml"
-version = "0.17.0"
-source = "git+https://github.com/jeremyletang/rust-sfml.git#f2824f48ed6c85a0c8435f958d6b0c271762d830"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b0a4b7b48559fb37c1a52e3a3fae4dbeb54155fe066f740a6e4d24a764eead7"
 dependencies = [
  "bitflags",
  "cc",
