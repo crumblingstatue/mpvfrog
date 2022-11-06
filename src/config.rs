@@ -76,6 +76,8 @@ pub struct CustomPlayerEntry {
     pub predicate: Predicate,
     pub reader_cmd: Command,
     pub extra_mpv_args: Vec<String>,
+    #[serde(default)]
+    pub name: String,
 }
 
 impl Default for CustomPlayerEntry {
@@ -84,6 +86,7 @@ impl Default for CustomPlayerEntry {
             predicate: Predicate::HasExt(String::new()),
             reader_cmd: Default::default(),
             extra_mpv_args: Default::default(),
+            name: Default::default(),
         }
     }
 }

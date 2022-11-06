@@ -71,7 +71,7 @@ impl App {
 
     pub fn save(&mut self) {
         let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
-        std::fs::write(Config::path(), &vec).unwrap();
+        std::fs::write(Config::path(), vec).unwrap();
     }
 
     fn handle_egui_input(&mut self, ctx: &Context) {
