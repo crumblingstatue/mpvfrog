@@ -43,7 +43,12 @@ impl CustomDemuxersWindow {
     }
     fn window_ui(&mut self, app: &mut Core, ui: &mut Ui) {
         let mut idx = 0;
-        let mut swap_op = None;
+        enum Op {
+            None,
+            Swap(usize, usize),
+            Clone(usize),
+        }
+        let mut op = Op::None;
         ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
             let len = app.cfg.custom_players.len();
             app.cfg.custom_players.retain_mut(|custom_player| {
@@ -64,18 +69,26 @@ impl CustomDemuxersWindow {
                         retain = false;
                     }
                     if ui.button("⏶").clicked() && idx > 0 {
-                        swap_op = Some((idx, idx - 1));
+                        op = Op::Swap(idx, idx - 1);
                     }
                     if ui.button("⏷").clicked() && idx < len - 1 {
-                        swap_op = Some((idx, idx + 1));
+                        op = Op::Swap(idx, idx + 1);
+                    }
+                    if ui.button("🗐").on_hover_text("Clone").clicked() {
+                        op = Op::Clone(idx);
                     }
                     idx += 1;
                 });
                 retain
             });
         });
-        if let Some((a, b)) = swap_op {
-            app.cfg.custom_players.swap(a, b);
+        match op {
+            Op::None => {}
+            Op::Swap(a, b) => app.cfg.custom_players.swap(a, b),
+            Op::Clone(idx) => app
+                .cfg
+                .custom_players
+                .insert(idx, app.cfg.custom_players[idx].clone()),
         }
         ui.separator();
         if ui.button("add new demuxer").clicked() {

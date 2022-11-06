@@ -64,14 +64,14 @@ impl Config {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, EnumKind)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, EnumKind, Clone)]
 #[enum_kind(PredicateKind)]
 pub enum Predicate {
     BeginsWith(String),
     HasExt(String),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CustomPlayerEntry {
     pub predicate: Predicate,
     pub reader_cmd: Command,
@@ -103,7 +103,7 @@ enum CommandParseErrorKind {
     ExpectedButEnd { what: &'static str },
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Command {
     pub name: String,
     pub args: Vec<ArgType>,
@@ -142,7 +142,7 @@ impl Command {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ArgType {
     Custom(String),
     SongPath,
