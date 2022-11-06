@@ -43,7 +43,9 @@ impl CustomDemuxersWindow {
     }
     fn window_ui(&mut self, app: &mut Core, ui: &mut Ui) {
         let mut idx = 0;
+        let mut swap_op = None;
         ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
+            let len = app.cfg.custom_players.len();
             app.cfg.custom_players.retain_mut(|custom_player| {
                 let mut retain = true;
                 ui.horizontal(|ui| {
@@ -61,11 +63,20 @@ impl CustomDemuxersWindow {
                     if ui.button("🗑").clicked() {
                         retain = false;
                     }
+                    if ui.button("⏶").clicked() && idx > 0 {
+                        swap_op = Some((idx, idx - 1));
+                    }
+                    if ui.button("⏷").clicked() && idx < len - 1 {
+                        swap_op = Some((idx, idx + 1));
+                    }
                     idx += 1;
                 });
                 retain
             });
         });
+        if let Some((a, b)) = swap_op {
+            app.cfg.custom_players.swap(a, b);
+        }
         ui.separator();
         if ui.button("add new demuxer").clicked() {
             app.cfg.custom_players.push(CustomPlayerEntry::default());
