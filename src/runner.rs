@@ -49,9 +49,11 @@ pub fn run(w: u32, h: u32, title: &str) {
                     _ => {}
                 }
             }
-            sf_egui.do_frame(|ctx| {
-                app.update(ctx, event_flags.pause_resume_clicked);
-            });
+            sf_egui
+                .do_frame(|ctx| {
+                    app.update(ctx, event_flags.pause_resume_clicked);
+                })
+                .unwrap();
             sf_egui.draw(&mut rw, None);
             rw.display();
         } else {
