@@ -115,7 +115,7 @@ impl Command {
         let mut buf = String::new();
         write!(&mut buf, "{} ", self.name)?;
         for arg in &self.args {
-            write!(&mut buf, "{} ", arg)?;
+            write!(&mut buf, "{arg} ")?;
         }
         Ok(buf)
     }
@@ -151,7 +151,7 @@ pub enum ArgType {
 impl Display for ArgType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgType::Custom(string) => write!(f, "{}", string),
+            ArgType::Custom(string) => write!(f, "{string}"),
             ArgType::SongPath => write!(f, "{{}}"),
         }
     }

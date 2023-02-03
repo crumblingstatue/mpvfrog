@@ -126,7 +126,7 @@ impl Bridge {
         // Commands need to be terminated with newline
         serialized.push(b'\n');
         if let Err(e) = self.ipc_stream.write_all(&serialized) {
-            warn_dialog("IPC error", &format!("Failed to send IPC message: {}", e));
+            warn_dialog("IPC error", &format!("Failed to send IPC message: {e}"));
         }
     }
     pub fn handle_responses(&mut self) -> anyhow::Result<()> {

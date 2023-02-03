@@ -70,7 +70,7 @@ impl MpvHandler {
             {
                 Ok(child) => child,
                 Err(e) => {
-                    warn_dialog("Play error", &format!("Failed to spawn demuxer: {}", e));
+                    warn_dialog("Play error", &format!("Failed to spawn demuxer: {e}"));
                     return;
                 }
             };
@@ -84,7 +84,7 @@ impl MpvHandler {
             Err(e) => {
                 warn_dialog(
                     "Play error",
-                    &format!("Failed to establish connection with mpv: {}", e),
+                    &format!("Failed to establish connection with mpv: {e}"),
                 );
                 return;
             }
@@ -105,7 +105,7 @@ impl MpvHandler {
     pub fn update(&mut self) {
         let Some(inner) = &mut self.inner else { return; };
         if let Err(e) = inner.ipc_bridge.handle_responses() {
-            warn_dialog("IPC error", &format!("Mpv IPC error: {}", e));
+            warn_dialog("IPC error", &format!("Mpv IPC error: {e}"));
         }
         let mut buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
