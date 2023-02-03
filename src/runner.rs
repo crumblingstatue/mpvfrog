@@ -39,7 +39,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                         win_visible = false;
                     }
                     Event::Resized { width, height } => {
-                        rw.set_view(&View::from_rect(&FloatRect::new(
+                        rw.set_view(&View::from_rect(FloatRect::new(
                             0.,
                             0.,
                             width as f32,
