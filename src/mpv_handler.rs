@@ -8,11 +8,7 @@ use std::{
     process::{Child, Stdio},
 };
 
-use crate::{
-    app::{logln, LOG},
-    config::ArgType,
-    ipc, warn_dialog,
-};
+use crate::{app::LOG, config::ArgType, ipc, logln, warn_dialog};
 
 struct MpvHandlerInner {
     child: Child,

@@ -3,8 +3,8 @@ use std::{ffi::OsStr, path::PathBuf};
 use walkdir::WalkDir;
 
 use crate::{
-    app::logln,
     config::Config,
+    logln,
     mpv_handler::{CustomDemuxer, MpvHandler},
 };
 

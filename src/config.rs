@@ -10,7 +10,7 @@ use directories::ProjectDirs;
 use enum_kinds::EnumKind;
 use serde::{Deserialize, Serialize};
 
-use crate::app::logln;
+use crate::logln;
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {

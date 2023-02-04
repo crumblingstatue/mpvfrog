@@ -14,11 +14,14 @@ pub use playlist_behavior::PlaylistBehavior;
 
 pub static LOG: Mutex<String> = Mutex::new(String::new());
 
-pub macro logln($($arg:tt)*) {{
-    use std::fmt::Write;
-    let mut log = LOG.lock().unwrap();
-    writeln!(log, $($arg)*).unwrap();
-}}
+#[macro_export]
+macro_rules! logln {
+    ($($arg:tt)*) => {{
+        use std::fmt::Write;
+        let mut log = $crate::app::LOG.lock().unwrap();
+        writeln!(log, $($arg)*).unwrap();
+    }}
+}
 
 pub struct App {
     core: Core,

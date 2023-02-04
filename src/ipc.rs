@@ -6,7 +6,7 @@ use std::{
 use interprocess::local_socket::LocalSocketStream;
 use serde::Serialize;
 
-use crate::{app::logln, warn_dialog};
+use crate::{logln, warn_dialog};
 
 pub struct Bridge {
     ipc_stream: LocalSocketStream,
