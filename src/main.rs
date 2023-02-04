@@ -1,5 +1,3 @@
-#![feature(associated_type_defaults)]
-
 mod app;
 mod bool_ext;
 mod config;

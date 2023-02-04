@@ -23,7 +23,7 @@ pub struct Properties {
 }
 
 trait Command {
-    type R: Serialize = [serde_json::Value; 3];
+    type R: Serialize;
     fn json_values(&self) -> Self::R;
     fn to_command_json(&self) -> CommandJson<Self::R> {
         CommandJson {
@@ -68,6 +68,7 @@ set_property_impl!(SetPaused, "pause", bool);
 struct ObserveProperty<'a>(&'a str);
 
 impl<'a> Command for ObserveProperty<'a> {
+    type R = [serde_json::Value; 3];
     fn json_values(&self) -> Self::R {
         ["observe_property".into(), 1.into(), self.0.into()]
     }
