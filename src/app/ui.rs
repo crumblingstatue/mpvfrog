@@ -177,8 +177,11 @@ impl Ui {
                     FfmpegTimeFmt(info.pos),
                     FfmpegTimeFmt(info.duration)
                 ));
-                let re =
-                    ui.add(egui::Slider::new(&mut info.pos, 0.0..=info.duration).show_value(false));
+                let re = ui.add(
+                    egui::Slider::new(&mut info.pos, 0.0..=info.duration)
+                        .show_value(false)
+                        .trailing_fill(true),
+                );
                 if re.drag_released() {
                     app.seek(info.pos);
                 }

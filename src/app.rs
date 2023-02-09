@@ -78,39 +78,41 @@ impl App {
     }
 
     fn handle_egui_input(&mut self, ctx: &Context) {
-        let input = ctx.input();
-        if input.key_pressed(Key::Space) && !self.core.mpv_handler.active() {
-            self.core.play_selected_song();
-            return;
-        }
-        for ev in &input.raw.events {
-            match ev {
-                Event::Text(s) => match s.as_str() {
-                    " " => self.core.play_or_toggle_pause(),
-                    "<" => self.core.play_prev(),
-                    ">" => self.core.play_next(),
-                    s => {
-                        self.core.mpv_handler.input(s);
-                    }
-                },
-                Event::Key {
-                    key,
-                    pressed: true,
-                    modifiers: _,
-                } => match *key {
-                    Key::ArrowUp => self.core.mpv_handler.input("\x1b[A"),
-                    Key::ArrowDown => self.core.mpv_handler.input("\x1b[B"),
-                    Key::ArrowRight => self.core.mpv_handler.input("\x1b[C"),
-                    Key::ArrowLeft => self.core.mpv_handler.input("\x1b[D"),
-                    Key::Backspace => {
-                        self.core.cfg.speed = 1.0;
-                        self.core.mpv_handler.input("\x08");
-                    }
-                    _ => (),
-                },
-                _ => (),
+        ctx.input(|input| {
+            if input.key_pressed(Key::Space) && !self.core.mpv_handler.active() {
+                self.core.play_selected_song();
+                return;
             }
-        }
+            for ev in &input.raw.events {
+                match ev {
+                    Event::Text(s) => match s.as_str() {
+                        " " => self.core.play_or_toggle_pause(),
+                        "<" => self.core.play_prev(),
+                        ">" => self.core.play_next(),
+                        s => {
+                            self.core.mpv_handler.input(s);
+                        }
+                    },
+                    Event::Key {
+                        key,
+                        pressed: true,
+                        modifiers: _,
+                        repeat: _,
+                    } => match key {
+                        Key::ArrowUp => self.core.mpv_handler.input("\x1b[A"),
+                        Key::ArrowDown => self.core.mpv_handler.input("\x1b[B"),
+                        Key::ArrowRight => self.core.mpv_handler.input("\x1b[C"),
+                        Key::ArrowLeft => self.core.mpv_handler.input("\x1b[D"),
+                        Key::Backspace => {
+                            self.core.cfg.speed = 1.0;
+                            self.core.mpv_handler.input("\x08");
+                        }
+                        _ => (),
+                    },
+                    _ => (),
+                }
+            }
+        });
     }
 
     pub(crate) fn paused_or_stopped(&self) -> bool {
