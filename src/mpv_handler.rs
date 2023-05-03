@@ -1,14 +1,15 @@
-use ansi_term_buf::Term;
-use nonblock::NonBlockingReader;
-use pty_process::blocking::{Command as PtyCommand, Pty};
-use std::{
-    ffi::{OsStr, OsString},
-    io::Write as _,
-    os::unix::prelude::AsRawFd,
-    process::{Child, Stdio},
+use {
+    crate::{app::LOG, config::ArgType, ipc, logln, warn_dialog},
+    ansi_term_buf::Term,
+    nonblock::NonBlockingReader,
+    pty_process::blocking::{Command as PtyCommand, Pty},
+    std::{
+        ffi::{OsStr, OsString},
+        io::Write as _,
+        os::unix::prelude::AsRawFd,
+        process::{Child, Stdio},
+    },
 };
-
-use crate::{app::LOG, config::ArgType, ipc, logln, warn_dialog};
 
 struct MpvHandlerInner {
     child: Child,

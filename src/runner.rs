@@ -1,14 +1,14 @@
-use std::time::Duration;
-
-use egui_sfml::{
-    sfml::{
-        graphics::{FloatRect, RenderTarget, RenderWindow, View},
-        window::{Event, Style},
+use {
+    crate::app::{tray::AppTray, App},
+    egui_sfml::{
+        sfml::{
+            graphics::{FloatRect, RenderTarget, RenderWindow, View},
+            window::{Event, Style},
+        },
+        SfEgui,
     },
-    SfEgui,
+    std::time::Duration,
 };
-
-use crate::app::{tray::AppTray, App};
 
 pub fn run(w: u32, h: u32, title: &str) {
     let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default());

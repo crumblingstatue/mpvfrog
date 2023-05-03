@@ -1,8 +1,9 @@
-use egui_sfml::egui::{Color32, ComboBox, Context, RichText, ScrollArea, Ui, Window};
-
-use crate::{
-    app::Core,
-    config::{Command, CustomPlayerEntry, Predicate, PredicateKind},
+use {
+    crate::{
+        app::Core,
+        config::{Command, CustomPlayerEntry, Predicate, PredicateKind},
+    },
+    egui_sfml::egui::{Color32, ComboBox, Context, RichText, ScrollArea, Ui, Window},
 };
 
 #[derive(Default)]

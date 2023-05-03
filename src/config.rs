@@ -1,16 +1,15 @@
 #![allow(clippy::extra_unused_lifetimes)] // For the EnumKind derive
 
-use std::{
-    fmt::Display,
-    path::{Path, PathBuf},
+use {
+    crate::logln,
+    directories::ProjectDirs,
+    enum_kinds::EnumKind,
+    serde::{Deserialize, Serialize},
+    std::{
+        fmt::Display,
+        path::{Path, PathBuf},
+    },
 };
-
-use directories::ProjectDirs;
-
-use enum_kinds::EnumKind;
-use serde::{Deserialize, Serialize};
-
-use crate::logln;
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {

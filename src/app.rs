@@ -3,14 +3,13 @@ mod playlist_behavior;
 pub mod tray;
 mod ui;
 
-use std::sync::Mutex;
-
-use crate::{config::Config, mpv_handler::MpvHandler};
-
-use egui_sfml::egui::{self, Context, Event, Key};
-
-use self::{core::Core, tray::AppTray};
 pub use playlist_behavior::PlaylistBehavior;
+use {
+    self::{core::Core, tray::AppTray},
+    crate::{config::Config, mpv_handler::MpvHandler},
+    egui_sfml::egui::{self, Context, Event, Key},
+    std::sync::Mutex,
+};
 
 pub static LOG: Mutex<String> = Mutex::new(String::new());
 

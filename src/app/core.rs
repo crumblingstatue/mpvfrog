@@ -1,14 +1,13 @@
-use std::{ffi::OsStr, path::PathBuf};
-
-use walkdir::WalkDir;
-
-use crate::{
-    config::Config,
-    logln,
-    mpv_handler::{CustomDemuxer, MpvHandler},
+use {
+    super::PlaylistBehavior,
+    crate::{
+        config::Config,
+        logln,
+        mpv_handler::{CustomDemuxer, MpvHandler},
+    },
+    std::{ffi::OsStr, path::PathBuf},
+    walkdir::WalkDir,
 };
-
-use super::PlaylistBehavior;
 
 pub struct Core {
     pub(super) cfg: Config,

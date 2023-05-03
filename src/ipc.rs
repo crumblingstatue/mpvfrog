@@ -1,12 +1,12 @@
-use std::{
-    collections::HashMap,
-    io::{Read, Write},
+use {
+    crate::{logln, warn_dialog},
+    interprocess::local_socket::LocalSocketStream,
+    serde::Serialize,
+    std::{
+        collections::HashMap,
+        io::{Read, Write},
+    },
 };
-
-use interprocess::local_socket::LocalSocketStream;
-use serde::Serialize;
-
-use crate::{logln, warn_dialog};
 
 pub struct Bridge {
     ipc_stream: LocalSocketStream,

@@ -1,15 +1,15 @@
 mod custom_demuxers_window;
 
-use std::fmt;
-
-use egui_sfml::egui::{self, Align, ComboBox, Context};
-
-use egui_sfml::egui::{Button, CentralPanel, ScrollArea, TextEdit, TextStyle, TopBottomPanel};
-
-use self::custom_demuxers_window::CustomDemuxersWindow;
-
-use super::{Core, PlaylistBehavior, LOG};
-use crate::bool_ext::BoolExt;
+use {
+    self::custom_demuxers_window::CustomDemuxersWindow,
+    super::{Core, PlaylistBehavior, LOG},
+    crate::bool_ext::BoolExt,
+    egui_sfml::egui::{
+        self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
+        TopBottomPanel,
+    },
+    std::fmt,
+};
 
 #[derive(Default)]
 struct Windows {
