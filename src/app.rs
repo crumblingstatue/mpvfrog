@@ -119,7 +119,9 @@ impl App {
     }
 
     fn currently_playing_name(&self) -> Option<&str> {
-        self.core.playlist[self.core.selected_song]
+        self.core
+            .playlist
+            .get(self.core.selected_song)?
             .file_name()
             .and_then(|name| name.to_str())
     }
