@@ -1,5 +1,3 @@
-#![allow(clippy::extra_unused_lifetimes)] // For the EnumKind derive
-
 use {
     crate::logln,
     directories::ProjectDirs,
