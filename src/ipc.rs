@@ -3,14 +3,19 @@ use {
     interprocess::local_socket::LocalSocketStream,
     serde::Serialize,
     std::{
-        collections::HashMap,
+        collections::{HashMap, VecDeque},
         io::{Read, Write},
     },
 };
 
+pub enum IpcEvent {
+    EndFile,
+}
+
 pub struct Bridge {
     ipc_stream: LocalSocketStream,
     pub observed: Properties,
+    pub event_queue: VecDeque<IpcEvent>,
 }
 
 #[derive(Default)]
@@ -111,6 +116,7 @@ impl Bridge {
         let mut this = Self {
             ipc_stream,
             observed: Default::default(),
+            event_queue: Default::default(),
         };
         this.write_command(ObserveProperty("speed"));
         this.write_command(ObserveProperty("volume"));
@@ -174,6 +180,9 @@ impl Bridge {
                                 "time-pos" => self.observed.time_pos = data.as_f64().unwrap(),
                                 name => logln!("Unhandled property: {} = {}", name, data),
                             }
+                        }
+                        "end-file" => {
+                            self.event_queue.push_back(IpcEvent::EndFile);
                         }
                         _ => logln!("Unhandled event: {}", event),
                     }

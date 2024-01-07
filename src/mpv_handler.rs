@@ -1,5 +1,10 @@
 use {
-    crate::{app::LOG, config::ArgType, ipc, logln, warn_dialog},
+    crate::{
+        app::LOG,
+        config::ArgType,
+        ipc::{self, IpcEvent},
+        logln, warn_dialog,
+    },
     ansi_term_buf::Term,
     nonblock::NonBlockingReader,
     pty_process::blocking::{Command as PtyCommand, Pty},
@@ -198,6 +203,13 @@ impl MpvHandler {
     pub(crate) fn set_video(&mut self, show: bool) {
         if let Some(inner) = &mut self.inner {
             inner.ipc_bridge.set_video(show);
+        }
+    }
+
+    pub(crate) fn poll_event(&mut self) -> Option<IpcEvent> {
+        match &mut self.inner {
+            Some(inner) => inner.ipc_bridge.event_queue.pop_front(),
+            None => None,
         }
     }
 }

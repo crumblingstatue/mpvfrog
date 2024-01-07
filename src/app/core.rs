@@ -173,4 +173,12 @@ impl Core {
     pub fn set_video(&mut self, show: bool) {
         self.mpv_handler.set_video(show);
     }
+
+    pub(crate) fn handle_event(&mut self, event: crate::ipc::IpcEvent) {
+        match event {
+            crate::ipc::IpcEvent::EndFile => {
+                self.save_mpv_values_to_cfg();
+            }
+        }
+    }
 }

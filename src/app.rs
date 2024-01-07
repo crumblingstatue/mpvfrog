@@ -56,6 +56,9 @@ impl App {
         if !ctx.wants_keyboard_input() {
             self.handle_egui_input(ctx);
         }
+        while let Some(event) = self.core.mpv_handler.poll_event() {
+            self.core.handle_event(event);
+        }
         self.core.mpv_handler.update();
         self.core.handle_mpv_not_active();
         // Do the ui
