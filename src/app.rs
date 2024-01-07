@@ -56,13 +56,17 @@ impl App {
         if !ctx.wants_keyboard_input() {
             self.handle_egui_input(ctx);
         }
-        while let Some(event) = self.core.mpv_handler.poll_event() {
-            self.core.handle_event(event);
-        }
+        self.handle_mpv_events();
         self.core.mpv_handler.update();
         self.core.handle_mpv_not_active();
         // Do the ui
         self.ui.update(&mut self.core, ctx);
+    }
+
+    fn handle_mpv_events(&mut self) {
+        while let Some(event) = self.core.mpv_handler.poll_event() {
+            self.core.handle_event(event);
+        }
     }
 
     /// Update when in the background (window not open)
@@ -70,6 +74,7 @@ impl App {
         if toggle_pause {
             self.core.play_or_toggle_pause();
         }
+        self.handle_mpv_events();
         self.core.mpv_handler.update();
         self.core.handle_mpv_not_active();
     }
