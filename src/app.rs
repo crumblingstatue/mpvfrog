@@ -105,6 +105,7 @@ impl App {
                         pressed: true,
                         modifiers: _,
                         repeat: _,
+                        physical_key: _,
                     } => match key {
                         Key::ArrowUp => self.core.mpv_handler.input("\x1b[A"),
                         Key::ArrowDown => self.core.mpv_handler.input("\x1b[B"),
