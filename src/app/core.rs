@@ -93,7 +93,14 @@ impl Core {
             }
             None => None,
         };
-        self.mpv_handler.play_music("mpv", mpv_args, demuxer)
+        if let Err(e) = self.mpv_handler.play_music("mpv", mpv_args, demuxer) {
+            rfd::MessageDialog::new()
+                .set_level(rfd::MessageLevel::Error)
+                .set_title("Play error")
+                .set_description(e.to_string())
+                .show();
+            self.playlist_behavior = PlaylistBehavior::Stop;
+        }
     }
     pub(super) fn play_prev(&mut self) {
         if self.selected_song == 0 {

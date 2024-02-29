@@ -6,6 +6,7 @@ use {
         logln, warn_dialog,
     },
     ansi_term_buf::Term,
+    anyhow::Context,
     nonblock::NonBlockingReader,
     pty_process::blocking::{Command as PtyCommand, Pty},
     std::{
@@ -51,7 +52,7 @@ impl MpvHandler {
         mpv_cmd: &str,
         mpv_args: impl IntoIterator<Item = &'a OsStr>,
         custom_demuxer: Option<CustomDemuxer>,
-    ) {
+    ) -> anyhow::Result<()> {
         LOG.lock().unwrap().clear();
         self.read_demuxer = true;
         self.stop_music();
@@ -65,38 +66,25 @@ impl MpvHandler {
         mpv_command.args(mpv_args);
         if let Some(demuxer) = custom_demuxer {
             logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
-            let mut demux_child = match PtyCommand::new(demuxer.cmd)
+            let mut demux_child = PtyCommand::new(demuxer.cmd)
                 .args(demuxer.args)
                 .stdout(Stdio::piped())
                 .spawn(&demux_pts)
-            {
-                Ok(child) => child,
-                Err(e) => {
-                    warn_dialog("Play error", &format!("Failed to spawn demuxer: {e}"));
-                    return;
-                }
-            };
+                .context("Failed to spawn demuxer")?;
             mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
         let child = mpv_command.spawn(&pts).unwrap();
         // Wait for socket (todo: Find better solution)
         std::thread::sleep(std::time::Duration::from_millis(100));
-        let ipc_bridge = match ipc::Bridge::connect() {
-            Ok(bridge) => bridge,
-            Err(e) => {
-                warn_dialog(
-                    "Play error",
-                    &format!("Failed to establish connection with mpv: {e}"),
-                );
-                return;
-            }
-        };
+        let ipc_bridge =
+            ipc::Bridge::connect().context("Failed to establish connection with mpv")?;
         self.inner = Some(MpvHandlerInner {
             child,
             pty,
             demuxer_pty,
             ipc_bridge,
         });
+        Ok(())
     }
     pub fn stop_music(&mut self) {
         let Some(inner) = &mut self.inner else { return };
