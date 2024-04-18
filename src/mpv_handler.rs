@@ -12,7 +12,6 @@ use {
     std::{
         ffi::{OsStr, OsString},
         io::Write as _,
-        os::unix::prelude::AsRawFd,
         process::{Child, Stdio},
     },
 };
@@ -34,16 +33,6 @@ pub struct MpvHandler {
 pub struct CustomDemuxer {
     cmd: String,
     args: Vec<OsString>,
-}
-
-struct RawFdWrap {
-    fd: std::os::unix::io::RawFd,
-}
-
-impl AsRawFd for RawFdWrap {
-    fn as_raw_fd(&self) -> std::os::unix::prelude::RawFd {
-        self.fd
-    }
 }
 
 impl MpvHandler {
