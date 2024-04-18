@@ -63,10 +63,17 @@ impl MpvHandler {
             mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
         let child = mpv_command.spawn(&pts).unwrap();
-        // Wait for socket (todo: Find better solution)
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        let ipc_bridge =
-            ipc::Bridge::connect().context("Failed to establish connection with mpv")?;
+        let attempts = 5;
+        let ipc_bridge = 'connect: {
+            for i in 0..attempts {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                match ipc::Bridge::connect() {
+                    Ok(bridge) => break 'connect bridge,
+                    Err(e) => logln!("mpv connection attempt #{i}: {e}"),
+                }
+            }
+            anyhow::bail!("Failed connect to mpv");
+        };
         self.inner = Some(MpvHandlerInner {
             child,
             pty,
