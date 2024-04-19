@@ -125,7 +125,12 @@ impl Bridge {
         Ok(this)
     }
     pub fn toggle_pause(&mut self) {
-        self.write_command(SetPaused(!self.observed.paused));
+        // We assume here that the pause command will succeed.
+        //
+        // Yeah, I don't know what else to do here, because mpv doesn't seem
+        // to fire a pause event anymore when it gets paused.
+        self.observed.paused ^= true;
+        self.write_command(SetPaused(self.observed.paused));
     }
     fn write_command<C: Command>(&mut self, command: C) {
         let command_json = command.to_command_json();
