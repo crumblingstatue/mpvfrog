@@ -84,7 +84,7 @@ pub fn run(w: u32, h: u32, title: &str) {
             let sf_egui = SfEgui::new(&rw);
             ctx_menu_win = Some(CtxMenuWin { rw, sf_egui });
         }
-        app.write_more_info();
+        app.update_tooltip();
         if win_visible {
             while let Some(event) = rw.poll_event() {
                 sf_egui.add_event(&event);

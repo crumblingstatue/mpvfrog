@@ -11,7 +11,7 @@ use {
     },
     crate::{config::Config, mpv_handler::MpvHandler},
     egui_sfml::egui::{self, Context, Event, Key},
-    std::sync::Mutex,
+    std::{sync::Mutex, time::Instant},
     zbus::names::BusName,
 };
 
@@ -30,6 +30,7 @@ pub struct App {
     pub core: Core,
     ui: ui::Ui,
     pub tray_handle: AppTray,
+    last_tooltip_update: Instant,
 }
 
 impl App {
@@ -50,6 +51,7 @@ impl App {
             ui: Default::default(),
             core: state,
             tray_handle: AppTray::establish().unwrap(),
+            last_tooltip_update: Instant::now(),
         }
     }
 
@@ -133,7 +135,13 @@ impl App {
             .and_then(|name| name.to_str())
     }
 
-    pub(crate) fn write_more_info(&mut self) {
+    pub(crate) fn update_tooltip(&mut self) {
+        // Don't spam DBus with updates every frame
+        if self.last_tooltip_update.elapsed().as_secs() >= 1 {
+            self.last_tooltip_update = Instant::now();
+        } else {
+            return;
+        }
         let mut buf = String::new();
         if let Some(currently_playing) = self.currently_playing_name() {
             buf.push_str(currently_playing);
