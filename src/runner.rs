@@ -105,7 +105,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                 }
             }
             sf_egui
-                .do_frame(|ctx| {
+                .do_frame(&mut rw, |ctx| {
                     app.update(ctx);
                 })
                 .unwrap();
@@ -202,7 +202,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     if quit {
         msg = Some(TrayUpdateMsg::QuitApp);
     }
-    win.sf_egui.end_frame().unwrap();
+    win.sf_egui.end_frame(&mut win.rw).unwrap();
     win.sf_egui.draw(&mut win.rw, None);
     win.rw.display();
     msg

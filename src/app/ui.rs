@@ -182,7 +182,7 @@ impl Ui {
                         .show_value(false)
                         .trailing_fill(true),
                 );
-                if re.drag_released() {
+                if re.drag_stopped() {
                     app.seek(info.pos);
                 }
             }
