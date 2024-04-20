@@ -3,6 +3,7 @@ mod bool_ext;
 mod config;
 mod ipc;
 mod mpv_handler;
+mod rect_math;
 mod runner;
 
 fn warn_dialog(title: &str, desc: &str) {

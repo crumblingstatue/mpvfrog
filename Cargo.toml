@@ -15,11 +15,13 @@ rfd = "0.12.1"
 walkdir = "2.4.0"
 nonblock = "0.2.0"
 ansi_term_buf = { git = "https://github.com/crumblingstatue/ansi_term_buf.git" }
-ksni = { git = "https://github.com/iovxw/ksni.git" }
 thiserror = "1.0.56"
 enum-kinds = "0.5.1"
 interprocess = { version = "1.2.1", default-features = false }
 anyhow = "1.0.79"
+zbus = "4.1.2"
+crossbeam-channel = "0.5.12"
+x11 = {version = "2.21.0", features = ["xlib"]}
 
 [profile.dev.package."*"]
 opt-level = 2

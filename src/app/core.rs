@@ -10,10 +10,10 @@ use {
 };
 
 pub struct Core {
-    pub(super) cfg: Config,
+    pub cfg: Config,
     pub(super) playlist: Vec<PathBuf>,
     pub(super) selected_song: usize,
-    pub(super) mpv_handler: MpvHandler,
+    pub mpv_handler: MpvHandler,
     pub(super) playlist_behavior: PlaylistBehavior,
     /// This is `true` when the user has initiated a stop, rather than just mpv exiting
     pub(super) user_stopped: bool,
@@ -102,7 +102,7 @@ impl Core {
             self.playlist_behavior = PlaylistBehavior::Stop;
         }
     }
-    pub(super) fn play_prev(&mut self) {
+    pub fn play_prev(&mut self) {
         if self.selected_song == 0 {
             self.selected_song = self.playlist.len() - 1;
         } else {
@@ -112,7 +112,7 @@ impl Core {
         self.song_change = true;
     }
 
-    pub(super) fn play_next(&mut self) {
+    pub fn play_next(&mut self) {
         self.selected_song += 1;
         if self.selected_song >= self.playlist.len() {
             self.selected_song = 0;
@@ -121,7 +121,7 @@ impl Core {
         self.song_change = true;
     }
 
-    pub(super) fn stop_music(&mut self) {
+    pub fn stop_music(&mut self) {
         self.save_mpv_values_to_cfg();
         self.mpv_handler.stop_music();
         self.user_stopped = true;

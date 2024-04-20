@@ -5,10 +5,14 @@ mod ui;
 
 pub use playlist_behavior::PlaylistBehavior;
 use {
-    self::{core::Core, tray::AppTray},
+    self::{
+        core::Core,
+        tray::{AppToTrayMsg, AppTray},
+    },
     crate::{config::Config, mpv_handler::MpvHandler},
     egui_sfml::egui::{self, Context, Event, Key},
     std::sync::Mutex,
+    zbus::names::BusName,
 };
 
 pub static LOG: Mutex<String> = Mutex::new(String::new());
@@ -23,9 +27,9 @@ macro_rules! logln {
 }
 
 pub struct App {
-    core: Core,
+    pub core: Core,
     ui: ui::Ui,
-    pub tray_handle: ksni::Handle<AppTray>,
+    pub tray_handle: AppTray,
 }
 
 impl App {
@@ -45,14 +49,11 @@ impl App {
         App {
             ui: Default::default(),
             core: state,
-            tray_handle: AppTray::spawn(),
+            tray_handle: AppTray::establish().unwrap(),
         }
     }
 
-    pub fn update(&mut self, ctx: &Context, toggle_pause: bool) {
-        if toggle_pause {
-            self.core.play_or_toggle_pause();
-        }
+    pub fn update(&mut self, ctx: &Context) {
         if !ctx.wants_keyboard_input() {
             self.handle_egui_input(ctx);
         }
@@ -70,10 +71,7 @@ impl App {
     }
 
     /// Update when in the background (window not open)
-    pub fn bg_update(&mut self, toggle_pause: bool) {
-        if toggle_pause {
-            self.core.play_or_toggle_pause();
-        }
+    pub fn bg_update(&mut self) {
         self.handle_mpv_events();
         self.core.mpv_handler.update();
         self.core.handle_mpv_not_active();
@@ -127,7 +125,7 @@ impl App {
         !self.core.mpv_handler.active() || self.core.mpv_handler.paused()
     }
 
-    fn currently_playing_name(&self) -> Option<&str> {
+    pub fn currently_playing_name(&self) -> Option<&str> {
         self.core
             .playlist
             .get(self.core.selected_song)?
@@ -135,8 +133,8 @@ impl App {
             .and_then(|name| name.to_str())
     }
 
-    pub(crate) fn write_more_info(&self, buf: &mut String) {
-        buf.clear();
+    pub(crate) fn write_more_info(&mut self) {
+        let mut buf = String::new();
         if let Some(currently_playing) = self.currently_playing_name() {
             buf.push_str(currently_playing);
             buf.push('\n');
@@ -144,5 +142,20 @@ impl App {
         if let Some(last) = self.core.mpv_handler.mpv_output().lines().last() {
             buf.push_str(last);
         }
+        self.tray_handle
+            .sender
+            .send(AppToTrayMsg::UpdateHoverText(buf))
+            .unwrap();
+        let body: &[u8] = &[];
+        self.tray_handle
+            .conn
+            .emit_signal(
+                None::<BusName>,
+                "/StatusNotifierItem",
+                "org.kde.StatusNotifierItem",
+                "NewToolTip",
+                &body,
+            )
+            .unwrap();
     }
 }
