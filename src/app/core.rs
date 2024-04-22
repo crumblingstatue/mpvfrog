@@ -4,6 +4,7 @@ use {
         config::Config,
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
+        MODAL,
     },
     std::{ffi::OsStr, path::PathBuf},
     walkdir::WalkDir,
@@ -94,11 +95,16 @@ impl Core {
             None => None,
         };
         if let Err(e) = self.mpv_handler.play_music("mpv", mpv_args, demuxer) {
-            rfd::MessageDialog::new()
-                .set_level(rfd::MessageLevel::Error)
-                .set_title("Play error")
-                .set_description(e.to_string())
-                .show();
+            let Some(modal) = &mut *MODAL.lock().unwrap() else {
+                eprintln!("Modal not init. error: {e}");
+                return;
+            };
+            modal
+                .dialog()
+                .with_title("Play error")
+                .with_icon(egui_modal::Icon::Error)
+                .with_body(e)
+                .open();
             self.playlist_behavior = PlaylistBehavior::Stop;
         }
     }

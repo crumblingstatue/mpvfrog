@@ -2,6 +2,7 @@ use {
     crate::{
         app::App,
         rect_math::{rect_ensure_within, Rect, Vec2},
+        MODAL,
     },
     egui_sfml::{
         egui,
@@ -25,6 +26,7 @@ pub fn run(w: u32, h: u32, title: &str) {
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
     let mut app = App::new(sf_egui.context());
+    *MODAL.lock().unwrap() = Some(egui_modal::Modal::new(sf_egui.context(), "modal_dialog"));
     let mut win_visible = true;
     'mainloop: loop {
         app.tray_handle.update();

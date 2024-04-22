@@ -3,7 +3,7 @@ mod custom_demuxers_window;
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, PlaylistBehavior, LOG},
-    crate::bool_ext::BoolExt,
+    crate::{bool_ext::BoolExt, MODAL},
     egui_sfml::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
         TopBottomPanel,
@@ -31,6 +31,7 @@ pub struct Ui {
     /// When this happens, we'll try to scroll to the selected song if we can
     filter_changed: bool,
     output_source: OutputSource,
+    file_dialog: egui_file_dialog::FileDialog,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -43,6 +44,9 @@ enum OutputSource {
 
 impl Ui {
     pub(super) fn update(&mut self, app: &mut Core, ctx: &Context) {
+        if let Some(modal) = &mut *MODAL.lock().unwrap() {
+            modal.show_dialog();
+        }
         TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(app, ui));
         CentralPanel::default().show(ctx, |ui| self.central_panel_ui(app, ui));
         self.windows.update(app, ctx);
@@ -51,11 +55,13 @@ impl Ui {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.button("Music folder").clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        app.cfg.music_folder = Some(path);
-                        app.read_songs();
-                    }
+                    self.file_dialog.select_directory();
                 }
+                if let Some(path) = self.file_dialog.take_selected() {
+                    app.cfg.music_folder = Some(path);
+                    app.read_songs();
+                }
+                self.file_dialog.update(ui.ctx());
                 match &app.cfg.music_folder {
                     Some(folder) => {
                         ui.label(&folder.display().to_string());
