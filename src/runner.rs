@@ -170,6 +170,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         });
         ui.horizontal(|ui| {
             ui.label("🔈");
+            app.update_volume();
             ui.add(egui_sfml::egui::Slider::new(
                 &mut app.core.cfg.volume,
                 0..=150,

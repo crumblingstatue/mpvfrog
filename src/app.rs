@@ -166,4 +166,10 @@ impl App {
             )
             .unwrap();
     }
+
+    pub(crate) fn update_volume(&mut self) {
+        if let Some(vol) = self.core.mpv_handler.volume() {
+            self.core.cfg.volume = vol;
+        }
+    }
 }
