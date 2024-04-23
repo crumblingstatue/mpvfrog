@@ -62,14 +62,19 @@ impl MpvHandler {
                 .context("Failed to spawn demuxer")?;
             mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
-        let child = mpv_command.spawn(&pts).unwrap();
+        let mut child = mpv_command.spawn(&pts).unwrap();
         let attempts = 5;
         let ipc_bridge = 'connect: {
             for i in 0..attempts {
                 std::thread::sleep(std::time::Duration::from_millis(100));
                 match ipc::Bridge::connect() {
                     Ok(bridge) => break 'connect bridge,
-                    Err(e) => logln!("mpv connection attempt #{i}: {e}"),
+                    Err(e) => {
+                        if let Some(status) = child.try_wait()? {
+                            anyhow::bail!("mpv exited with {status}");
+                        }
+                        logln!("mpv connection attempt #{i}: {e}");
+                    }
                 }
             }
             anyhow::bail!("Failed connect to mpv");
