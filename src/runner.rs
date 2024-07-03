@@ -184,7 +184,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
             "⏸"
         };
         if let Some(name) = app.currently_playing_name() {
-            ui.add(egui_sfml::egui::Label::new(name).wrap(false));
+            ui.add(egui_sfml::egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
         }
         ui.horizontal(|ui| {
             if ui.button("⏪").clicked() {

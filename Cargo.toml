@@ -21,8 +21,8 @@ anyhow = "1.0.79"
 zbus = "4.1.2"
 crossbeam-channel = "0.5.12"
 x11 = {version = "2.21.0", features = ["xlib"]}
-egui-modal = "0.3.6"
-egui-file-dialog = "0.5.0"
+egui-modal = { git = "https://github.com/crumblingstatue/egui-modal.git", branch = "egui-0.28" }
+egui-file-dialog = { git = "https://github.com/crumblingstatue/egui-file-dialog.git", branch = "develop" }
 
 [profile.dev.package."*"]
 opt-level = 2
