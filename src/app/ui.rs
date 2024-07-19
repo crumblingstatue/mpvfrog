@@ -64,7 +64,7 @@ impl Ui {
                 self.file_dialog.update(ui.ctx());
                 match &app.cfg.music_folder {
                     Some(folder) => {
-                        ui.label(&folder.display().to_string());
+                        ui.label(folder.display().to_string());
                     }
                     None => {
                         ui.label("<none>");
