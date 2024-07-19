@@ -135,9 +135,9 @@ pub fn run(w: u32, h: u32, title: &str) {
                 }
             }
         } else {
-            app.bg_update();
             // Update tray window if visible
             if let Some(win) = &mut tray_popup_win {
+                app.tray_popup_update(win.sf_egui.context());
                 let msg = update_tray_window(win, &mut app);
                 if let Some(msg) = msg {
                     match msg {
@@ -146,6 +146,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                     }
                 }
             } else {
+                app.bg_update();
                 std::thread::sleep(Duration::from_millis(250));
             }
         }

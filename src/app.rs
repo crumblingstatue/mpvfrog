@@ -79,6 +79,14 @@ impl App {
         self.core.handle_mpv_not_active();
     }
 
+    /// Update when tray popup is open
+    pub fn tray_popup_update(&mut self, ctx: &Context) {
+        if !ctx.wants_keyboard_input() {
+            self.handle_egui_input(ctx);
+        }
+        self.bg_update();
+    }
+
     pub fn save(&mut self) {
         let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
         std::fs::write(Config::path(), vec).unwrap();
