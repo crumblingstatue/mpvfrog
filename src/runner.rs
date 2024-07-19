@@ -185,10 +185,13 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         ui.horizontal(|ui| {
             ui.label("🔈");
             app.update_volume();
-            ui.add(egui_sfml::egui::Slider::new(
+            let re = ui.add(egui_sfml::egui::Slider::new(
                 &mut app.core.cfg.volume,
                 0..=150,
             ));
+            if re.changed() {
+                app.core.mpv_handler.set_volume(app.core.cfg.volume);
+            }
         });
         let play_pause_label = if app.paused_or_stopped() {
             "▶"
@@ -214,7 +217,6 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
                 app.core.play_next();
             }
         });
-        app.core.mpv_handler.set_volume(app.core.cfg.volume);
     });
     if quit {
         msg = Some(TrayUpdateMsg::QuitApp);
