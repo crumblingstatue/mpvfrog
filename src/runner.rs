@@ -35,8 +35,12 @@ pub fn run(w: u32, h: u32, title: &str) {
             break;
         }
         if event_flags.activated {
-            win_visible ^= true;
-            rw.set_visible(win_visible);
+            if ctx_menu_win.is_some() {
+                ctx_menu_win = None;
+            } else {
+                win_visible ^= true;
+                rw.set_visible(win_visible);
+            }
         }
         if let Some((x, y)) = event_flags.ctx_menu.take() {
             let desired = Rect {
