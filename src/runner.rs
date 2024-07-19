@@ -197,7 +197,9 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         if let Some(name) = app.currently_playing_name() {
             ui.add(egui_sfml::egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
         }
+        ui.add_space(4.0);
         ui.horizontal(|ui| {
+            ui.add_space(38.0);
             if ui.button("⏪").clicked() {
                 app.core.play_prev();
             }
