@@ -43,52 +43,59 @@ pub fn run(w: u32, h: u32, title: &str) {
             }
         }
         if let Some((x, y)) = event_flags.ctx_menu.take() {
-            let desired = Rect {
-                pos: Vec2 { x, y },
-                size: Vec2 { x: 200, y: 100 },
-            };
-            let desk_size = VideoMode::desktop_mode();
-            let desk_rect = Rect {
-                pos: Vec2 { x: 0, y: 0 },
-                size: Vec2 {
-                    x: desk_size.width as i32,
-                    y: desk_size.height as i32,
-                },
-            };
-            let put_rect = rect_ensure_within(desired, desk_rect, Vec2 { x: 16, y: 32 });
-            let mut rw = RenderWindow::new(
-                (put_rect.size.x as u32, put_rect.size.y as u32),
-                "NOOO",
-                Style::NONE,
-                &Default::default(),
-            );
-            // Skip taskbar for context menu window
-            unsafe {
-                let native = rw.system_handle();
-                let display = x11::xlib::XOpenDisplay(std::ptr::null());
-                let utility = x11::xlib::XInternAtom(
-                    display,
-                    c"_NET_WM_STATE_SKIP_TASKBAR".as_ptr(),
-                    x11::xlib::False,
+            if tray_popup_win.is_some() {
+                tray_popup_win = None;
+            } else {
+                let desired = Rect {
+                    pos: Vec2 { x, y },
+                    size: Vec2 { x: 200, y: 100 },
+                };
+                let desk_size = VideoMode::desktop_mode();
+                let desk_rect = Rect {
+                    pos: Vec2 { x: 0, y: 0 },
+                    size: Vec2 {
+                        x: desk_size.width as i32,
+                        y: desk_size.height as i32,
+                    },
+                };
+                let put_rect = rect_ensure_within(desired, desk_rect, Vec2 { x: 16, y: 32 });
+                let mut rw = RenderWindow::new(
+                    (put_rect.size.x as u32, put_rect.size.y as u32),
+                    "NOOO",
+                    Style::NONE,
+                    &Default::default(),
                 );
-                let property =
-                    x11::xlib::XInternAtom(display, c"_NET_WM_STATE".as_ptr(), x11::xlib::False);
-                x11::xlib::XChangeProperty(
-                    display,
-                    native,
-                    property,
-                    x11::xlib::XA_ATOM,
-                    32,
-                    x11::xlib::PropModeReplace,
-                    std::ptr::addr_of!(utility) as *const u8,
-                    1,
-                );
-                x11::xlib::XCloseDisplay(display);
+                // Skip taskbar for context menu window
+                unsafe {
+                    let native = rw.system_handle();
+                    let display = x11::xlib::XOpenDisplay(std::ptr::null());
+                    let utility = x11::xlib::XInternAtom(
+                        display,
+                        c"_NET_WM_STATE_SKIP_TASKBAR".as_ptr(),
+                        x11::xlib::False,
+                    );
+                    let property = x11::xlib::XInternAtom(
+                        display,
+                        c"_NET_WM_STATE".as_ptr(),
+                        x11::xlib::False,
+                    );
+                    x11::xlib::XChangeProperty(
+                        display,
+                        native,
+                        property,
+                        x11::xlib::XA_ATOM,
+                        32,
+                        x11::xlib::PropModeReplace,
+                        std::ptr::addr_of!(utility) as *const u8,
+                        1,
+                    );
+                    x11::xlib::XCloseDisplay(display);
+                }
+                rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
+                rw.set_vertical_sync_enabled(true);
+                let sf_egui = SfEgui::new(&rw);
+                tray_popup_win = Some(CtxMenuWin { rw, sf_egui });
             }
-            rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
-            rw.set_vertical_sync_enabled(true);
-            let sf_egui = SfEgui::new(&rw);
-            tray_popup_win = Some(CtxMenuWin { rw, sf_egui });
         }
         app.update_tooltip();
         if win_visible {
