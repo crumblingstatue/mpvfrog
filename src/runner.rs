@@ -22,7 +22,7 @@ struct CtxMenuWin {
 
 pub fn run(w: u32, h: u32, title: &str) {
     let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default());
-    let mut ctx_menu_win = None;
+    let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
     let mut app = App::new(sf_egui.context());
@@ -35,8 +35,8 @@ pub fn run(w: u32, h: u32, title: &str) {
             break;
         }
         if event_flags.activated {
-            if ctx_menu_win.is_some() {
-                ctx_menu_win = None;
+            if tray_popup_win.is_some() {
+                tray_popup_win = None;
             } else {
                 win_visible ^= true;
                 rw.set_visible(win_visible);
@@ -88,7 +88,7 @@ pub fn run(w: u32, h: u32, title: &str) {
             rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
             rw.set_vertical_sync_enabled(true);
             let sf_egui = SfEgui::new(&rw);
-            ctx_menu_win = Some(CtxMenuWin { rw, sf_egui });
+            tray_popup_win = Some(CtxMenuWin { rw, sf_egui });
         }
         app.update_tooltip();
         if win_visible {
@@ -118,24 +118,24 @@ pub fn run(w: u32, h: u32, title: &str) {
             sf_egui.draw(&mut rw, None);
             rw.display();
             // Update tray window if visible
-            if let Some(win) = &mut ctx_menu_win {
+            if let Some(win) = &mut tray_popup_win {
                 let msg = update_tray_window(win, &mut app);
                 if let Some(msg) = msg {
                     match msg {
                         TrayUpdateMsg::QuitApp => break 'mainloop,
-                        TrayUpdateMsg::CloseTray => ctx_menu_win = None,
+                        TrayUpdateMsg::CloseTray => tray_popup_win = None,
                     }
                 }
             }
         } else {
             app.bg_update();
             // Update tray window if visible
-            if let Some(win) = &mut ctx_menu_win {
+            if let Some(win) = &mut tray_popup_win {
                 let msg = update_tray_window(win, &mut app);
                 if let Some(msg) = msg {
                     match msg {
                         TrayUpdateMsg::QuitApp => break 'mainloop,
-                        TrayUpdateMsg::CloseTray => ctx_menu_win = None,
+                        TrayUpdateMsg::CloseTray => tray_popup_win = None,
                     }
                 }
             } else {
