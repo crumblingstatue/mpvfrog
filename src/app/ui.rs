@@ -75,11 +75,14 @@ impl Ui {
                 self.windows.custom_demuxers.open ^= true;
             }
             ui.label("🔎");
-            if ui
-                .add(TextEdit::singleline(&mut self.filter_string).hint_text("Filter"))
-                .changed()
-            {
+            let ctrl_f = ui.input(|inp| inp.key_pressed(egui::Key::F) && inp.modifiers.ctrl);
+            let re =
+                ui.add(TextEdit::singleline(&mut self.filter_string).hint_text("Filter (ctrl+f)"));
+            if re.changed() {
                 self.filter_changed = true;
+            }
+            if ctrl_f {
+                re.request_focus();
             }
             self.filter_string = self.filter_string.to_ascii_lowercase();
         });
