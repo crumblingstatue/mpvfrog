@@ -70,6 +70,11 @@ impl Ui {
                         ui.label("<none>");
                     }
                 }
+                if ui.button("🔃").on_hover_text("Refresh (F5)").clicked()
+                    || ui.input(|inp| inp.key_pressed(egui::Key::F5))
+                {
+                    app.read_songs();
+                }
             });
             if ui.button("Custom demuxers...").clicked() {
                 self.windows.custom_demuxers.open ^= true;
