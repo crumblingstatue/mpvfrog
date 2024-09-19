@@ -1,7 +1,7 @@
 mod core;
 mod playlist_behavior;
 pub mod tray;
-mod ui;
+pub mod ui;
 
 pub use playlist_behavior::PlaylistBehavior;
 use {
@@ -12,6 +12,7 @@ use {
     crate::{config::Config, mpv_handler::MpvHandler},
     egui_sfml::egui::{self, Context, Event, Key},
     std::{sync::Mutex, time::Instant},
+    ui::apply_colorix_theme,
     zbus::names::BusName,
 };
 
@@ -36,9 +37,10 @@ pub struct App {
 impl App {
     pub fn new(ctx: &Context) -> Self {
         ctx.set_visuals(egui::Visuals::dark());
-
+        let cfg = Config::load_or_default();
+        apply_colorix_theme(cfg.theme, ctx);
         let mut state = Core {
-            cfg: Config::load_or_default(),
+            cfg,
             playlist: Vec::new(),
             selected_song: 0,
             mpv_handler: MpvHandler::default(),

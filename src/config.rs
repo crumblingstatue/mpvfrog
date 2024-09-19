@@ -9,6 +9,8 @@ use {
     },
 };
 
+pub type ThemeColors = [[u8; 3]; 12];
+
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub music_folder: Option<PathBuf>,
@@ -21,6 +23,8 @@ pub struct Config {
     pub speed: f64,
     #[serde(default)]
     pub video: bool,
+    #[serde(default)]
+    pub theme: Option<ThemeColors>,
 }
 
 impl Default for Config {
@@ -31,6 +35,7 @@ impl Default for Config {
             volume: default_volume(),
             speed: default_speed(),
             video: false,
+            theme: None,
         }
     }
 }

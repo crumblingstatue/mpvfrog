@@ -4,10 +4,12 @@ use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, PlaylistBehavior, LOG},
     crate::{bool_ext::BoolExt, MODAL},
+    egui_colors::{tokens::ColorPreset, Colorix},
     egui_sfml::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
         TopBottomPanel,
     },
+    rand::{thread_rng, Rng},
     std::fmt,
 };
 
@@ -43,26 +45,26 @@ enum OutputSource {
 }
 
 impl Ui {
-    pub(super) fn update(&mut self, app: &mut Core, ctx: &Context) {
+    pub(super) fn update(&mut self, core: &mut Core, ctx: &Context) {
         if let Some(modal) = &mut *MODAL.lock().unwrap() {
             modal.show_dialog();
         }
-        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(app, ui));
-        CentralPanel::default().show(ctx, |ui| self.central_panel_ui(app, ui));
-        self.windows.update(app, ctx);
+        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ctx, ui));
+        CentralPanel::default().show(ctx, |ui| self.central_panel_ui(core, ui));
+        self.windows.update(core, ctx);
     }
-    fn top_panel_ui(&mut self, app: &mut Core, ui: &mut egui::Ui) {
+    fn top_panel_ui(&mut self, core: &mut Core, ctx: &Context, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.button("Music folder").clicked() {
                     self.file_dialog.select_directory();
                 }
                 if let Some(path) = self.file_dialog.take_selected() {
-                    app.cfg.music_folder = Some(path);
-                    app.read_songs();
+                    core.cfg.music_folder = Some(path);
+                    core.read_songs();
                 }
                 self.file_dialog.update(ui.ctx());
-                match &app.cfg.music_folder {
+                match &core.cfg.music_folder {
                     Some(folder) => {
                         ui.label(folder.display().to_string());
                     }
@@ -73,7 +75,7 @@ impl Ui {
                 if ui.button("🔃").on_hover_text("Refresh (F5)").clicked()
                     || ui.input(|inp| inp.key_pressed(egui::Key::F5))
                 {
-                    app.read_songs();
+                    core.read_songs();
                 }
             });
             if ui.button("Custom demuxers...").clicked() {
@@ -90,6 +92,19 @@ impl Ui {
                 re.request_focus();
             }
             self.filter_string = self.filter_string.to_ascii_lowercase();
+            let re = ui.button("💎").on_hover_text("Random theme");
+            re.context_menu(|ui| {
+                if ui.button("clear").clicked() {
+                    core.cfg.theme = None;
+                    ctx.set_visuals(egui::Visuals::dark());
+                    ui.close_menu();
+                }
+            });
+            if re.clicked() {
+                let mut rng = thread_rng();
+                core.cfg.theme = Some(std::array::from_fn(|_| rng.gen()));
+                apply_colorix_theme(core.cfg.theme, ctx);
+            }
         });
     }
     fn central_panel_ui(&mut self, app: &mut Core, ui: &mut egui::Ui) {
@@ -243,6 +258,12 @@ impl Ui {
                         .font(TextStyle::Monospace),
                 );
             });
+    }
+}
+
+pub fn apply_colorix_theme(theme: Option<[[u8; 3]; 12]>, ctx: &egui::Context) {
+    if let Some(theme) = theme {
+        let _ = Colorix::init(ctx, std::array::from_fn(|i| ColorPreset::Custom(theme[i])));
     }
 }
 
