@@ -111,7 +111,7 @@ impl Ui {
         ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
-            .id_source("song_scroll")
+            .id_salt("song_scroll")
             .show(ui, |ui| {
                 for (i, path) in app.playlist.iter().enumerate() {
                     if !self.filter_string.is_empty() {
@@ -244,7 +244,7 @@ impl Ui {
         });
         ScrollArea::vertical()
             .auto_shrink([false; 2])
-            .id_source("out_scroll")
+            .id_salt("out_scroll")
             .stick_to_bottom(true)
             .show(ui, |ui| {
                 let out = match self.output_source {

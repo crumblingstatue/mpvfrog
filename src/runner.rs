@@ -119,7 +119,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                 }
             }
             sf_egui
-                .do_frame(&mut rw, |ctx| {
+                .do_pass(&mut rw, |ctx| {
                     app.update(ctx);
                 })
                 .unwrap();
@@ -169,7 +169,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         }
     }
     win.rw.clear(Color::MAGENTA);
-    win.sf_egui.begin_frame();
+    win.sf_egui.begin_pass();
     let mut quit = false;
     egui_sfml::egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
         ui.horizontal(|ui| {
@@ -222,7 +222,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     if quit {
         msg = Some(TrayUpdateMsg::QuitApp);
     }
-    win.sf_egui.end_frame(&mut win.rw).unwrap();
+    win.sf_egui.end_pass(&mut win.rw).unwrap();
     win.sf_egui.draw(&mut win.rw, None);
     win.rw.display();
     msg
