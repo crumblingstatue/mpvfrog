@@ -13,6 +13,15 @@ pub struct CustomDemuxersWindow {
     edit_target: Option<EditTarget>,
     error_label: String,
     selected_idx: usize,
+    tab: CustomDemuxTab,
+    selected_pred_idx: usize,
+}
+
+#[derive(PartialEq, Default)]
+enum CustomDemuxTab {
+    #[default]
+    Commands,
+    Predicates,
 }
 
 struct EditTarget {
@@ -102,85 +111,125 @@ impl CustomDemuxersWindow {
                 ui.label("Name");
                 ui.text_edit_singleline(&mut custom_player.name);
             });
-            ComboBox::new(idx, "Predicate")
-                .selected_text(PredicateKind::from(&custom_player.predicate).label())
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(
-                        &mut custom_player.predicate,
-                        Predicate::BeginsWith(String::new()),
-                        PredicateKind::BeginsWith.label(),
-                    );
-                    ui.selectable_value(
-                        &mut custom_player.predicate,
-                        Predicate::HasExt(String::new()),
-                        PredicateKind::HasExt.label(),
-                    );
-                });
-            match &mut custom_player.predicate {
-                Predicate::BeginsWith(frag) => ui.text_edit_singleline(frag),
-                Predicate::HasExt(ext) => ui.text_edit_singleline(ext),
-            };
-            ui.label("Command");
-            match self.edit_target {
-                Some(EditTarget {
-                    index,
-                    which: EditTargetWhich::Command,
-                }) if idx == index => {
-                    if ui.text_edit_singleline(&mut self.edit_buffer).lost_focus() {
-                        match Command::from_str(&self.edit_buffer) {
-                            Ok(cmd) => {
-                                custom_player.reader_cmd = cmd;
-                                self.error_label.clear();
-                            }
-                            Err(e) => self.error_label = e.to_string(),
-                        }
-                        self.edit_buffer.clear();
-                        self.edit_target = None;
-                    }
+            ui.horizontal(|ui| {
+                if ui
+                    .selectable_label(self.tab == CustomDemuxTab::Commands, "Commands")
+                    .clicked()
+                {
+                    self.tab = CustomDemuxTab::Commands;
                 }
-                _ => {
-                    if ui
-                        .text_edit_singleline(&mut custom_player.reader_cmd.to_string().unwrap())
-                        .gained_focus()
-                    {
-                        self.edit_buffer = custom_player.reader_cmd.to_string().unwrap();
-                        self.edit_target = Some(EditTarget {
-                            index: idx,
+                if ui
+                    .selectable_label(self.tab == CustomDemuxTab::Predicates, "Predicates")
+                    .clicked()
+                {
+                    self.tab = CustomDemuxTab::Predicates;
+                }
+            });
+            ui.separator();
+            match self.tab {
+                CustomDemuxTab::Commands => {
+                    ui.label("Demuxer command");
+                    match self.edit_target {
+                        Some(EditTarget {
+                            index,
                             which: EditTargetWhich::Command,
-                        });
+                        }) if idx == index => {
+                            if ui.text_edit_singleline(&mut self.edit_buffer).lost_focus() {
+                                match Command::from_str(&self.edit_buffer) {
+                                    Ok(cmd) => {
+                                        custom_player.reader_cmd = cmd;
+                                        self.error_label.clear();
+                                    }
+                                    Err(e) => self.error_label = e.to_string(),
+                                }
+                                self.edit_buffer.clear();
+                                self.edit_target = None;
+                            }
+                        }
+                        _ => {
+                            if ui
+                                .text_edit_singleline(
+                                    &mut custom_player.reader_cmd.to_string().unwrap(),
+                                )
+                                .gained_focus()
+                            {
+                                self.edit_buffer = custom_player.reader_cmd.to_string().unwrap();
+                                self.edit_target = Some(EditTarget {
+                                    index: idx,
+                                    which: EditTargetWhich::Command,
+                                });
+                            }
+                        }
+                    };
+                    if !self.error_label.is_empty() {
+                        ui.label(RichText::new(&self.error_label).color(Color32::RED));
                     }
-                }
-            };
-            if !self.error_label.is_empty() {
-                ui.label(RichText::new(&self.error_label).color(Color32::RED));
-            }
-            ui.label("Example: my-cmd --input {}");
-            ui.label("extra mpv args");
-            match self.edit_target {
-                Some(EditTarget {
-                    index,
-                    which: EditTargetWhich::MpvArgs,
-                }) if idx == index => {
-                    if ui.text_edit_singleline(&mut self.edit_buffer).lost_focus() {
-                        custom_player.extra_mpv_args = self
-                            .edit_buffer
-                            .split_whitespace()
-                            .map(|s| s.to_string())
-                            .collect();
-                        self.edit_buffer.clear();
-                        self.edit_target = None;
-                    }
-                }
-                _ => {
-                    if ui
-                        .text_edit_singleline(&mut custom_player.extra_mpv_args.join(" "))
-                        .gained_focus()
-                    {
-                        self.edit_buffer = custom_player.extra_mpv_args.join(" ");
-                        self.edit_target = Some(EditTarget {
-                            index: idx,
+                    ui.label("Example: my-cmd --input {}");
+                    ui.label("extra mpv args");
+                    match self.edit_target {
+                        Some(EditTarget {
+                            index,
                             which: EditTargetWhich::MpvArgs,
-                        });
+                        }) if idx == index => {
+                            if ui.text_edit_singleline(&mut self.edit_buffer).lost_focus() {
+                                custom_player.extra_mpv_args = self
+                                    .edit_buffer
+                                    .split_whitespace()
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                self.edit_buffer.clear();
+                                self.edit_target = None;
+                            }
+                        }
+                        _ => {
+                            if ui
+                                .text_edit_singleline(&mut custom_player.extra_mpv_args.join(" "))
+                                .gained_focus()
+                            {
+                                self.edit_buffer = custom_player.extra_mpv_args.join(" ");
+                                self.edit_target = Some(EditTarget {
+                                    index: idx,
+                                    which: EditTargetWhich::MpvArgs,
+                                });
+                            }
+                        }
+                    }
+                }
+                CustomDemuxTab::Predicates => {
+                    ui.horizontal(|ui| {
+                        for i in 0..custom_player.predicates.len() {
+                            if ui
+                                .selectable_label(i == self.selected_pred_idx, (i + 1).to_string())
+                                .clicked()
+                            {
+                                self.selected_pred_idx = i;
+                            }
+                        }
+                        if ui.button("➕").on_hover_text("Add predicate").clicked() {
+                            custom_player
+                                .predicates
+                                .push(Predicate::HasExt(String::new()));
+                        }
+                    });
+                    if let Some(pred) = custom_player.predicates.get_mut(self.selected_pred_idx) {
+                        ComboBox::new(idx, "Kind")
+                            .selected_text(PredicateKind::from(&*pred).label())
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    pred,
+                                    Predicate::BeginsWith(String::new()),
+                                    PredicateKind::BeginsWith.label(),
+                                );
+                                ui.selectable_value(
+                                    pred,
+                                    Predicate::HasExt(String::new()),
+                                    PredicateKind::HasExt.label(),
+                                );
+                            });
+                        match pred {
+                            Predicate::BeginsWith(frag) => ui.text_edit_singleline(frag),
+                            Predicate::HasExt(ext) => ui.text_edit_singleline(ext),
+                        };
                     }
                 }
             }

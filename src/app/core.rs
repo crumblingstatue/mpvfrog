@@ -1,7 +1,7 @@
 use {
     super::PlaylistBehavior,
     crate::{
-        config::Config,
+        config::{Config, PredicateSliceExt},
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
         MODAL,
@@ -82,7 +82,7 @@ impl Core {
             .cfg
             .custom_players
             .iter()
-            .find(|en| en.predicate.matches(&path))
+            .find(|en| en.predicates.find_predicate_match(&path))
         {
             Some(en) => {
                 mpv_args.remove(0);

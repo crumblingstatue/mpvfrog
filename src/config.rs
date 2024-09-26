@@ -73,24 +73,13 @@ pub enum Predicate {
     HasExt(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CustomPlayerEntry {
-    pub predicate: Predicate,
+    pub predicates: Vec<Predicate>,
     pub reader_cmd: Command,
     pub extra_mpv_args: Vec<String>,
     #[serde(default)]
     pub name: String,
-}
-
-impl Default for CustomPlayerEntry {
-    fn default() -> Self {
-        Self {
-            predicate: Predicate::HasExt(String::new()),
-            reader_cmd: Default::default(),
-            extra_mpv_args: Default::default(),
-            name: Default::default(),
-        }
-    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -178,5 +167,15 @@ impl Predicate {
             Some(path_ext) => path_ext == ext,
             None => false,
         }
+    }
+}
+
+pub trait PredicateSliceExt {
+    fn find_predicate_match(&self, path: &Path) -> bool;
+}
+
+impl PredicateSliceExt for [Predicate] {
+    fn find_predicate_match(&self, path: &Path) -> bool {
+        self.iter().any(|pred| pred.matches(path))
     }
 }
