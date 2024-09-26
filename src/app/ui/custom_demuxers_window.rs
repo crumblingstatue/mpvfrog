@@ -3,7 +3,7 @@ use {
         app::Core,
         config::{Command, CustomPlayerEntry, Predicate, PredicateKind},
     },
-    egui_sfml::egui::{Color32, ComboBox, Context, RichText, ScrollArea, Ui, Window},
+    egui_sfml::egui::{self, Color32, ComboBox, Context, RichText, ScrollArea, Ui, Window},
 };
 
 #[derive(Default)]
@@ -66,18 +66,20 @@ impl CustomDemuxersWindow {
                     {
                         self.selected_idx = idx;
                     }
-                    if ui.button("🗑").clicked() {
-                        retain = false;
-                    }
-                    if ui.button("⏶").clicked() && idx > 0 {
-                        op = Op::Swap(idx, idx - 1);
-                    }
-                    if ui.button("⏷").clicked() && idx < len - 1 {
-                        op = Op::Swap(idx, idx + 1);
-                    }
-                    if ui.button("🗐").on_hover_text("Clone").clicked() {
-                        op = Op::Clone(idx);
-                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("🗑").on_hover_text("Delete").clicked() {
+                            retain = false;
+                        }
+                        if ui.button("⏶").on_hover_text("Higher prio").clicked() && idx > 0 {
+                            op = Op::Swap(idx, idx - 1);
+                        }
+                        if ui.button("⏷").on_hover_text("Lower prio").clicked() && idx < len - 1 {
+                            op = Op::Swap(idx, idx + 1);
+                        }
+                        if ui.button("🗐").on_hover_text("Clone").clicked() {
+                            op = Op::Clone(idx);
+                        }
+                    });
                     idx += 1;
                 });
                 retain
@@ -91,8 +93,7 @@ impl CustomDemuxersWindow {
                 .custom_players
                 .insert(idx, app.cfg.custom_players[idx].clone()),
         }
-        ui.separator();
-        if ui.button("add new demuxer").clicked() {
+        if ui.button("➕ Add").clicked() {
             app.cfg.custom_players.push(CustomPlayerEntry::default());
         }
         ui.separator();
