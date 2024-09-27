@@ -11,10 +11,10 @@ use {
 };
 
 pub struct Core {
-    pub cfg: Config,
+    pub(crate) cfg: Config,
     pub(super) playlist: Vec<PathBuf>,
     pub(super) selected_song: usize,
-    pub mpv_handler: MpvHandler,
+    pub(crate) mpv_handler: MpvHandler,
     pub(super) playlist_behavior: PlaylistBehavior,
     /// This is `true` when the user has initiated a stop, rather than just mpv exiting
     pub(super) user_stopped: bool,
