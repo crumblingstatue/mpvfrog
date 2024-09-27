@@ -19,8 +19,8 @@ struct Windows {
 }
 
 impl Windows {
-    fn update(&mut self, app: &mut Core, ctx: &Context) {
-        self.custom_demuxers.update(app, ctx);
+    fn update(&mut self, core: &mut Core, ctx: &Context) {
+        self.custom_demuxers.update(core, ctx);
     }
 }
 
@@ -107,13 +107,13 @@ impl Ui {
             }
         });
     }
-    fn central_panel_ui(&mut self, app: &mut Core, ui: &mut egui::Ui) {
+    fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
         ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
             .show(ui, |ui| {
-                for (i, path) in app.playlist.iter().enumerate() {
+                for (i, path) in core.playlist.iter().enumerate() {
                     if !self.filter_string.is_empty() {
                         match path.to_str() {
                             Some(path_str) => {
@@ -125,15 +125,15 @@ impl Ui {
                         }
                     }
                     let re =
-                        ui.selectable_label(app.selected_song == i, path.display().to_string());
-                    if app.selected_song == i
-                        && (self.filter_changed.take() || app.song_change.take())
+                        ui.selectable_label(core.selected_song == i, path.display().to_string());
+                    if core.selected_song == i
+                        && (self.filter_changed.take() || core.song_change.take())
                     {
                         re.scroll_to_me(Some(Align::Center));
                     }
                     if re.clicked() {
-                        app.selected_song = i;
-                        app.play_selected_song();
+                        core.selected_song = i;
+                        core.play_selected_song();
                         break;
                     }
                 }
@@ -142,64 +142,64 @@ impl Ui {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.add(Button::new("⏪")).clicked() {
-                    app.play_prev();
+                    core.play_prev();
                 }
-                let active = app.mpv_handler.active();
-                let icon = if active && !app.mpv_handler.paused() {
+                let active = core.mpv_handler.active();
+                let icon = if active && !core.mpv_handler.paused() {
                     "⏸"
                 } else {
                     "▶"
                 };
                 if ui.add(Button::new(icon)).clicked() {
                     if active {
-                        app.mpv_handler.toggle_pause();
+                        core.mpv_handler.toggle_pause();
                     } else {
-                        app.play_selected_song();
+                        core.play_selected_song();
                     }
                 }
                 if ui.add_enabled(active, Button::new("⏹")).clicked() {
-                    app.stop_music();
+                    core.stop_music();
                 }
                 if ui.add(Button::new("⏩")).clicked() {
-                    app.play_next();
+                    core.play_next();
                 }
             });
             ui.group(|ui| {
                 ui.label("🔈");
-                match app.mpv_handler.volume() {
+                match core.mpv_handler.volume() {
                     Some(mut vol) => {
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut vol, 0..=150));
                         if re.changed() {
-                            app.mpv_handler.set_volume(vol);
+                            core.mpv_handler.set_volume(vol);
                         }
                     }
                     None => {
-                        ui.add(egui::Slider::new(&mut app.cfg.volume, 0..=150));
+                        ui.add(egui::Slider::new(&mut core.cfg.volume, 0..=150));
                     }
                 }
             });
             ui.group(|ui| {
                 ui.label("⏩");
-                match app.mpv_handler.speed() {
+                match core.mpv_handler.speed() {
                     Some(mut speed) => {
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0));
                         if re.changed() {
-                            app.mpv_handler.set_speed(speed);
+                            core.mpv_handler.set_speed(speed);
                         }
                     }
                     None => {
-                        ui.add(egui::Slider::new(&mut app.cfg.speed, 0.3..=2.0));
+                        ui.add(egui::Slider::new(&mut core.cfg.speed, 0.3..=2.0));
                     }
                 }
             });
-            if ui.checkbox(&mut app.cfg.video, "video").clicked() {
-                app.set_video(app.cfg.video);
+            if ui.checkbox(&mut core.cfg.video, "video").clicked() {
+                core.set_video(core.cfg.video);
             }
         });
         ui.horizontal(|ui| {
-            if let Some(mut info) = app.mpv_handler.time_info() {
+            if let Some(mut info) = core.mpv_handler.time_info() {
                 ui.style_mut().spacing.slider_width = 420.0;
                 ui.label(format!(
                     "{}/{}",
@@ -212,24 +212,28 @@ impl Ui {
                         .trailing_fill(true),
                 );
                 if re.drag_stopped() {
-                    app.seek(info.pos);
+                    core.seek(info.pos);
                 }
             }
             ui.group(|ui| {
                 ui.style_mut().spacing.slider_width = 100.0;
                 ComboBox::new("playlist_behavior_cb", "▶")
-                    .selected_text(app.playlist_behavior.label())
+                    .selected_text(core.playlist_behavior.label())
                     .show_ui(ui, |ui| {
                         use self::PlaylistBehavior::*;
-                        ui.selectable_value(&mut app.playlist_behavior, Stop, Stop.label());
-                        ui.selectable_value(&mut app.playlist_behavior, Continue, Continue.label());
+                        ui.selectable_value(&mut core.playlist_behavior, Stop, Stop.label());
                         ui.selectable_value(
-                            &mut app.playlist_behavior,
+                            &mut core.playlist_behavior,
+                            Continue,
+                            Continue.label(),
+                        );
+                        ui.selectable_value(
+                            &mut core.playlist_behavior,
                             RepeatOne,
                             RepeatOne.label(),
                         );
                         ui.selectable_value(
-                            &mut app.playlist_behavior,
+                            &mut core.playlist_behavior,
                             RepeatPlaylist,
                             RepeatPlaylist.label(),
                         );
@@ -248,8 +252,8 @@ impl Ui {
             .stick_to_bottom(true)
             .show(ui, |ui| {
                 let out = match self.output_source {
-                    OutputSource::Mpv => app.mpv_handler.mpv_output(),
-                    OutputSource::Demuxer => app.mpv_handler.demux_term.contents_to_string(),
+                    OutputSource::Mpv => core.mpv_handler.mpv_output(),
+                    OutputSource::Demuxer => core.mpv_handler.demux_term.contents_to_string(),
                     OutputSource::Log => LOG.lock().unwrap().clone(),
                 };
                 ui.add(

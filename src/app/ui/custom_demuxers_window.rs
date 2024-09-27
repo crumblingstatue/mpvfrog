@@ -44,14 +44,14 @@ impl PredicateKind {
 }
 
 impl CustomDemuxersWindow {
-    pub(super) fn update(&mut self, app: &mut Core, ctx: &Context) {
+    pub(super) fn update(&mut self, core: &mut Core, ctx: &Context) {
         let mut open = self.open;
         Window::new("Custom demuxers")
             .open(&mut open)
-            .show(ctx, |ui| self.window_ui(app, ui));
+            .show(ctx, |ui| self.window_ui(core, ui));
         self.open = open;
     }
-    fn window_ui(&mut self, app: &mut Core, ui: &mut Ui) {
+    fn window_ui(&mut self, core: &mut Core, ui: &mut Ui) {
         let mut idx = 0;
         enum Op {
             None,
@@ -60,8 +60,8 @@ impl CustomDemuxersWindow {
         }
         let mut op = Op::None;
         ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
-            let len = app.cfg.custom_players.len();
-            app.cfg.custom_players.retain_mut(|custom_player| {
+            let len = core.cfg.custom_players.len();
+            core.cfg.custom_players.retain_mut(|custom_player| {
                 let mut retain = true;
                 ui.horizontal(|ui| {
                     let label = if custom_player.name.is_empty() {
@@ -96,17 +96,17 @@ impl CustomDemuxersWindow {
         });
         match op {
             Op::None => {}
-            Op::Swap(a, b) => app.cfg.custom_players.swap(a, b),
-            Op::Clone(idx) => app
+            Op::Swap(a, b) => core.cfg.custom_players.swap(a, b),
+            Op::Clone(idx) => core
                 .cfg
                 .custom_players
-                .insert(idx, app.cfg.custom_players[idx].clone()),
+                .insert(idx, core.cfg.custom_players[idx].clone()),
         }
         if ui.button("➕ Add").clicked() {
-            app.cfg.custom_players.push(CustomPlayerEntry::default());
+            core.cfg.custom_players.push(CustomPlayerEntry::default());
         }
         ui.separator();
-        if let Some(custom_player) = app.cfg.custom_players.get_mut(self.selected_idx) {
+        if let Some(custom_player) = core.cfg.custom_players.get_mut(self.selected_idx) {
             ui.horizontal(|ui| {
                 ui.label("Name");
                 ui.text_edit_singleline(&mut custom_player.name);
