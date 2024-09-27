@@ -1,3 +1,5 @@
+//! Persistent configuration for the application
+
 use {
     crate::logln,
     directories::ProjectDirs,

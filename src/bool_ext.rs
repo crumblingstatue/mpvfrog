@@ -1,3 +1,5 @@
+//! Utility extension trait for `bool`
+
 pub trait BoolExt {
     fn take(&mut self) -> bool;
 }

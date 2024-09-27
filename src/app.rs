@@ -1,3 +1,5 @@
+//! Application state management
+
 mod core;
 mod playlist_behavior;
 pub mod tray;
@@ -18,6 +20,7 @@ use {
 
 pub static LOG: Mutex<String> = Mutex::new(String::new());
 
+/// Log a line to the application logger. Uses [`std::fmt`] syntax.
 #[macro_export]
 macro_rules! logln {
     ($($arg:tt)*) => {{

@@ -1,3 +1,5 @@
+//! Launch and main loop of the application
+
 use {
     crate::{
         app::{ui::apply_colorix_theme, App},

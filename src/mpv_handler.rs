@@ -1,3 +1,5 @@
+//! Handling of the spawned mpv process
+
 use {
     crate::{
         app::LOG,

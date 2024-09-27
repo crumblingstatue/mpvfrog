@@ -1,3 +1,5 @@
+//! Interprocess comunication with spawned mpv process
+
 use {
     crate::{logln, warn_dialog},
     interprocess::local_socket::{
