@@ -1,5 +1,5 @@
 #![doc(html_no_source)]
-#![warn(unused_qualifications)]
+#![warn(unused_qualifications, clippy::redundant_closure_for_method_calls)]
 
 use std::sync::Mutex;
 

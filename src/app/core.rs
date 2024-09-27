@@ -32,7 +32,7 @@ impl Core {
         self.playlist.clear();
         for entry in WalkDir::new(music_folder)
             .into_iter()
-            .filter_map(|e| e.ok())
+            .filter_map(Result::ok)
         {
             if entry.file_type().is_file() {
                 let en_path = entry.path();

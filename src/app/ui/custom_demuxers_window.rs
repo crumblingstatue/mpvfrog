@@ -175,7 +175,7 @@ impl CustomDemuxersWindow {
                                 custom_player.extra_mpv_args = self
                                     .edit_buffer
                                     .split_whitespace()
-                                    .map(|s| s.to_string())
+                                    .map(String::from)
                                     .collect();
                                 self.edit_buffer.clear();
                                 self.edit_target = None;
