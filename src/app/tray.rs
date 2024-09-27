@@ -1,18 +1,14 @@
 use {
     crossbeam_channel::{Receiver, Sender},
     std::sync::Mutex,
-    zbus::{
-        blocking::{self, connection},
-        interface,
-        object_server::SignalContext,
-    },
+    zbus::{blocking::connection, interface, object_server::SignalContext},
 };
 
 pub struct AppTray {
     pub event_flags: EventFlags,
     pub sender: Sender<AppToTrayMsg>,
     receiver: Receiver<TrayToAppMsg>,
-    pub conn: blocking::connection::Connection,
+    pub conn: connection::Connection,
 }
 
 impl AppTray {

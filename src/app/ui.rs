@@ -265,7 +265,7 @@ impl Ui {
     }
 }
 
-pub fn apply_colorix_theme(theme: Option<[[u8; 3]; 12]>, ctx: &egui::Context) {
+pub fn apply_colorix_theme(theme: Option<[[u8; 3]; 12]>, ctx: &Context) {
     if let Some(theme) = theme {
         let _ = Colorix::init(ctx, std::array::from_fn(|i| ColorPreset::Custom(theme[i])));
     }

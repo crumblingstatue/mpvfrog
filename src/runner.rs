@@ -173,7 +173,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     win.rw.clear(Color::MAGENTA);
     win.sf_egui.begin_pass();
     let mut quit = false;
-    egui_sfml::egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
+    egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
         ui.horizontal(|ui| {
             ui.label("egui-mpv");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -188,10 +188,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         ui.horizontal(|ui| {
             ui.label("🔈");
             app.update_volume();
-            let re = ui.add(egui_sfml::egui::Slider::new(
-                &mut app.core.cfg.volume,
-                0..=150,
-            ));
+            let re = ui.add(egui::Slider::new(&mut app.core.cfg.volume, 0..=150));
             if re.changed() {
                 app.core.mpv_handler.set_volume(app.core.cfg.volume);
             }
@@ -202,7 +199,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
             "⏸"
         };
         if let Some(name) = app.currently_playing_name() {
-            ui.add(egui_sfml::egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
+            ui.add(egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
         }
         ui.add_space(4.0);
         ui.horizontal(|ui| {

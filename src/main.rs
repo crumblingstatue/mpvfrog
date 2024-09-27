@@ -1,4 +1,5 @@
 #![doc(html_no_source)]
+#![warn(unused_qualifications)]
 
 use std::sync::Mutex;
 

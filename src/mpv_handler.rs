@@ -233,7 +233,7 @@ impl CustomDemuxer {
     }
 }
 
-fn config_cmd_arg_to_os_string(arg: &crate::config::ArgType, song_path: &OsStr) -> OsString {
+fn config_cmd_arg_to_os_string(arg: &ArgType, song_path: &OsStr) -> OsString {
     match arg {
         ArgType::Custom(string) => string.into(),
         ArgType::SongPath => song_path.to_owned(),
