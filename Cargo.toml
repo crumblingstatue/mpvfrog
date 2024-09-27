@@ -16,7 +16,7 @@ nonblock = "0.2.0"
 ansi_term_buf = { git = "https://github.com/crumblingstatue/ansi_term_buf.git" }
 thiserror = "1.0.56"
 enum-kinds = "0.5.1"
-interprocess = { version = "1.2.1", default-features = false }
+interprocess = { version = "2.2", default-features = false }
 anyhow = "1.0.79"
 zbus = "4.1.2"
 crossbeam-channel = "0.5.12"

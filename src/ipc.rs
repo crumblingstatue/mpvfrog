@@ -1,6 +1,8 @@
 use {
     crate::{logln, warn_dialog},
-    interprocess::local_socket::LocalSocketStream,
+    interprocess::local_socket::{
+        traits::Stream as _, GenericFilePath, Stream as LocalSocketStream, ToFsName,
+    },
     serde::Serialize,
     std::{
         collections::{HashMap, VecDeque},
@@ -111,7 +113,11 @@ struct CommandJson<T: Serialize> {
 
 impl Bridge {
     pub fn connect() -> anyhow::Result<Self> {
-        let ipc_stream = LocalSocketStream::connect("/tmp/mpv-egui-musicplayer.sock")?;
+        let ipc_stream = LocalSocketStream::connect(
+            "/tmp/mpv-egui-musicplayer.sock"
+                .to_fs_name::<GenericFilePath>()
+                .unwrap(),
+        )?;
         ipc_stream.set_nonblocking(true)?;
         let mut this = Self {
             ipc_stream,
