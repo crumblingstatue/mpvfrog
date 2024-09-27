@@ -179,12 +179,9 @@ impl Bridge {
                         "unpause" => self.observed.paused = false,
                         "property-change" => {
                             let name = map.get("name").unwrap().as_str().unwrap();
-                            let data = match map.get("data") {
-                                Some(data) => data,
-                                None => {
-                                    logln!("data-less property change: {}", name);
-                                    return;
-                                }
+                            let Some(data) = map.get("data") else {
+                                logln!("data-less property change: {}", name);
+                                return;
                             };
                             match name {
                                 "speed" => self.observed.speed = data.as_f64().unwrap(),
