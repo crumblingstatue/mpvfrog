@@ -88,7 +88,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                         x11::xlib::XA_ATOM,
                         32,
                         x11::xlib::PropModeReplace,
-                        std::ptr::addr_of!(utility) as *const u8,
+                        std::ptr::addr_of!(utility).cast(),
                         1,
                     );
                     x11::xlib::XCloseDisplay(display);

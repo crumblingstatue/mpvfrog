@@ -2,7 +2,8 @@
 #![warn(
     unused_qualifications,
     clippy::redundant_closure_for_method_calls,
-    clippy::manual_let_else
+    clippy::manual_let_else,
+    clippy::ptr_as_ptr
 )]
 
 use std::sync::Mutex;
