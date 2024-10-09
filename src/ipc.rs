@@ -76,7 +76,7 @@ set_property_impl!(SetPaused, "pause", bool);
 
 struct ObserveProperty<'a>(&'a str);
 
-impl<'a> Command for ObserveProperty<'a> {
+impl Command for ObserveProperty<'_> {
     type R = [serde_json::Value; 3];
     fn json_values(&self) -> Self::R {
         ["observe_property".into(), 1.into(), self.0.into()]
