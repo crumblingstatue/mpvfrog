@@ -11,6 +11,7 @@ use {
         sfml::{
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
             window::{Event, Style, VideoMode},
+            SfBox,
         },
         SfEgui,
     },
@@ -18,12 +19,12 @@ use {
 };
 
 struct CtxMenuWin {
-    rw: RenderWindow,
+    rw: SfBox<RenderWindow>,
     sf_egui: SfEgui,
 }
 
 pub fn run(w: u32, h: u32, title: &str) {
-    let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default());
+    let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default()).unwrap();
     let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
@@ -66,7 +67,8 @@ pub fn run(w: u32, h: u32, title: &str) {
                     "NOOO",
                     Style::NONE,
                     &Default::default(),
-                );
+                )
+                .unwrap();
                 // Skip taskbar for context menu window
                 unsafe {
                     let native = rw.system_handle();
@@ -121,7 +123,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                 }
             }
             sf_egui
-                .do_pass(&mut rw, |ctx| {
+                .run(&mut rw, |_rw, ctx| {
                     app.update(ctx);
                 })
                 .unwrap();
