@@ -1,4 +1,4 @@
-# mpv-egui-musicplayer
+# mpvfrog 🐸
 Small personal music player wrapping mpv
 
 ## Why?

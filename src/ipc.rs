@@ -116,9 +116,7 @@ struct CommandJson<T: Serialize> {
 impl Bridge {
     pub fn connect() -> anyhow::Result<Self> {
         let ipc_stream = LocalSocketStream::connect(
-            "/tmp/mpv-egui-musicplayer.sock"
-                .to_fs_name::<GenericFilePath>()
-                .unwrap(),
+            "/tmp/mpvfrog.sock".to_fs_name::<GenericFilePath>().unwrap(),
         )?;
         ipc_stream.set_nonblocking(true)?;
         let mut this = Self {

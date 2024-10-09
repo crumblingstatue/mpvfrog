@@ -107,11 +107,11 @@ impl TrayIface {
     }
     #[zbus(property)]
     fn id(&self) -> &'static str {
-        "mpv-egui-musicplayer"
+        "mpvfrog"
     }
     #[zbus(property)]
     fn title(&self) -> &'static str {
-        "mpv-egui-musicplayer"
+        "mpvfrog"
     }
     #[zbus(property)]
     fn status(&self) -> &'static str {

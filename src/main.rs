@@ -35,5 +35,5 @@ fn warn_dialog(title: &str, desc: &str) {
 
 /// Entry point
 fn main() {
-    runner::run(740, 500, "mpv-egui-musicplayer");
+    runner::run(740, 500, "mpvfrog");
 }

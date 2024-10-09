@@ -61,7 +61,7 @@ impl Config {
         }
     }
     pub fn path() -> PathBuf {
-        let proj_dirs = ProjectDirs::from("", "crumblingstatue", "mpv-egui-musicplayer").unwrap();
+        let proj_dirs = ProjectDirs::from("", "crumblingstatue", "mpvfrog").unwrap();
         let cfg_dir = proj_dirs.config_dir();
         std::fs::create_dir_all(cfg_dir).unwrap();
         cfg_dir.join("config.json")

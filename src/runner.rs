@@ -175,7 +175,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     let mut quit = false;
     egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
         ui.horizontal(|ui| {
-            ui.label("egui-mpv");
+            ui.label("🐸 mpvfrog");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Quit").clicked() {
                     quit = true;

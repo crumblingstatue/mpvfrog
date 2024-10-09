@@ -71,7 +71,7 @@ impl Core {
         let speed_arg = format!("--speed={}", self.cfg.speed);
         let mut mpv_args = vec![
             path.as_ref(),
-            "--input-ipc-server=/tmp/mpv-egui-musicplayer.sock".as_ref(),
+            "--input-ipc-server=/tmp/mpvfrog.sock".as_ref(),
             vol_arg.as_ref(),
             speed_arg.as_ref(),
         ];
