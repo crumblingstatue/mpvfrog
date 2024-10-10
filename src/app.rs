@@ -32,7 +32,7 @@ macro_rules! logln {
 pub struct App {
     pub core: Core,
     pub ui: ui::Ui,
-    pub tray_handle: AppTray,
+    pub tray_handle: Option<AppTray>,
     last_tooltip_update: Instant,
 }
 
@@ -52,10 +52,17 @@ impl App {
         state.read_songs();
         let mut ui: ui::Ui = Default::default();
         ui.apply_colorix_theme(&state.cfg.theme, ctx);
+        let tray_handle = match AppTray::establish() {
+            Ok(handle) => Some(handle),
+            Err(e) => {
+                eprintln!("Failed to establish tray connection: {e}");
+                None
+            }
+        };
         App {
             ui,
             core: state,
-            tray_handle: AppTray::establish().unwrap(),
+            tray_handle,
             last_tooltip_update: Instant::now(),
         }
     }
@@ -163,20 +170,22 @@ impl App {
         if let Some(last) = self.core.mpv_handler.mpv_output().lines().last() {
             buf.push_str(last);
         }
-        self.tray_handle
-            .sender
-            .send(AppToTrayMsg::UpdateHoverText(buf))
-            .unwrap();
-        self.tray_handle
-            .conn
-            .emit_signal(
-                None::<BusName>,
-                "/StatusNotifierItem",
-                "org.kde.StatusNotifierItem",
-                "NewToolTip",
-                &(),
-            )
-            .unwrap();
+        if let Some(trhandle) = &self.tray_handle {
+            trhandle
+                .sender
+                .send(AppToTrayMsg::UpdateHoverText(buf))
+                .unwrap();
+            trhandle
+                .conn
+                .emit_signal(
+                    None::<BusName>,
+                    "/StatusNotifierItem",
+                    "org.kde.StatusNotifierItem",
+                    "NewToolTip",
+                    &(),
+                )
+                .unwrap();
+        }
     }
 
     pub(crate) fn update_volume(&mut self) {

@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        app::App,
+        app::{tray::EventFlags, App},
         rect_math::{rect_ensure_within, Rect, Vec2},
         MODAL,
     },
@@ -32,8 +32,13 @@ pub fn run(w: u32, h: u32, title: &str) {
     *MODAL.lock().unwrap() = Some(egui_modal::Modal::new(sf_egui.context(), "modal_dialog"));
     let mut win_visible = true;
     'mainloop: loop {
-        app.tray_handle.update();
-        let mut event_flags = app.tray_handle.event_flags.take();
+        let mut event_flags;
+        if let Some(trhandle) = &mut app.tray_handle {
+            trhandle.update();
+            event_flags = trhandle.event_flags.take();
+        } else {
+            event_flags = EventFlags::default();
+        }
         if event_flags.quit_clicked {
             break;
         }
@@ -109,6 +114,10 @@ pub fn run(w: u32, h: u32, title: &str) {
                 sf_egui.add_event(&event);
                 match event {
                     Event::Closed => {
+                        if app.tray_handle.is_none() {
+                            eprintln!("No tray handle, quitting.");
+                            break 'mainloop;
+                        }
                         rw.set_visible(false);
                         win_visible = false;
                     }
