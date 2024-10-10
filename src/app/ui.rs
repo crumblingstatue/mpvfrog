@@ -60,6 +60,7 @@ impl Ui {
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.group(|ui| {
+                ui.label(crate::APP_LABEL);
                 if ui.button("Music folder").clicked() {
                     self.file_dialog.select_directory();
                 }

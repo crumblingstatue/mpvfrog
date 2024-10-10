@@ -202,7 +202,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
         ui.horizontal(|ui| {
             if ui
-                .add(egui::Label::new("🐸 mpvfrog").sense(egui::Sense::click()))
+                .add(egui::Label::new(crate::APP_LABEL).sense(egui::Sense::click()))
                 .clicked()
             {
                 msg = Some(TrayUpdateMsg::FocusApp);

@@ -19,6 +19,8 @@ mod runner;
 /// Global egui modal dialog handle
 static MODAL: Mutex<Option<egui_modal::Modal>> = Mutex::new(None);
 
+const APP_LABEL: &str = "🐸 mpvfrog";
+
 /// Display a modal warning popup in the egui ui
 fn warn_dialog(title: &str, desc: &str) {
     let Some(modal) = &mut *MODAL.lock().unwrap() else {
