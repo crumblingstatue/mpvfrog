@@ -52,7 +52,7 @@ impl AppTray {
                 TrayIface {
                     sender: s1,
                     receiver: r2,
-                    tooltip: Mutex::new("Initial tooltip".into()),
+                    tooltip: Mutex::new("mpv-frog".into()),
                 },
             )
             .unwrap()
