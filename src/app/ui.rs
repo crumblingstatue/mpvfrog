@@ -58,9 +58,9 @@ impl Ui {
         self.windows.update(core, ctx, &mut self.colorix);
     }
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
+        ui.horizontal_centered(|ui| {
+            ui.label(crate::APP_LABEL);
             ui.group(|ui| {
-                ui.label(crate::APP_LABEL);
                 if ui.button("Music folder").clicked() {
                     self.file_dialog.select_directory();
                 }
