@@ -28,3 +28,9 @@ rand = "0.8.5"
 
 [profile.dev.package."*"]
 opt-level = 2
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+codegen-units = 1
+strip = true
