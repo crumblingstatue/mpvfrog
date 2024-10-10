@@ -43,12 +43,7 @@ pub fn run(w: u32, h: u32, title: &str) {
             break;
         }
         if event_flags.activated {
-            if tray_popup_win.is_some() {
-                tray_popup_win = None;
-            } else {
-                win_visible ^= true;
-                rw.set_visible(win_visible);
-            }
+            toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw);
         }
         if let Some((x, y)) = event_flags.ctx_menu.take() {
             if tray_popup_win.is_some() {
@@ -146,6 +141,9 @@ pub fn run(w: u32, h: u32, title: &str) {
                     match msg {
                         TrayUpdateMsg::QuitApp => break 'mainloop,
                         TrayUpdateMsg::CloseTray => tray_popup_win = None,
+                        TrayUpdateMsg::FocusApp => {
+                            toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw)
+                        }
                     }
                 }
             }
@@ -158,6 +156,9 @@ pub fn run(w: u32, h: u32, title: &str) {
                     match msg {
                         TrayUpdateMsg::QuitApp => break 'mainloop,
                         TrayUpdateMsg::CloseTray => tray_popup_win = None,
+                        TrayUpdateMsg::FocusApp => {
+                            toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw)
+                        }
                     }
                 }
             } else {
@@ -169,9 +170,22 @@ pub fn run(w: u32, h: u32, title: &str) {
     app.save();
 }
 
+fn toggle_win_visible(
+    tray_popup_win: &mut Option<CtxMenuWin>,
+    win_visible: &mut bool,
+    rw: &mut SfBox<RenderWindow>,
+) {
+    if tray_popup_win.is_some() {
+        *tray_popup_win = None;
+    }
+    *win_visible ^= true;
+    rw.set_visible(*win_visible);
+}
+
 enum TrayUpdateMsg {
     QuitApp,
     CloseTray,
+    FocusApp,
 }
 
 fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateMsg> {
@@ -187,7 +201,12 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     let mut quit = false;
     egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
         ui.horizontal(|ui| {
-            ui.label("🐸 mpvfrog");
+            if ui
+                .add(egui::Label::new("🐸 mpvfrog").sense(egui::Sense::click()))
+                .clicked()
+            {
+                msg = Some(TrayUpdateMsg::FocusApp);
+            }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.button("Quit").clicked() {
                     quit = true;
