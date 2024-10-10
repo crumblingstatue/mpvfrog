@@ -167,7 +167,6 @@ impl App {
             .sender
             .send(AppToTrayMsg::UpdateHoverText(buf))
             .unwrap();
-        let body: &[u8] = &[];
         self.tray_handle
             .conn
             .emit_signal(
@@ -175,7 +174,7 @@ impl App {
                 "/StatusNotifierItem",
                 "org.kde.StatusNotifierItem",
                 "NewToolTip",
-                &body,
+                &(),
             )
             .unwrap();
     }
