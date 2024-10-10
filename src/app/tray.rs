@@ -135,6 +135,11 @@ impl TrayIface {
         let content = "";
         (icon_name, icon, tooltip.clone(), content)
     }
+    /// Needed so all tray providers enable "Activate"
+    #[zbus(property)]
+    fn item_is_menu(&self) -> bool {
+        false
+    }
     fn context_menu(&self, x: i32, y: i32) {
         self.sender
             .send(TrayToAppMsg::ShowCtxMenu { x, y })
