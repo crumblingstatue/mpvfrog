@@ -14,7 +14,6 @@ use {
     crate::{config::Config, mpv_handler::MpvHandler},
     egui_sfml::egui::{self, Context, Event, Key},
     std::{sync::Mutex, time::Instant},
-    ui::apply_colorix_theme,
     zbus::names::BusName,
 };
 
@@ -32,7 +31,7 @@ macro_rules! logln {
 
 pub struct App {
     pub core: Core,
-    ui: ui::Ui,
+    pub ui: ui::Ui,
     pub tray_handle: AppTray,
     last_tooltip_update: Instant,
 }
@@ -41,7 +40,6 @@ impl App {
     pub fn new(ctx: &Context) -> Self {
         ctx.set_visuals(egui::Visuals::dark());
         let cfg = Config::load_or_default();
-        apply_colorix_theme(cfg.theme, ctx);
         let mut state = Core {
             cfg,
             playlist: Vec::new(),
@@ -52,8 +50,10 @@ impl App {
             song_change: false,
         };
         state.read_songs();
+        let mut ui: ui::Ui = Default::default();
+        ui.apply_colorix_theme(&state.cfg.theme, ctx);
         App {
-            ui: Default::default(),
+            ui,
             core: state,
             tray_handle: AppTray::establish().unwrap(),
             last_tooltip_update: Instant::now(),

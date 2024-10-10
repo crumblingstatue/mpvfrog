@@ -414,8 +414,7 @@ dependencies = [
 [[package]]
 name = "egui_colors"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1d321da5a490c3879694c8fd6212bb1f3f646c2e62a4c480fce7be729622c8e"
+source = "git+https://github.com/frankvgompel/egui_colors.git#640fd4d1de7cfd6e162b24f941e0ddc5e53454f6"
 dependencies = [
  "egui",
  "palette",

@@ -1,26 +1,29 @@
+mod color_theme_window;
 mod custom_demuxers_window;
 
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, PlaylistBehavior, LOG},
     crate::{bool_ext::BoolExt, MODAL},
-    egui_colors::{tokens::ColorPreset, Colorix},
+    color_theme_window::ColorThemeWindow,
+    egui_colors::{tokens::ThemeColor, Colorix},
     egui_sfml::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
         TopBottomPanel,
     },
-    rand::{thread_rng, Rng},
     std::fmt,
 };
 
 #[derive(Default)]
 struct Windows {
     custom_demuxers: CustomDemuxersWindow,
+    color_theme: ColorThemeWindow,
 }
 
 impl Windows {
-    fn update(&mut self, core: &mut Core, ctx: &Context) {
+    fn update(&mut self, core: &mut Core, ctx: &Context, colorix: &mut Option<Colorix>) {
         self.custom_demuxers.update(core, ctx);
+        self.color_theme.update(core, ctx, colorix);
     }
 }
 
@@ -34,6 +37,7 @@ pub struct Ui {
     filter_changed: bool,
     output_source: OutputSource,
     file_dialog: egui_file_dialog::FileDialog,
+    colorix: Option<Colorix>,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -49,11 +53,11 @@ impl Ui {
         if let Some(modal) = &mut *MODAL.lock().unwrap() {
             modal.show_dialog();
         }
-        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ctx, ui));
+        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ui));
         CentralPanel::default().show(ctx, |ui| self.central_panel_ui(core, ui));
-        self.windows.update(core, ctx);
+        self.windows.update(core, ctx, &mut self.colorix);
     }
-    fn top_panel_ui(&mut self, core: &mut Core, ctx: &Context, ui: &mut egui::Ui) {
+    fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.button("Music folder").clicked() {
@@ -92,18 +96,12 @@ impl Ui {
                 re.request_focus();
             }
             self.filter_string = self.filter_string.to_ascii_lowercase();
-            let re = ui.button("💎").on_hover_text("Random theme");
-            re.context_menu(|ui| {
-                if ui.button("clear").clicked() {
-                    core.cfg.theme = None;
-                    ctx.set_visuals(egui::Visuals::dark());
-                    ui.close_menu();
-                }
-            });
-            if re.clicked() {
-                let mut rng = thread_rng();
-                core.cfg.theme = Some(std::array::from_fn(|_| rng.gen()));
-                apply_colorix_theme(core.cfg.theme, ctx);
+            if ui
+                .button("💎")
+                .on_hover_text("Color theme config")
+                .clicked()
+            {
+                self.windows.color_theme.open ^= true;
             }
         });
     }
@@ -263,11 +261,13 @@ impl Ui {
                 );
             });
     }
-}
-
-pub fn apply_colorix_theme(theme: Option<[[u8; 3]; 12]>, ctx: &Context) {
-    if let Some(theme) = theme {
-        let _ = Colorix::init(ctx, std::array::from_fn(|i| ColorPreset::Custom(theme[i])));
+    pub fn apply_colorix_theme(&mut self, theme: &Option<[[u8; 3]; 12]>, ctx: &Context) {
+        if let Some(theme) = theme {
+            self.colorix = Some(Colorix::init(
+                ctx,
+                std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
+            ));
+        }
     }
 }
 

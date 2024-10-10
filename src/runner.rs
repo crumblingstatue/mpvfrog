@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        app::{ui::apply_colorix_theme, App},
+        app::App,
         rect_math::{rect_ensure_within, Rect, Vec2},
         MODAL,
     },
@@ -98,7 +98,8 @@ pub fn run(w: u32, h: u32, title: &str) {
                 rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
                 rw.set_vertical_sync_enabled(true);
                 let sf_egui = SfEgui::new(&rw);
-                apply_colorix_theme(app.core.cfg.theme, sf_egui.context());
+                app.ui
+                    .apply_colorix_theme(&app.core.cfg.theme, sf_egui.context());
                 tray_popup_win = Some(CtxMenuWin { rw, sf_egui });
             }
         }
