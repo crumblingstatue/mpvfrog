@@ -64,7 +64,7 @@ pub fn run(w: u32, h: u32, title: &str) {
                 let put_rect = rect_ensure_within(desired, desk_rect, Vec2 { x: 16, y: 32 });
                 let mut rw = RenderWindow::new(
                     (put_rect.size.x as u32, put_rect.size.y as u32),
-                    "NOOO",
+                    "",
                     Style::NONE,
                     &Default::default(),
                 )
