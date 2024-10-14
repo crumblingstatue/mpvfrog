@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui-sfml = { git = "https://github.com/crumblingstatue/egui-sfml.git" }
+egui-sfml = "0.6.0"
 pty-process = { git = "https://github.com/crumblingstatue/pty-process.git", branch = "quickfix" }
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
