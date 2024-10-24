@@ -11,7 +11,7 @@ use {
         sfml::{
             cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
-            window::{Event, Style, VideoMode},
+            window::{Event, Key, Style, VideoMode},
         },
         SfEgui,
     },
@@ -131,6 +131,12 @@ pub fn run(
                             &View::from_rect(FloatRect::new(0., 0., width as f32, height as f32))
                                 .unwrap(),
                         );
+                    }
+                    Event::KeyPressed { code, .. } => {
+                        if code == Key::Escape {
+                            rw.set_visible(false);
+                            win_visible = false;
+                        }
                     }
                     _ => {}
                 }
