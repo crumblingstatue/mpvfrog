@@ -1,7 +1,7 @@
 use {
     crossbeam_channel::{Receiver, Sender},
     std::sync::Mutex,
-    zbus::{blocking::connection, interface, object_server::SignalContext},
+    zbus::{blocking::connection, interface, object_server::SignalEmitter},
 };
 
 pub struct AppTray {
@@ -149,7 +149,7 @@ impl TrayIface {
         self.sender.send(TrayToAppMsg::Activate).unwrap();
     }
     #[zbus(signal)]
-    async fn new_tool_tip(_ctx: &SignalContext<'_>) -> zbus::Result<()>;
+    async fn new_tool_tip(_ctx: &SignalEmitter<'_>) -> zbus::Result<()>;
     #[zbus(signal)]
-    async fn new_title(_ctx: &SignalContext<'_>) -> zbus::Result<()>;
+    async fn new_title(_ctx: &SignalEmitter<'_>) -> zbus::Result<()>;
 }

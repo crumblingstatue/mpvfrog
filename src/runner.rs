@@ -9,9 +9,9 @@ use {
     egui_sfml::{
         egui,
         sfml::{
+            cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
             window::{Event, Style, VideoMode},
-            SfBox,
         },
         SfEgui,
     },
@@ -19,7 +19,7 @@ use {
 };
 
 struct CtxMenuWin {
-    rw: SfBox<RenderWindow>,
+    rw: FBox<RenderWindow>,
     sf_egui: SfEgui,
 }
 
@@ -117,22 +117,20 @@ pub fn run(w: u32, h: u32, title: &str) {
                         win_visible = false;
                     }
                     Event::Resized { width, height } => {
-                        rw.set_view(&View::from_rect(FloatRect::new(
-                            0.,
-                            0.,
-                            width as f32,
-                            height as f32,
-                        )));
+                        rw.set_view(
+                            &View::from_rect(FloatRect::new(0., 0., width as f32, height as f32))
+                                .unwrap(),
+                        );
                     }
                     _ => {}
                 }
             }
-            sf_egui
+            let di = sf_egui
                 .run(&mut rw, |_rw, ctx| {
                     app.update(ctx);
                 })
                 .unwrap();
-            sf_egui.draw(&mut rw, None);
+            sf_egui.draw(di, &mut rw, None);
             rw.display();
             // Update tray window if visible
             if let Some(win) = &mut tray_popup_win {
@@ -173,7 +171,7 @@ pub fn run(w: u32, h: u32, title: &str) {
 fn toggle_win_visible(
     tray_popup_win: &mut Option<CtxMenuWin>,
     win_visible: &mut bool,
-    rw: &mut SfBox<RenderWindow>,
+    rw: &mut RenderWindow,
 ) {
     if tray_popup_win.is_some() {
         *tray_popup_win = None;
@@ -252,8 +250,8 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     if quit {
         msg = Some(TrayUpdateMsg::QuitApp);
     }
-    win.sf_egui.end_pass(&mut win.rw).unwrap();
-    win.sf_egui.draw(&mut win.rw, None);
+    let di = win.sf_egui.end_pass(&mut win.rw).unwrap();
+    win.sf_egui.draw(di, &mut win.rw, None);
     win.rw.display();
     msg
 }
