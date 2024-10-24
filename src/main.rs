@@ -6,7 +6,7 @@
     clippy::ptr_as_ptr
 )]
 
-use std::sync::Mutex;
+use {existing_instance::Msg, std::sync::Mutex};
 
 mod app;
 mod bool_ext;
@@ -37,5 +37,18 @@ fn warn_dialog(title: &str, desc: &str) {
 
 /// Entry point
 fn main() {
-    runner::run(740, 500, "mpvfrog");
+    let listener = match existing_instance::establish_endpoint("mpvfrog-instance", true) {
+        Ok(endpoint) => match endpoint {
+            existing_instance::Endpoint::New(listener) => Some(listener),
+            existing_instance::Endpoint::Existing(mut stream) => {
+                stream.send(Msg::Nudge);
+                return;
+            }
+        },
+        Err(e) => {
+            eprintln!("Failed to establish IPC endpoint: {e}\nContinuing.");
+            None
+        }
+    };
+    runner::run(740, 500, "mpvfrog", listener);
 }

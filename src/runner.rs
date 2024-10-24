@@ -23,7 +23,12 @@ struct CtxMenuWin {
     sf_egui: SfEgui,
 }
 
-pub fn run(w: u32, h: u32, title: &str) {
+pub fn run(
+    w: u32,
+    h: u32,
+    title: &str,
+    mut instance_listener: Option<existing_instance::Listener>,
+) {
     let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default()).unwrap();
     let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
@@ -38,6 +43,11 @@ pub fn run(w: u32, h: u32, title: &str) {
             event_flags = trhandle.event_flags.take();
         } else {
             event_flags = EventFlags::default();
+        }
+        if let Some(listener) = &mut instance_listener {
+            if listener.accept().is_some() {
+                event_flags.activated = true;
+            }
         }
         if event_flags.quit_clicked {
             break;

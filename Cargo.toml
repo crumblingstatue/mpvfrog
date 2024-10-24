@@ -20,11 +20,12 @@ interprocess = { version = "2.2", default-features = false }
 anyhow = "1.0.79"
 zbus = "5"
 crossbeam-channel = "0.5.12"
-x11 = {version = "2.21.0", features = ["xlib"]}
+x11 = { version = "2.21.0", features = ["xlib"] }
 egui-modal = { git = "https://github.com/crumblingstatue/egui-modal.git", branch = "egui-0.29" }
 egui-file-dialog = { git = "https://github.com/crumblingstatue/egui-file-dialog.git", branch = "egui-0.29" }
 egui_colors = { git = "https://github.com/frankvgompel/egui_colors.git" }
 rand = "0.8.5"
+existing_instance = { git = "https://github.com/crumblingstatue/rust-existing-instance.git" }
 
 [profile.dev.package."*"]
 opt-level = 2
