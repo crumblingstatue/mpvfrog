@@ -59,7 +59,7 @@ impl CustomDemuxersWindow {
             Clone(usize),
         }
         let mut op = Op::None;
-        ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
+        ScrollArea::vertical().max_height(400.0).show(ui, |ui| {
             let len = core.cfg.custom_players.len();
             core.cfg.custom_players.retain_mut(|custom_player| {
                 let mut retain = true;
@@ -139,7 +139,8 @@ impl CustomDemuxersWindow {
                         }) if idx == index => {
                             if ui
                                 .add(
-                                    egui::TextEdit::singleline(&mut self.edit_buffer)
+                                    egui::TextEdit::multiline(&mut self.edit_buffer)
+                                        .desired_rows(3)
                                         .desired_width(f32::INFINITY),
                                 )
                                 .lost_focus()
@@ -158,9 +159,10 @@ impl CustomDemuxersWindow {
                         _ => {
                             if ui
                                 .add(
-                                    egui::TextEdit::singleline(
+                                    egui::TextEdit::multiline(
                                         &mut custom_player.reader_cmd.to_string().unwrap(),
                                     )
+                                    .desired_rows(3)
                                     .desired_width(f32::INFINITY),
                                 )
                                 .gained_focus()
@@ -185,7 +187,8 @@ impl CustomDemuxersWindow {
                         }) if idx == index => {
                             if ui
                                 .add(
-                                    egui::TextEdit::singleline(&mut self.edit_buffer)
+                                    egui::TextEdit::multiline(&mut self.edit_buffer)
+                                        .desired_rows(3)
                                         .desired_width(f32::INFINITY),
                                 )
                                 .lost_focus()
@@ -202,9 +205,10 @@ impl CustomDemuxersWindow {
                         _ => {
                             if ui
                                 .add(
-                                    egui::TextEdit::singleline(
+                                    egui::TextEdit::multiline(
                                         &mut custom_player.extra_mpv_args.join(" "),
                                     )
+                                    .desired_rows(3)
                                     .desired_width(f32::INFINITY),
                                 )
                                 .gained_focus()
