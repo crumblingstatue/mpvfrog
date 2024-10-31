@@ -103,6 +103,7 @@ impl MpvHandler {
             warn_dialog("IPC error", &format!("Mpv IPC error: {e}"));
         }
         let mut buf = Vec::new();
+        let mut demux_buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
         let mut demux_nbr = NonBlockingReader::from_fd(&mut inner.demuxer_pty).unwrap();
         match nbr.read_available(&mut buf) {
@@ -119,10 +120,10 @@ impl MpvHandler {
             }
         }
         if self.read_demuxer {
-            match demux_nbr.read_available(&mut buf) {
+            match demux_nbr.read_available(&mut demux_buf) {
                 Ok(n_read) => {
                     if n_read != 0 {
-                        self.demux_term.feed(&buf);
+                        self.demux_term.feed(&demux_buf);
                     }
                 }
                 Err(e) => {
