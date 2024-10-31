@@ -109,7 +109,10 @@ impl CustomDemuxersWindow {
         if let Some(custom_player) = core.cfg.custom_players.get_mut(self.selected_idx) {
             ui.horizontal(|ui| {
                 ui.label("Name");
-                ui.text_edit_singleline(&mut custom_player.name);
+                ui.add(
+                    egui::TextEdit::singleline(&mut custom_player.name)
+                        .desired_width(f32::INFINITY),
+                );
             });
             ui.horizontal(|ui| {
                 if ui
@@ -134,7 +137,13 @@ impl CustomDemuxersWindow {
                             index,
                             which: EditTargetWhich::Command,
                         }) if idx == index => {
-                            if ui.text_edit_singleline(&mut self.edit_buffer).lost_focus() {
+                            if ui
+                                .add(
+                                    egui::TextEdit::singleline(&mut self.edit_buffer)
+                                        .desired_width(f32::INFINITY),
+                                )
+                                .lost_focus()
+                            {
                                 match Command::from_str(&self.edit_buffer) {
                                     Ok(cmd) => {
                                         custom_player.reader_cmd = cmd;
@@ -148,8 +157,11 @@ impl CustomDemuxersWindow {
                         }
                         _ => {
                             if ui
-                                .text_edit_singleline(
-                                    &mut custom_player.reader_cmd.to_string().unwrap(),
+                                .add(
+                                    egui::TextEdit::singleline(
+                                        &mut custom_player.reader_cmd.to_string().unwrap(),
+                                    )
+                                    .desired_width(f32::INFINITY),
                                 )
                                 .gained_focus()
                             {
@@ -171,7 +183,13 @@ impl CustomDemuxersWindow {
                             index,
                             which: EditTargetWhich::MpvArgs,
                         }) if idx == index => {
-                            if ui.text_edit_singleline(&mut self.edit_buffer).lost_focus() {
+                            if ui
+                                .add(
+                                    egui::TextEdit::singleline(&mut self.edit_buffer)
+                                        .desired_width(f32::INFINITY),
+                                )
+                                .lost_focus()
+                            {
                                 custom_player.extra_mpv_args = self
                                     .edit_buffer
                                     .split_whitespace()
@@ -183,7 +201,12 @@ impl CustomDemuxersWindow {
                         }
                         _ => {
                             if ui
-                                .text_edit_singleline(&mut custom_player.extra_mpv_args.join(" "))
+                                .add(
+                                    egui::TextEdit::singleline(
+                                        &mut custom_player.extra_mpv_args.join(" "),
+                                    )
+                                    .desired_width(f32::INFINITY),
+                                )
                                 .gained_focus()
                             {
                                 self.edit_buffer = custom_player.extra_mpv_args.join(" ");
@@ -227,8 +250,11 @@ impl CustomDemuxersWindow {
                                 );
                             });
                         match pred {
-                            Predicate::BeginsWith(frag) => ui.text_edit_singleline(frag),
-                            Predicate::HasExt(ext) => ui.text_edit_singleline(ext),
+                            Predicate::BeginsWith(frag) => ui
+                                .add(egui::TextEdit::singleline(frag).desired_width(f32::INFINITY)),
+                            Predicate::HasExt(ext) => {
+                                ui.add(egui::TextEdit::singleline(ext).desired_width(f32::INFINITY))
+                            }
                         };
                     }
                 }
