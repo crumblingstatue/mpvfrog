@@ -20,7 +20,7 @@ use {
 
 struct MpvHandlerInner {
     child: Child,
-    pty: Pty,
+    mpv_pty: Pty,
     demuxer_pty: Pty,
     ipc_bridge: ipc::Bridge,
 }
@@ -83,7 +83,7 @@ impl MpvHandler {
         };
         self.inner = Some(MpvHandlerInner {
             child,
-            pty,
+            mpv_pty: pty,
             demuxer_pty,
             ipc_bridge,
         });
@@ -91,7 +91,7 @@ impl MpvHandler {
     }
     pub fn stop_music(&mut self) {
         let Some(inner) = &mut self.inner else { return };
-        inner.pty.write_all(b"q").unwrap();
+        inner.mpv_pty.write_all(b"q").unwrap();
         inner.child.wait().unwrap();
         self.inner = None;
     }
@@ -104,7 +104,7 @@ impl MpvHandler {
         }
         let mut buf = Vec::new();
         let mut demux_buf = Vec::new();
-        let mut nbr = NonBlockingReader::from_fd(&mut inner.pty).unwrap();
+        let mut nbr = NonBlockingReader::from_fd(&mut inner.mpv_pty).unwrap();
         let mut demux_nbr = NonBlockingReader::from_fd(&mut inner.demuxer_pty).unwrap();
         match nbr.read_available(&mut buf) {
             Ok(n_read) => {
@@ -136,7 +136,7 @@ impl MpvHandler {
 
     pub fn input(&mut self, s: &str) {
         let Some(inner) = &mut self.inner else { return };
-        inner.pty.write_all(s.as_bytes()).unwrap();
+        inner.mpv_pty.write_all(s.as_bytes()).unwrap();
     }
 
     pub fn active(&self) -> bool {
