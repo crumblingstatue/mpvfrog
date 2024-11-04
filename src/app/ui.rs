@@ -4,7 +4,7 @@ mod custom_demuxers_window;
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, PlaylistBehavior, LOG},
-    crate::{bool_ext::BoolExt, MODAL},
+    crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput, MODAL},
     color_theme_window::ColorThemeWindow,
     egui_colors::{tokens::ThemeColor, Colorix},
     egui_sfml::egui::{
@@ -241,8 +241,18 @@ impl Ui {
         });
         ui.separator();
         ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.output_source, OutputSource::Mpv, "Mpv");
-            ui.selectable_value(&mut self.output_source, OutputSource::Demuxer, "Demuxer");
+            if ui
+                .selectable_value(&mut self.output_source, OutputSource::Mpv, "Mpv")
+                .clicked()
+            {
+                core.mpv_handler.active_pty_input = ActivePtyInput::Mpv;
+            }
+            if ui
+                .selectable_value(&mut self.output_source, OutputSource::Demuxer, "Demuxer")
+                .clicked()
+            {
+                core.mpv_handler.active_pty_input = ActivePtyInput::Demuxer;
+            };
             ui.selectable_value(&mut self.output_source, OutputSource::Log, "Log");
         });
         ScrollArea::vertical()

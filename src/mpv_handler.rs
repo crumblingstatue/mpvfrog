@@ -30,6 +30,12 @@ pub struct MpvHandler {
     pub demux_term: Term,
     inner: Option<MpvHandlerInner>,
     read_demuxer: bool,
+    pub active_pty_input: ActivePtyInput,
+}
+
+pub enum ActivePtyInput {
+    Mpv,
+    Demuxer,
 }
 
 pub struct CustomDemuxer {
@@ -134,9 +140,13 @@ impl MpvHandler {
         }
     }
 
-    pub fn input(&mut self, s: &str) {
+    pub fn send_input(&mut self, s: &str) {
         let Some(inner) = &mut self.inner else { return };
-        inner.mpv_pty.write_all(s.as_bytes()).unwrap();
+        let pty = match self.active_pty_input {
+            ActivePtyInput::Mpv => &mut inner.mpv_pty,
+            ActivePtyInput::Demuxer => &mut inner.demuxer_pty,
+        };
+        pty.write_all(s.as_bytes()).unwrap();
     }
 
     pub fn active(&self) -> bool {
@@ -218,6 +228,7 @@ impl Default for MpvHandler {
             demux_term: Term::new(100),
             inner: None,
             read_demuxer: true,
+            active_pty_input: ActivePtyInput::Mpv,
         }
     }
 }

@@ -11,7 +11,10 @@ use {
         core::Core,
         tray::{AppToTrayMsg, AppTray},
     },
-    crate::{config::Config, mpv_handler::MpvHandler},
+    crate::{
+        config::Config,
+        mpv_handler::{ActivePtyInput, MpvHandler},
+    },
     egui_sfml::egui::{self, Context, Event, Key},
     std::{sync::Mutex, time::Instant},
     zbus::names::BusName,
@@ -111,13 +114,15 @@ impl App {
                 return;
             }
             for ev in &input.raw.events {
+                let mpv_active =
+                    matches!(self.core.mpv_handler.active_pty_input, ActivePtyInput::Mpv);
                 match ev {
                     Event::Text(s) => match s.as_str() {
-                        " " => self.core.play_or_toggle_pause(),
-                        "<" => self.core.play_prev(),
-                        ">" => self.core.play_next(),
+                        " " if mpv_active => self.core.play_or_toggle_pause(),
+                        "<" if mpv_active => self.core.play_prev(),
+                        ">" if mpv_active => self.core.play_next(),
                         s => {
-                            self.core.mpv_handler.input(s);
+                            self.core.mpv_handler.send_input(s);
                         }
                     },
                     Event::Key {
@@ -127,13 +132,13 @@ impl App {
                         repeat: _,
                         physical_key: _,
                     } => match key {
-                        Key::ArrowUp => self.core.mpv_handler.input("\x1b[A"),
-                        Key::ArrowDown => self.core.mpv_handler.input("\x1b[B"),
-                        Key::ArrowRight => self.core.mpv_handler.input("\x1b[C"),
-                        Key::ArrowLeft => self.core.mpv_handler.input("\x1b[D"),
+                        Key::ArrowUp => self.core.mpv_handler.send_input("\x1b[A"),
+                        Key::ArrowDown => self.core.mpv_handler.send_input("\x1b[B"),
+                        Key::ArrowRight => self.core.mpv_handler.send_input("\x1b[C"),
+                        Key::ArrowLeft => self.core.mpv_handler.send_input("\x1b[D"),
                         Key::Backspace => {
                             self.core.cfg.speed = 1.0;
-                            self.core.mpv_handler.input("\x08");
+                            self.core.mpv_handler.send_input("\x08");
                         }
                         _ => (),
                     },
