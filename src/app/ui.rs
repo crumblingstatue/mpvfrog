@@ -265,11 +265,21 @@ impl Ui {
                     OutputSource::Demuxer => core.mpv_handler.demux_term.contents_to_string(),
                     OutputSource::Log => LOG.lock().unwrap().clone(),
                 };
-                ui.add(
-                    TextEdit::multiline(&mut out.as_str())
-                        .desired_width(620.0)
-                        .font(TextStyle::Monospace),
-                );
+                // Weird hack to make PTY interaction work even if the TextEdit was clicked.
+                // Normally, the `TextEdit` is interested in keyboard events even in the
+                // "immutable" mode, which is not what we want.
+                // But unconditionally surrendering focus also deselects, so we first check if
+                // nothing is being selected.
+                let out = TextEdit::multiline(&mut out.as_str())
+                    .desired_width(620.0)
+                    .font(TextStyle::Monospace)
+                    .show(ui);
+                if out
+                    .cursor_range
+                    .is_none_or(|range| range.primary == range.secondary)
+                {
+                    out.response.surrender_focus();
+                }
             });
     }
     pub fn apply_colorix_theme(&mut self, theme: &Option<[[u8; 3]; 12]>, ctx: &Context) {
