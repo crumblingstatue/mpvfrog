@@ -3,7 +3,7 @@
 use {
     crate::{logln, warn_dialog},
     interprocess::local_socket::{
-        traits::Stream as _, GenericFilePath, Stream as LocalSocketStream, ToFsName,
+        GenericFilePath, Stream as LocalSocketStream, ToFsName, traits::Stream as _,
     },
     serde::Serialize,
     std::{
@@ -100,11 +100,7 @@ impl SetProperty for SetVideo {
     type Value = serde_json::Value;
 
     fn value(&self) -> Self::Value {
-        if self.0 {
-            1.into()
-        } else {
-            false.into()
-        }
+        if self.0 { 1.into() } else { false.into() }
     }
 }
 

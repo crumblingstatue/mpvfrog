@@ -3,10 +3,10 @@ mod custom_demuxers_window;
 
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
-    super::{Core, PlaylistBehavior, LOG},
-    crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput, MODAL},
+    super::{Core, LOG, PlaylistBehavior},
+    crate::{MODAL, bool_ext::BoolExt, mpv_handler::ActivePtyInput},
     color_theme_window::ColorThemeWindow,
-    egui_colors::{tokens::ThemeColor, Colorix},
+    egui_colors::{Colorix, tokens::ThemeColor},
     egui_sfml::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
         TopBottomPanel,

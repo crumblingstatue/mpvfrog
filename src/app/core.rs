@@ -1,10 +1,10 @@
 use {
     super::PlaylistBehavior,
     crate::{
+        MODAL,
         config::{Config, PredicateSliceExt},
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
-        MODAL,
     },
     std::{ffi::OsStr, path::PathBuf},
     walkdir::WalkDir,

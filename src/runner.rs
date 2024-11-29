@@ -2,18 +2,17 @@
 
 use {
     crate::{
-        app::{tray::EventFlags, App},
-        rect_math::{rect_ensure_within, Rect, Vec2},
         MODAL,
+        app::{App, tray::EventFlags},
+        rect_math::{Rect, Vec2, rect_ensure_within},
     },
     egui_sfml::{
-        egui,
+        SfEgui, egui,
         sfml::{
             cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
             window::{Event, Key, Style, VideoMode},
         },
-        SfEgui,
     },
     std::time::Duration,
 };

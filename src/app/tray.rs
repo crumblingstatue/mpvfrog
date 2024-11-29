@@ -47,14 +47,11 @@ impl AppTray {
             .unwrap()
             .name(name.clone())
             .unwrap()
-            .serve_at(
-                "/StatusNotifierItem",
-                TrayIface {
-                    sender: s1,
-                    receiver: r2,
-                    tooltip: Mutex::new("mpv-frog".into()),
-                },
-            )
+            .serve_at("/StatusNotifierItem", TrayIface {
+                sender: s1,
+                receiver: r2,
+                tooltip: Mutex::new("mpv-frog".into()),
+            })
             .unwrap()
             .build()
             .unwrap();

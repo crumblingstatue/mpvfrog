@@ -1,8 +1,8 @@
 use {
     crate::app::core::Core,
-    egui_colors::{tokens::ThemeColor, Colorix},
+    egui_colors::{Colorix, tokens::ThemeColor},
     egui_sfml::egui,
-    rand::{thread_rng, Rng as _},
+    rand::{Rng as _, thread_rng},
 };
 
 #[derive(Default)]
@@ -28,7 +28,7 @@ impl ColorThemeWindow {
                     }
                     if ui.button("Random").clicked() {
                         let mut rng = thread_rng();
-                        let theme = std::array::from_fn(|_| rng.gen());
+                        let theme = std::array::from_fn(|_| rng.r#gen());
                         core.cfg.theme = Some(theme);
                         *colorix = Colorix::init(ctx, theme.map(ThemeColor::Custom));
                     }
