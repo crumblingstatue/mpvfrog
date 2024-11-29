@@ -33,7 +33,7 @@ dependencies = [
 [[package]]
 name = "ansi_term_buf"
 version = "0.1.0"
-source = "git+https://github.com/crumblingstatue/ansi_term_buf.git#ba62d226aed66f09bd2d17aad91d72b35f1fca60"
+source = "git+https://github.com/crumblingstatue/ansi_term_buf.git#7763b6681af12c61143e05c4b4811106b955ecd2"
 
 [[package]]
 name = "anyhow"

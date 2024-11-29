@@ -248,14 +248,7 @@ impl Ui {
                 core.mpv_handler.active_pty_input = ActivePtyInput::Mpv;
             }
             let mut demux_enabled = true;
-            if !core.mpv_handler.demuxer_active()
-                && core
-                    .mpv_handler
-                    .demux_term
-                    .contents_to_string()
-                    .trim()
-                    .is_empty()
-            {
+            if !core.mpv_handler.demuxer_active() && core.mpv_handler.demux_term.is_empty() {
                 demux_enabled = false;
             }
             if ui
