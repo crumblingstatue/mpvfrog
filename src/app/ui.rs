@@ -247,10 +247,28 @@ impl Ui {
             {
                 core.mpv_handler.active_pty_input = ActivePtyInput::Mpv;
             }
+            let mut demux_enabled = true;
+            if !core.mpv_handler.demuxer_active()
+                && core
+                    .mpv_handler
+                    .demux_term
+                    .contents_to_string()
+                    .trim()
+                    .is_empty()
+            {
+                demux_enabled = false;
+            }
             if ui
-                .selectable_value(&mut self.output_source, OutputSource::Demuxer, "Demuxer")
+                .add_enabled(
+                    demux_enabled,
+                    egui::SelectableLabel::new(
+                        self.output_source == OutputSource::Demuxer,
+                        "Demuxer",
+                    ),
+                )
                 .clicked()
             {
+                self.output_source = OutputSource::Demuxer;
                 core.mpv_handler.active_pty_input = ActivePtyInput::Demuxer;
             };
             ui.selectable_value(&mut self.output_source, OutputSource::Log, "Log");

@@ -214,6 +214,10 @@ impl MpvHandler {
             None => None,
         }
     }
+
+    pub(crate) fn demuxer_active(&self) -> bool {
+        self.read_demuxer
+    }
 }
 
 pub struct TimeInfo {
