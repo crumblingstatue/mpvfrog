@@ -14,7 +14,7 @@ directories = "5.0.1"
 walkdir = "2.4.0"
 nonblock = "0.2.0"
 ansi_term_buf = { git = "https://github.com/crumblingstatue/ansi_term_buf.git" }
-thiserror = "1.0.56"
+thiserror = "2"
 enum-kinds = "0.5.1"
 interprocess = { version = "2.2", default-features = false }
 anyhow = "1.0.79"
