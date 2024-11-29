@@ -54,6 +54,7 @@ impl App {
         };
         state.read_songs();
         let mut ui: ui::Ui = Default::default();
+        ui.recalc_filt_entries(&state);
         ui.apply_colorix_theme(&state.cfg.theme, ctx);
         let tray_handle = match AppTray::establish() {
             Ok(handle) => Some(handle),

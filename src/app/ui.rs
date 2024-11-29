@@ -11,6 +11,7 @@ use {
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
         TopBottomPanel,
     },
+    fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
     std::fmt,
 };
 
@@ -38,6 +39,7 @@ pub struct Ui {
     output_source: OutputSource,
     file_dialog: egui_file_dialog::FileDialog,
     colorix: Option<Colorix>,
+    filtered_entries: Vec<usize>,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -92,11 +94,11 @@ impl Ui {
                 ui.add(TextEdit::singleline(&mut self.filter_string).hint_text("Filter (ctrl+f)"));
             if re.changed() {
                 self.filter_changed = true;
+                self.recalc_filt_entries(core);
             }
             if ctrl_f {
                 re.request_focus();
             }
-            self.filter_string = self.filter_string.to_ascii_lowercase();
             if ui
                 .button("💎")
                 .on_hover_text("Color theme config")
@@ -106,28 +108,44 @@ impl Ui {
             }
         });
     }
+
+    pub(crate) fn recalc_filt_entries(&mut self, core: &Core) {
+        let matcher = SkimMatcherV2::default();
+        let prepared_filter = self.filter_string.replace(char::is_whitespace, "");
+        let mut scored_indices: Vec<(usize, i64)> = core
+            .playlist
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, path)| {
+                path.to_str().and_then(|path_str| {
+                    matcher
+                        .fuzzy_match(path_str, &prepared_filter)
+                        .map(|score| (idx, score))
+                })
+            })
+            .collect();
+        scored_indices.sort_by(|(_, score1), (_, score2)| score1.cmp(score2).reverse());
+        self.filtered_entries = scored_indices
+            .into_iter()
+            .map(|(idx, _score)| idx)
+            .collect();
+    }
+
     fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
         ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
             .show(ui, |ui| {
-                for (i, path) in core.playlist.iter().enumerate() {
-                    if !self.filter_string.is_empty() {
-                        match path.to_str() {
-                            Some(path_str) => {
-                                if !path_str.to_ascii_lowercase().contains(&self.filter_string) {
-                                    continue;
-                                }
-                            }
-                            None => continue,
-                        }
-                    }
+                for &i in &self.filtered_entries {
+                    let path = &core.playlist[i];
                     let re =
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
-                    if core.selected_song == i
-                        && (self.filter_changed.take() || core.song_change.take())
-                    {
+                    let filter_changed = self.filter_changed.take();
+                    if filter_changed {
+                        ui.scroll_to_rect(egui::Rect::ZERO, Some(Align::TOP));
+                    }
+                    if core.selected_song == i && (filter_changed || core.song_change.take()) {
                         re.scroll_to_me(Some(Align::Center));
                     }
                     if re.clicked() {
