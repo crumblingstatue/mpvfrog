@@ -259,6 +259,7 @@ impl Ui {
                         "Demuxer",
                     ),
                 )
+                .on_disabled_hover_text("No active demuxer")
                 .clicked()
             {
                 self.output_source = OutputSource::Demuxer;
