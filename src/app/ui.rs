@@ -69,6 +69,7 @@ impl Ui {
                 if let Some(path) = self.file_dialog.take_selected() {
                     core.cfg.music_folder = Some(path);
                     core.read_songs();
+                    self.recalc_filt_entries(core);
                 }
                 self.file_dialog.update(ui.ctx());
                 match &core.cfg.music_folder {
