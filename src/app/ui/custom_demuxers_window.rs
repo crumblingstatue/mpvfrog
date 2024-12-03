@@ -260,6 +260,9 @@ impl CustomDemuxersWindow {
                                 ui.add(egui::TextEdit::singleline(ext).desired_width(f32::INFINITY))
                             }
                         };
+                        if ui.button("Remove").clicked() {
+                            custom_player.predicates.remove(self.selected_pred_idx);
+                        }
                     }
                 }
             }
