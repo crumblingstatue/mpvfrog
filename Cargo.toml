@@ -6,7 +6,7 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui-sfml = "0.7.0"
+egui-sfml = "0.8.0"
 pty-process = { git = "https://github.com/crumblingstatue/pty-process.git", branch = "quickfix" }
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
@@ -21,8 +21,7 @@ anyhow = "1.0.79"
 zbus = "5"
 crossbeam-channel = "0.5.12"
 x11 = { version = "2.21.0", features = ["xlib"] }
-egui-modal = { git = "https://github.com/crumblingstatue/egui-modal.git", branch = "egui-0.29" }
-egui-file-dialog = { git = "https://github.com/crumblingstatue/egui-file-dialog.git", branch = "egui-0.29" }
+egui-file-dialog = { git = "https://github.com/bircni/egui-file-dialog.git", branch = "bump_egui" }
 egui_colors = { git = "https://github.com/frankvgompel/egui_colors.git" }
 rand = "0.8.5"
 existing_instance = { git = "https://github.com/crumblingstatue/rust-existing-instance.git" }

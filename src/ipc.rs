@@ -1,7 +1,7 @@
 //! Interprocess comunication with spawned mpv process
 
 use {
-    crate::{logln, warn_dialog},
+    crate::logln,
     interprocess::local_socket::{
         GenericFilePath, Stream as LocalSocketStream, ToFsName, traits::Stream as _,
     },
@@ -120,28 +120,28 @@ impl Bridge {
             observed: Default::default(),
             event_queue: Default::default(),
         };
-        this.write_command(ObserveProperty("speed"));
-        this.write_command(ObserveProperty("volume"));
-        this.write_command(ObserveProperty("time-pos"));
-        this.write_command(ObserveProperty("duration"));
+        this.write_command(ObserveProperty("speed"))?;
+        this.write_command(ObserveProperty("volume"))?;
+        this.write_command(ObserveProperty("time-pos"))?;
+        this.write_command(ObserveProperty("duration"))?;
         Ok(this)
     }
-    pub fn toggle_pause(&mut self) {
+    pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
         // We assume here that the pause command will succeed.
         //
         // Yeah, I don't know what else to do here, because mpv doesn't seem
         // to fire a pause event anymore when it gets paused.
         self.observed.paused ^= true;
-        self.write_command(SetPaused(self.observed.paused));
+        self.write_command(SetPaused(self.observed.paused))?;
+        Ok(())
     }
-    fn write_command<C: Command>(&mut self, command: C) {
+    fn write_command<C: Command>(&mut self, command: C) -> anyhow::Result<()> {
         let command_json = command.to_command_json();
         let mut serialized = serde_json::to_vec(&command_json).unwrap();
         // Commands need to be terminated with newline
         serialized.push(b'\n');
-        if let Err(e) = self.ipc_stream.write_all(&serialized) {
-            warn_dialog("IPC error", &format!("Failed to send IPC message: {e}"));
-        }
+        self.ipc_stream.write_all(&serialized)?;
+        Ok(())
     }
     pub fn handle_responses(&mut self) -> anyhow::Result<()> {
         loop {
@@ -198,16 +198,16 @@ impl Bridge {
             }
         }
     }
-    pub fn set_volume(&mut self, vol: u8) {
-        self.write_command(SetVolume(vol));
+    pub fn set_volume(&mut self, vol: u8) -> anyhow::Result<()> {
+        self.write_command(SetVolume(vol))
     }
-    pub fn set_speed(&mut self, speed: f64) {
-        self.write_command(SetSpeed(speed));
+    pub fn set_speed(&mut self, speed: f64) -> anyhow::Result<()> {
+        self.write_command(SetSpeed(speed))
     }
-    pub fn seek(&mut self, pos: f64) {
-        self.write_command(Seek(pos));
+    pub fn seek(&mut self, pos: f64) -> anyhow::Result<()> {
+        self.write_command(Seek(pos))
     }
-    pub fn set_video(&mut self, show: bool) {
-        self.write_command(SetVideo(show));
+    pub fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
+        self.write_command(SetVideo(show))
     }
 }

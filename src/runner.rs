@@ -2,8 +2,7 @@
 
 use {
     crate::{
-        MODAL,
-        app::{App, tray::EventFlags},
+        app::{App, ResultModalExt, tray::EventFlags},
         rect_math::{Rect, Vec2, rect_ensure_within},
     },
     egui_sfml::{
@@ -33,7 +32,6 @@ pub fn run(
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
     let mut app = App::new(sf_egui.context());
-    *MODAL.lock().unwrap() = Some(egui_modal::Modal::new(sf_egui.context(), "modal_dialog"));
     let mut win_visible = true;
     'mainloop: loop {
         let mut event_flags;
@@ -225,7 +223,9 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
                     quit = true;
                 }
                 if ui.checkbox(&mut app.core.cfg.video, "video").clicked() {
-                    app.core.set_video(app.core.cfg.video);
+                    app.core
+                        .set_video(app.core.cfg.video)
+                        .err_popup("Video set error", &mut app.modal);
                 }
             })
         });
@@ -234,7 +234,10 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
             app.update_volume();
             let re = ui.add(egui::Slider::new(&mut app.core.cfg.volume, 0..=150));
             if re.changed() {
-                app.core.mpv_handler.set_volume(app.core.cfg.volume);
+                app.core
+                    .mpv_handler
+                    .set_volume(app.core.cfg.volume)
+                    .err_popup("Volume set error", &mut app.modal);
             }
         });
         let play_pause_label = if app.paused_or_stopped() {
@@ -249,16 +252,16 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         ui.horizontal(|ui| {
             ui.add_space(38.0);
             if ui.button("⏪").clicked() {
-                app.core.play_prev();
+                app.core.play_prev(&mut app.modal);
             }
             if ui.button(play_pause_label).clicked() {
-                app.core.play_or_toggle_pause();
+                app.core.play_or_toggle_pause(&mut app.modal);
             }
             if ui.button("⏹").clicked() {
                 app.core.stop_music();
             }
             if ui.button("⏩").clicked() {
-                app.core.play_next();
+                app.core.play_next(&mut app.modal);
             }
         });
     });

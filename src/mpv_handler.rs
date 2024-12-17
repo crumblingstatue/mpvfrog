@@ -2,10 +2,10 @@
 
 use {
     crate::{
-        app::LOG,
+        app::{LOG, ModalPopup},
         config::ArgType,
         ipc::{self, IpcEvent},
-        logln, warn_dialog,
+        logln,
     },
     ansi_term_buf::Term,
     anyhow::Context,
@@ -101,12 +101,12 @@ impl MpvHandler {
         inner.child.wait().unwrap();
         self.inner = None;
     }
-    pub fn update(&mut self) {
+    pub fn update(&mut self, modal: &mut ModalPopup) {
         let Some(inner) = &mut self.inner else {
             return;
         };
         if let Err(e) = inner.ipc_bridge.handle_responses() {
-            warn_dialog("IPC error", &format!("Mpv IPC error: {e}"));
+            modal.warn("Mpv IPC error", e);
         }
         let mut buf = Vec::new();
         let mut demux_buf = Vec::new();
@@ -153,10 +153,11 @@ impl MpvHandler {
         self.inner.is_some()
     }
 
-    pub fn toggle_pause(&mut self) {
+    pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.toggle_pause();
+            inner.ipc_bridge.toggle_pause()?;
         }
+        Ok(())
     }
 
     pub fn paused(&self) -> bool {
@@ -178,15 +179,17 @@ impl MpvHandler {
             .as_ref()
             .map(|inner| inner.ipc_bridge.observed.speed)
     }
-    pub fn set_volume(&mut self, vol: u8) {
+    pub fn set_volume(&mut self, vol: u8) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_volume(vol);
+            inner.ipc_bridge.set_volume(vol)?;
         }
+        Ok(())
     }
-    pub fn set_speed(&mut self, speed: f64) {
+    pub fn set_speed(&mut self, speed: f64) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_speed(speed);
+            inner.ipc_bridge.set_speed(speed)?;
         }
+        Ok(())
     }
 
     pub(crate) fn time_info(&self) -> Option<TimeInfo> {
@@ -196,16 +199,18 @@ impl MpvHandler {
         })
     }
 
-    pub(crate) fn seek(&mut self, pos: f64) {
+    pub(crate) fn seek(&mut self, pos: f64) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.seek(pos);
+            inner.ipc_bridge.seek(pos)?;
         }
+        Ok(())
     }
 
-    pub(crate) fn set_video(&mut self, show: bool) {
+    pub(crate) fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_video(show);
+            inner.ipc_bridge.set_video(show)?;
         }
+        Ok(())
     }
 
     pub(crate) fn poll_event(&mut self) -> Option<IpcEvent> {

@@ -1,7 +1,6 @@
 use {
-    super::PlaylistBehavior,
+    super::{ModalPopup, PlaylistBehavior},
     crate::{
-        MODAL,
         config::{Config, PredicateSliceExt},
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
@@ -55,7 +54,7 @@ impl Core {
         self.playlist.sort();
     }
 
-    pub(super) fn play_selected_song(&mut self) {
+    pub(super) fn play_selected_song(&mut self, modal: &mut ModalPopup) {
         self.save_mpv_values_to_cfg();
         self.user_stopped = false;
         let selection = self.selected_song;
@@ -95,35 +94,26 @@ impl Core {
             None => None,
         };
         if let Err(e) = self.mpv_handler.play_music("mpv", mpv_args, demuxer) {
-            let Some(modal) = &mut *MODAL.lock().unwrap() else {
-                eprintln!("Modal not init. error: {e}");
-                return;
-            };
-            modal
-                .dialog()
-                .with_title("Play error")
-                .with_icon(egui_modal::Icon::Error)
-                .with_body(e)
-                .open();
+            modal.error("Play error", e);
             self.playlist_behavior = PlaylistBehavior::Stop;
         }
     }
-    pub fn play_prev(&mut self) {
+    pub fn play_prev(&mut self, modal: &mut ModalPopup) {
         if self.selected_song == 0 {
             self.selected_song = self.playlist.len() - 1;
         } else {
             self.selected_song -= 1;
         }
-        self.play_selected_song();
+        self.play_selected_song(modal);
         self.song_change = true;
     }
 
-    pub fn play_next(&mut self) {
+    pub fn play_next(&mut self, modal: &mut ModalPopup) {
         self.selected_song += 1;
         if self.selected_song >= self.playlist.len() {
             self.selected_song = 0;
         }
-        self.play_selected_song();
+        self.play_selected_song(modal);
         self.song_change = true;
     }
 
@@ -143,15 +133,17 @@ impl Core {
     }
 
     /// Plays the selected song, or toggles the pause state if already playing
-    pub fn play_or_toggle_pause(&mut self) {
+    pub fn play_or_toggle_pause(&mut self, modal: &mut ModalPopup) {
         if self.mpv_handler.active() {
-            self.mpv_handler.toggle_pause();
+            if let Err(e) = self.mpv_handler.toggle_pause() {
+                modal.error("Play error", e);
+            }
         } else {
-            self.play_selected_song();
+            self.play_selected_song(modal);
         }
     }
 
-    pub(super) fn handle_mpv_not_active(&mut self) {
+    pub(super) fn handle_mpv_not_active(&mut self, modal: &mut ModalPopup) {
         if self.user_stopped {
             return;
         }
@@ -175,16 +167,16 @@ impl Core {
             }
             // If we reached this point, we can take this as the song having been changed
             self.song_change = true;
-            self.play_selected_song();
+            self.play_selected_song(modal);
         }
     }
 
-    pub(crate) fn seek(&mut self, pos: f64) {
+    pub(crate) fn seek(&mut self, pos: f64) -> anyhow::Result<()> {
         self.mpv_handler.seek(pos)
     }
 
-    pub fn set_video(&mut self, show: bool) {
-        self.mpv_handler.set_video(show);
+    pub fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
+        self.mpv_handler.set_video(show)
     }
 
     pub(crate) fn handle_event(&mut self, event: crate::ipc::IpcEvent) {

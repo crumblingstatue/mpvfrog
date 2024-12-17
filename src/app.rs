@@ -16,7 +16,7 @@ use {
         mpv_handler::{ActivePtyInput, MpvHandler},
     },
     egui_sfml::egui::{self, Context, Event, Key},
-    std::{sync::Mutex, time::Instant},
+    std::{fmt::Display, sync::Mutex, time::Instant},
     zbus::names::BusName,
 };
 
@@ -37,6 +37,52 @@ pub struct App {
     pub ui: ui::Ui,
     pub tray_handle: Option<AppTray>,
     last_tooltip_update: Instant,
+    pub modal: ModalPopup,
+}
+
+#[derive(Default)]
+pub struct ModalPopup {
+    payload: Option<ModalPayload>,
+}
+
+struct ModalPayload {
+    title: String,
+    msg: String,
+    kind: ModalPayloadKind,
+}
+
+enum ModalPayloadKind {
+    Warning,
+    Error,
+}
+
+impl ModalPopup {
+    pub fn warn(&mut self, title: &str, msg: impl Display) {
+        self.payload = Some(ModalPayload {
+            title: title.into(),
+            msg: msg.to_string(),
+            kind: ModalPayloadKind::Warning,
+        });
+    }
+    pub fn error(&mut self, title: &str, msg: impl Display) {
+        self.payload = Some(ModalPayload {
+            title: title.into(),
+            msg: msg.to_string(),
+            kind: ModalPayloadKind::Error,
+        });
+    }
+}
+
+pub trait ResultModalExt {
+    fn err_popup(&self, title: &str, modal: &mut ModalPopup);
+}
+
+impl<T, E: Display> ResultModalExt for Result<T, E> {
+    fn err_popup(&self, title: &str, modal: &mut ModalPopup) {
+        if let Err(e) = self {
+            modal.error(title, e);
+        }
+    }
 }
 
 impl App {
@@ -68,6 +114,7 @@ impl App {
             core: state,
             tray_handle,
             last_tooltip_update: Instant::now(),
+            modal: ModalPopup::default(),
         }
     }
 
@@ -76,10 +123,10 @@ impl App {
             self.handle_egui_input(ctx);
         }
         self.handle_mpv_events();
-        self.core.mpv_handler.update();
-        self.core.handle_mpv_not_active();
+        self.core.mpv_handler.update(&mut self.modal);
+        self.core.handle_mpv_not_active(&mut self.modal);
         // Do the ui
-        self.ui.update(&mut self.core, ctx);
+        self.ui.update(&mut self.core, ctx, &mut self.modal);
     }
 
     fn handle_mpv_events(&mut self) {
@@ -91,8 +138,8 @@ impl App {
     /// Update when in the background (window not open)
     pub fn bg_update(&mut self) {
         self.handle_mpv_events();
-        self.core.mpv_handler.update();
-        self.core.handle_mpv_not_active();
+        self.core.mpv_handler.update(&mut self.modal);
+        self.core.handle_mpv_not_active(&mut self.modal);
     }
 
     /// Update when tray popup is open
@@ -111,7 +158,7 @@ impl App {
     fn handle_egui_input(&mut self, ctx: &Context) {
         ctx.input(|input| {
             if input.key_pressed(Key::Space) && !self.core.mpv_handler.active() {
-                self.core.play_selected_song();
+                self.core.play_selected_song(&mut self.modal);
                 return;
             }
             for ev in &input.raw.events {
@@ -119,9 +166,9 @@ impl App {
                     matches!(self.core.mpv_handler.active_pty_input, ActivePtyInput::Mpv);
                 match ev {
                     Event::Text(s) => match s.as_str() {
-                        " " if mpv_active => self.core.play_or_toggle_pause(),
-                        "<" if mpv_active => self.core.play_prev(),
-                        ">" if mpv_active => self.core.play_next(),
+                        " " if mpv_active => self.core.play_or_toggle_pause(&mut self.modal),
+                        "<" if mpv_active => self.core.play_prev(&mut self.modal),
+                        ">" if mpv_active => self.core.play_next(&mut self.modal),
                         s => {
                             self.core.mpv_handler.send_input(s);
                         }

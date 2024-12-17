@@ -3,8 +3,8 @@ mod custom_demuxers_window;
 
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
-    super::{Core, LOG, PlaylistBehavior},
-    crate::{MODAL, bool_ext::BoolExt, mpv_handler::ActivePtyInput},
+    super::{Core, LOG, ModalPopup, PlaylistBehavior, ResultModalExt as _},
+    crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput},
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sfml::egui::{
@@ -51,12 +51,33 @@ enum OutputSource {
 }
 
 impl Ui {
-    pub(super) fn update(&mut self, core: &mut Core, ctx: &Context) {
-        if let Some(modal) = &mut *MODAL.lock().unwrap() {
-            modal.show_dialog();
+    pub(super) fn update(&mut self, core: &mut Core, ctx: &Context, modal: &mut ModalPopup) {
+        if let Some(payload) = &mut modal.payload {
+            let mut close = false;
+            egui::Modal::new("modal_popup".into()).show(ctx, |ui| {
+                let (icon, color) = match payload.kind {
+                    super::ModalPayloadKind::Warning => ("⚠️", egui::Color32::YELLOW),
+                    super::ModalPayloadKind::Error => ("❗", egui::Color32::RED),
+                };
+                ui.horizontal_centered(|ui| {
+                    ui.label(egui::RichText::new(icon).color(color).size(30.0));
+                    ui.vertical_centered(|ui| {
+                        ui.heading(&payload.title);
+                        ui.separator();
+                        ui.label(&payload.msg);
+                        ui.separator();
+                        if ui.button("Ok").clicked() {
+                            close = true;
+                        }
+                    });
+                });
+            });
+            if close {
+                modal.payload = None;
+            }
         }
         TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ui));
-        CentralPanel::default().show(ctx, |ui| self.central_panel_ui(core, ui));
+        CentralPanel::default().show(ctx, |ui| self.central_panel_ui(core, ui, modal));
         self.windows.update(core, ctx, &mut self.colorix);
     }
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
@@ -64,9 +85,9 @@ impl Ui {
             ui.label(crate::APP_LABEL);
             ui.group(|ui| {
                 if ui.button("Music folder").clicked() {
-                    self.file_dialog.select_directory();
+                    self.file_dialog.pick_directory();
                 }
-                if let Some(path) = self.file_dialog.take_selected() {
+                if let Some(path) = self.file_dialog.take_picked() {
                     core.cfg.music_folder = Some(path);
                     core.read_songs();
                     self.recalc_filt_entries(core);
@@ -132,7 +153,7 @@ impl Ui {
             .collect();
     }
 
-    fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
+    fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
@@ -151,7 +172,7 @@ impl Ui {
                     }
                     if re.clicked() {
                         core.selected_song = i;
-                        core.play_selected_song();
+                        core.play_selected_song(modal);
                         break;
                     }
                 }
@@ -160,7 +181,7 @@ impl Ui {
         ui.horizontal(|ui| {
             ui.group(|ui| {
                 if ui.add(Button::new("⏪")).clicked() {
-                    core.play_prev();
+                    core.play_prev(modal);
                 }
                 let active = core.mpv_handler.active();
                 let icon = if active && !core.mpv_handler.paused() {
@@ -170,16 +191,18 @@ impl Ui {
                 };
                 if ui.add(Button::new(icon)).clicked() {
                     if active {
-                        core.mpv_handler.toggle_pause();
+                        core.mpv_handler
+                            .toggle_pause()
+                            .err_popup("Toggle pause error", modal);
                     } else {
-                        core.play_selected_song();
+                        core.play_selected_song(modal);
                     }
                 }
                 if ui.add_enabled(active, Button::new("⏹")).clicked() {
                     core.stop_music();
                 }
                 if ui.add(Button::new("⏩")).clicked() {
-                    core.play_next();
+                    core.play_next(modal);
                 }
             });
             ui.group(|ui| {
@@ -189,7 +212,9 @@ impl Ui {
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut vol, 0..=150));
                         if re.changed() {
-                            core.mpv_handler.set_volume(vol);
+                            core.mpv_handler
+                                .set_volume(vol)
+                                .err_popup("Volume change error", modal);
                         }
                     }
                     None => {
@@ -204,7 +229,9 @@ impl Ui {
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0));
                         if re.changed() {
-                            core.mpv_handler.set_speed(speed);
+                            core.mpv_handler
+                                .set_speed(speed)
+                                .err_popup("Speed change error", modal);
                         }
                     }
                     None => {
@@ -213,7 +240,8 @@ impl Ui {
                 }
             });
             if ui.checkbox(&mut core.cfg.video, "video").clicked() {
-                core.set_video(core.cfg.video);
+                core.set_video(core.cfg.video)
+                    .err_popup("Video set error", modal);
             }
         });
         ui.horizontal(|ui| {
@@ -230,7 +258,7 @@ impl Ui {
                         .trailing_fill(true),
                 );
                 if re.drag_stopped() {
-                    core.seek(info.pos);
+                    core.seek(info.pos).err_popup("Seek error", modal);
                 }
             }
             ui.group(|ui| {
