@@ -353,8 +353,9 @@ dependencies = [
 
 [[package]]
 name = "egui-file-dialog"
-version = "0.7.0"
-source = "git+https://github.com/bircni/egui-file-dialog.git?branch=bump_egui#ab6a88f39c2e5a0285ec965f9aeb05d1956f7ffb"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac4167fcddb279f41863074b96b877c6e48c02d543b7d6111d1f3957b9a5874f"
 dependencies = [
  "directories",
  "dunce",
@@ -376,8 +377,9 @@ dependencies = [
 
 [[package]]
 name = "egui_colors"
-version = "0.5.0"
-source = "git+https://github.com/frankvgompel/egui_colors.git#52efdddca3bebd971e7a100447faf3daa0120249"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6a71f3595f6ebfdf955b6aee2d3c3c4f9a7eee43f209ae27557d6eecb7ade59"
 dependencies = [
  "egui",
  "palette",

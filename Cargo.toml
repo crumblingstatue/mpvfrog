@@ -21,8 +21,8 @@ anyhow = "1.0.79"
 zbus = "5"
 crossbeam-channel = "0.5.12"
 x11 = { version = "2.21.0", features = ["xlib"] }
-egui-file-dialog = { git = "https://github.com/bircni/egui-file-dialog.git", branch = "bump_egui" }
-egui_colors = { git = "https://github.com/frankvgompel/egui_colors.git" }
+egui-file-dialog = "0.8.0"
+egui_colors = "0.6.0"
 rand = "0.8.5"
 existing_instance = { git = "https://github.com/crumblingstatue/rust-existing-instance.git" }
 fuzzy-matcher = "0.3.7"

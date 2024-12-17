@@ -34,7 +34,7 @@ impl ColorThemeWindow {
                     }
                 });
                 ui.separator();
-                colorix.ui_combo_12(ui);
+                colorix.ui_combo_12(ui, true);
 
                 core.cfg.theme = Some(colorix.theme().map(|theme| theme.rgb()));
             });
