@@ -40,6 +40,8 @@ pub struct Ui {
     file_dialog: egui_file_dialog::FileDialog,
     colorix: Option<Colorix>,
     filtered_entries: Vec<usize>,
+    ab_loop_a: f64,
+    ab_loop_b: f64,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -247,11 +249,65 @@ impl Ui {
         ui.horizontal(|ui| {
             if let Some(mut info) = core.mpv_handler.time_info() {
                 ui.style_mut().spacing.slider_width = 420.0;
-                ui.label(format!(
+                let re = ui.label(format!(
                     "{}/{}",
                     FfmpegTimeFmt(info.pos),
                     FfmpegTimeFmt(info.duration)
                 ));
+                re.context_menu(|ui| {
+                    ui.menu_button("A-B loop", |ui| {
+                        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                        let mut ab_changed = false;
+                        ui.horizontal(|ui| {
+                            ui.label("A");
+                            ab_changed |=
+                                ui.add(egui::DragValue::new(&mut self.ab_loop_a)).changed();
+                            if ui.button("now").clicked() {
+                                self.ab_loop_a = info.pos;
+                                ab_changed = true;
+                            }
+                            if ui.button("jump").clicked() {
+                                if let Err(e) = core.mpv_handler.seek(self.ab_loop_a) {
+                                    modal.error("Error jumping", e);
+                                }
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("B");
+                            ab_changed |=
+                                ui.add(egui::DragValue::new(&mut self.ab_loop_b)).changed();
+                            if ui.button("now").clicked() {
+                                self.ab_loop_b = info.pos;
+                                ab_changed = true;
+                            }
+                            if ui.button("jump").clicked() {
+                                if let Err(e) = core.mpv_handler.seek(self.ab_loop_b) {
+                                    modal.error("Error jumping", e);
+                                }
+                            }
+                        });
+                        if ui.button("Set").clicked() || ab_changed {
+                            if let Err(e) = core
+                                .mpv_handler
+                                .set_ab_loop(Some(self.ab_loop_a), Some(self.ab_loop_b))
+                            {
+                                modal.error("Error setting A-B loop", e);
+                            }
+                        }
+                        if let Some((Some(a), Some(b))) = core.mpv_handler.ab_loop() {
+                            if ui.button("Unset").clicked() {
+                                if let Err(e) = core.mpv_handler.set_ab_loop(None, None) {
+                                    modal.error("Error unsetting A-B loop", e);
+                                }
+                            }
+                            ui.label(format!(
+                                "Current a-b loop\n{}-{}",
+                                FfmpegTimeFmt(a),
+                                FfmpegTimeFmt(b)
+                            ));
+                        }
+                    });
+                });
                 let re = ui.add(
                     egui::Slider::new(&mut info.pos, 0.0..=info.duration)
                         .show_value(false)

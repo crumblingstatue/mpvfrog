@@ -179,6 +179,14 @@ impl MpvHandler {
             .as_ref()
             .map(|inner| inner.ipc_bridge.observed.speed)
     }
+    pub fn ab_loop(&self) -> Option<(Option<f64>, Option<f64>)> {
+        self.inner.as_ref().map(|inner| {
+            (
+                inner.ipc_bridge.observed.ab_loop_a,
+                inner.ipc_bridge.observed.ab_loop_b,
+            )
+        })
+    }
     pub fn set_volume(&mut self, vol: u8) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
             inner.ipc_bridge.set_volume(vol)?;
@@ -209,6 +217,13 @@ impl MpvHandler {
     pub(crate) fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
         if let Some(inner) = &mut self.inner {
             inner.ipc_bridge.set_video(show)?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn set_ab_loop(&mut self, a: Option<f64>, b: Option<f64>) -> anyhow::Result<()> {
+        if let Some(inner) = &mut self.inner {
+            inner.ipc_bridge.set_ab_loop(a, b)?;
         }
         Ok(())
     }

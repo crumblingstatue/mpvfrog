@@ -29,6 +29,8 @@ pub struct Properties {
     pub speed: f64,
     pub duration: f64,
     pub time_pos: f64,
+    pub ab_loop_a: Option<f64>,
+    pub ab_loop_b: Option<f64>,
 }
 
 trait Command {
@@ -104,6 +106,36 @@ impl SetProperty for SetVideo {
     }
 }
 
+struct AbLoopA(Option<f64>);
+
+impl SetProperty for AbLoopA {
+    const NAME: &'static str = "ab-loop-a";
+
+    type Value = serde_json::Value;
+
+    fn value(&self) -> Self::Value {
+        match self.0 {
+            Some(val) => val.into(),
+            None => "no".into(),
+        }
+    }
+}
+
+struct AbLoopB(Option<f64>);
+
+impl SetProperty for AbLoopB {
+    const NAME: &'static str = "ab-loop-b";
+
+    type Value = serde_json::Value;
+
+    fn value(&self) -> Self::Value {
+        match self.0 {
+            Some(val) => val.into(),
+            None => "no".into(),
+        }
+    }
+}
+
 #[derive(Serialize)]
 struct CommandJson<T: Serialize> {
     command: T,
@@ -124,6 +156,8 @@ impl Bridge {
         this.write_command(ObserveProperty("volume"))?;
         this.write_command(ObserveProperty("time-pos"))?;
         this.write_command(ObserveProperty("duration"))?;
+        this.write_command(ObserveProperty("ab-loop-a"))?;
+        this.write_command(ObserveProperty("ab-loop-b"))?;
         Ok(this)
     }
     pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
@@ -182,6 +216,8 @@ impl Bridge {
                                 "volume" => self.observed.volume = data.as_f64().unwrap() as u8,
                                 "duration" => self.observed.duration = data.as_f64().unwrap(),
                                 "time-pos" => self.observed.time_pos = data.as_f64().unwrap(),
+                                "ab-loop-a" => self.observed.ab_loop_a = data.as_f64(),
+                                "ab-loop-b" => self.observed.ab_loop_b = data.as_f64(),
                                 name => logln!("Unhandled property: {} = {}", name, data),
                             }
                         }
@@ -209,5 +245,9 @@ impl Bridge {
     }
     pub fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
         self.write_command(SetVideo(show))
+    }
+    pub fn set_ab_loop(&mut self, a: Option<f64>, b: Option<f64>) -> anyhow::Result<()> {
+        self.write_command(AbLoopA(a))?;
+        self.write_command(AbLoopB(b))
     }
 }
