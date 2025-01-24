@@ -1,10 +1,13 @@
 //! Interprocess comunication with spawned mpv process
 
+mod property;
+
 use {
     crate::logln,
     interprocess::local_socket::{
         GenericFilePath, Stream as LocalSocketStream, ToFsName, traits::Stream as _,
     },
+    property::{PropValue, Property},
     serde::Serialize,
     std::{
         collections::{HashMap, VecDeque},
@@ -43,39 +46,6 @@ trait Command {
     }
 }
 
-trait SetProperty {
-    const NAME: &'static str;
-    type Value: Into<serde_json::Value>;
-    fn value(&self) -> Self::Value;
-}
-
-impl<T: SetProperty> Command for T {
-    type R = [serde_json::Value; 3];
-
-    fn json_values(&self) -> Self::R {
-        [
-            "set_property".into(),
-            Self::NAME.into(),
-            self.value().into(),
-        ]
-    }
-}
-
-macro_rules! set_property_impl {
-    ($t:ty, $name:literal, $v:ty) => {
-        impl SetProperty for $t {
-            const NAME: &'static str = $name;
-            type Value = $v;
-            fn value(&self) -> Self::Value {
-                self.0
-            }
-        }
-    };
-}
-
-struct SetPaused(bool);
-set_property_impl!(SetPaused, "pause", bool);
-
 struct ObserveProperty<'a>(&'a str);
 
 impl Command for ObserveProperty<'_> {
@@ -85,60 +55,21 @@ impl Command for ObserveProperty<'_> {
     }
 }
 
-struct SetVolume(u8);
-set_property_impl!(SetVolume, "volume", u8);
-
-struct SetSpeed(f64);
-set_property_impl!(SetSpeed, "speed", f64);
-
-struct Seek(f64);
-set_property_impl!(Seek, "time-pos", f64);
-
-struct SetVideo(bool);
-
-impl SetProperty for SetVideo {
-    const NAME: &'static str = "vid";
-
-    type Value = serde_json::Value;
-
-    fn value(&self) -> Self::Value {
-        if self.0 { 1.into() } else { false.into() }
-    }
-}
-
-struct AbLoopA(Option<f64>);
-
-impl SetProperty for AbLoopA {
-    const NAME: &'static str = "ab-loop-a";
-
-    type Value = serde_json::Value;
-
-    fn value(&self) -> Self::Value {
-        match self.0 {
-            Some(val) => val.into(),
-            None => "no".into(),
-        }
-    }
-}
-
-struct AbLoopB(Option<f64>);
-
-impl SetProperty for AbLoopB {
-    const NAME: &'static str = "ab-loop-b";
-
-    type Value = serde_json::Value;
-
-    fn value(&self) -> Self::Value {
-        match self.0 {
-            Some(val) => val.into(),
-            None => "no".into(),
-        }
-    }
-}
-
 #[derive(Serialize)]
 struct CommandJson<T: Serialize> {
     command: T,
+}
+
+struct SetProperty<P: Property>(P::Value);
+
+impl<P: Property> Command for SetProperty<P>
+where
+    P::Value: PropValue,
+{
+    type R = [serde_json::Value; 3];
+    fn json_values(&self) -> Self::R {
+        ["set_property".into(), P::NAME.into(), self.0.to_json()]
+    }
 }
 
 impl Bridge {
@@ -166,7 +97,7 @@ impl Bridge {
         // Yeah, I don't know what else to do here, because mpv doesn't seem
         // to fire a pause event anymore when it gets paused.
         self.observed.paused ^= true;
-        self.write_command(SetPaused(self.observed.paused))?;
+        self.set_property::<property::Pause>(self.observed.paused)?;
         Ok(())
     }
     fn write_command<C: Command>(&mut self, command: C) -> anyhow::Result<()> {
@@ -176,6 +107,12 @@ impl Bridge {
         serialized.push(b'\n');
         self.ipc_stream.write_all(&serialized)?;
         Ok(())
+    }
+    fn set_property<P: Property>(&mut self, value: P::Value) -> anyhow::Result<()>
+    where
+        P::Value: PropValue,
+    {
+        self.write_command(SetProperty::<P>(value))
     }
     pub fn handle_responses(&mut self) -> anyhow::Result<()> {
         loop {
@@ -212,12 +149,20 @@ impl Bridge {
                                 return;
                             };
                             match name {
-                                "speed" => self.observed.speed = data.as_f64().unwrap(),
-                                "volume" => self.observed.volume = data.as_f64().unwrap() as u8,
-                                "duration" => self.observed.duration = data.as_f64().unwrap(),
-                                "time-pos" => self.observed.time_pos = data.as_f64().unwrap(),
-                                "ab-loop-a" => self.observed.ab_loop_a = data.as_f64(),
-                                "ab-loop-b" => self.observed.ab_loop_b = data.as_f64(),
+                                property::Speed::NAME => {
+                                    self.observed.speed = data.as_f64().unwrap()
+                                }
+                                property::Volume::NAME => {
+                                    self.observed.volume = data.as_f64().unwrap() as u8
+                                }
+                                property::Duration::NAME => {
+                                    self.observed.duration = data.as_f64().unwrap()
+                                }
+                                property::TimePos::NAME => {
+                                    self.observed.time_pos = data.as_f64().unwrap()
+                                }
+                                property::AbLoopA::NAME => self.observed.ab_loop_a = data.as_f64(),
+                                property::AbLoopB::NAME => self.observed.ab_loop_b = data.as_f64(),
                                 name => logln!("Unhandled property: {} = {}", name, data),
                             }
                         }
@@ -235,19 +180,19 @@ impl Bridge {
         }
     }
     pub fn set_volume(&mut self, vol: u8) -> anyhow::Result<()> {
-        self.write_command(SetVolume(vol))
+        self.set_property::<property::Volume>(vol as f64)
     }
     pub fn set_speed(&mut self, speed: f64) -> anyhow::Result<()> {
-        self.write_command(SetSpeed(speed))
+        self.set_property::<property::Speed>(speed)
     }
     pub fn seek(&mut self, pos: f64) -> anyhow::Result<()> {
-        self.write_command(Seek(pos))
+        self.set_property::<property::TimePos>(pos)
     }
     pub fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
-        self.write_command(SetVideo(show))
+        self.set_property::<property::Video>(show.then_some("1"))
     }
     pub fn set_ab_loop(&mut self, a: Option<f64>, b: Option<f64>) -> anyhow::Result<()> {
-        self.write_command(AbLoopA(a))?;
-        self.write_command(AbLoopB(b))
+        self.set_property::<property::AbLoopA>(a)?;
+        self.set_property::<property::AbLoopB>(b)
     }
 }
