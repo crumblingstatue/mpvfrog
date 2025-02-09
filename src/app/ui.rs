@@ -399,7 +399,7 @@ impl Ui {
     }
     pub fn apply_colorix_theme(&mut self, theme: &Option<[[u8; 3]; 12]>, ctx: &Context) {
         if let Some(theme) = theme {
-            self.colorix = Some(Colorix::init(
+            self.colorix = Some(Colorix::global(
                 ctx,
                 std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
             ));

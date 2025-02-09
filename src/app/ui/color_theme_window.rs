@@ -30,7 +30,7 @@ impl ColorThemeWindow {
                         let mut rng = thread_rng();
                         let theme = std::array::from_fn(|_| rng.r#gen());
                         core.cfg.theme = Some(theme);
-                        *colorix = Colorix::init(ctx, theme.map(ThemeColor::Custom));
+                        *colorix = Colorix::global(ctx, theme.map(ThemeColor::Custom));
                     }
                 });
                 ui.separator();
