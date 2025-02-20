@@ -84,11 +84,21 @@ impl Ui {
     }
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
         ui.horizontal_centered(|ui| {
-            ui.label(crate::APP_LABEL);
-            ui.group(|ui| {
-                if ui.button("Music folder").clicked() {
+            ui.menu_button(crate::APP_LABEL, |ui| {
+                if ui.button("🗁 Open music folder...").clicked() {
                     self.file_dialog.pick_directory();
+                    ui.close_menu();
                 }
+                if ui.button("🎶 Custom demuxers...").clicked() {
+                    self.windows.custom_demuxers.open ^= true;
+                    ui.close_menu();
+                }
+                if ui.button("💎 Color theme config").clicked() {
+                    self.windows.color_theme.open ^= true;
+                    ui.close_menu();
+                }
+            });
+            ui.group(|ui| {
                 if let Some(path) = self.file_dialog.take_picked() {
                     core.cfg.music_folder = Some(path);
                     core.read_songs();
@@ -109,9 +119,6 @@ impl Ui {
                     core.read_songs();
                 }
             });
-            if ui.button("Custom demuxers...").clicked() {
-                self.windows.custom_demuxers.open ^= true;
-            }
             ui.label("🔎");
             let ctrl_f = ui.input(|inp| inp.key_pressed(egui::Key::F) && inp.modifiers.ctrl);
             let re =
@@ -123,13 +130,20 @@ impl Ui {
             if ctrl_f {
                 re.request_focus();
             }
-            if ui
-                .button("💎")
-                .on_hover_text("Color theme config")
-                .clicked()
-            {
-                self.windows.color_theme.open ^= true;
-            }
+            ui.label("▶").on_hover_text("Playlist behavior");
+            ComboBox::new("playlist_behavior_cb", "")
+                .selected_text(core.playlist_behavior.label())
+                .show_ui(ui, |ui| {
+                    use self::PlaylistBehavior::*;
+                    ui.selectable_value(&mut core.playlist_behavior, Stop, Stop.label());
+                    ui.selectable_value(&mut core.playlist_behavior, Continue, Continue.label());
+                    ui.selectable_value(&mut core.playlist_behavior, RepeatOne, RepeatOne.label());
+                    ui.selectable_value(
+                        &mut core.playlist_behavior,
+                        RepeatPlaylist,
+                        RepeatPlaylist.label(),
+                    );
+                })
         });
     }
 
@@ -248,7 +262,7 @@ impl Ui {
         });
         ui.horizontal(|ui| {
             if let Some(mut info) = core.mpv_handler.time_info() {
-                ui.style_mut().spacing.slider_width = 420.0;
+                ui.style_mut().spacing.slider_width = ui.available_width() - 160.0;
                 let re = ui.label(format!(
                     "{}/{}",
                     FfmpegTimeFmt(info.pos),
@@ -317,30 +331,6 @@ impl Ui {
                     core.seek(info.pos).err_popup("Seek error", modal);
                 }
             }
-            ui.group(|ui| {
-                ui.style_mut().spacing.slider_width = 100.0;
-                ComboBox::new("playlist_behavior_cb", "▶")
-                    .selected_text(core.playlist_behavior.label())
-                    .show_ui(ui, |ui| {
-                        use self::PlaylistBehavior::*;
-                        ui.selectable_value(&mut core.playlist_behavior, Stop, Stop.label());
-                        ui.selectable_value(
-                            &mut core.playlist_behavior,
-                            Continue,
-                            Continue.label(),
-                        );
-                        ui.selectable_value(
-                            &mut core.playlist_behavior,
-                            RepeatOne,
-                            RepeatOne.label(),
-                        );
-                        ui.selectable_value(
-                            &mut core.playlist_behavior,
-                            RepeatPlaylist,
-                            RepeatPlaylist.label(),
-                        );
-                    })
-            });
         });
         ui.separator();
         ui.horizontal(|ui| {

@@ -33,5 +33,5 @@ fn main() {
             None
         }
     };
-    runner::run(740, 500, "mpvfrog", listener);
+    runner::run(700, 500, "mpvfrog", listener);
 }
