@@ -42,6 +42,8 @@ pub struct Ui {
     filtered_entries: Vec<usize>,
     ab_loop_a: f64,
     ab_loop_b: f64,
+    /// If `Some`, focus on the playlist item with that index
+    focus_on: Option<usize>,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -96,6 +98,14 @@ impl Ui {
                 if ui.button("💎 Color theme config").clicked() {
                     self.windows.color_theme.open ^= true;
                     ui.close_menu();
+                }
+                if ui
+                    .button("🔍 Focus song")
+                    .on_hover_text("Focus currently playing song in playlist")
+                    .clicked()
+                {
+                    ui.close_menu();
+                    self.focus_on = Some(core.selected_song);
                 }
             });
             ui.group(|ui| {
@@ -185,6 +195,10 @@ impl Ui {
                     }
                     if core.selected_song == i && (filter_changed || core.song_change.take()) {
                         re.scroll_to_me(Some(Align::Center));
+                    }
+                    if self.focus_on.is_some_and(|idx| idx == i) {
+                        re.scroll_to_me(Some(Align::Center));
+                        self.focus_on = None;
                     }
                     if re.clicked() {
                         core.selected_song = i;
