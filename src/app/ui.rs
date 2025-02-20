@@ -336,11 +336,17 @@ impl Ui {
                         }
                     });
                 });
-                let re = ui.add(
+                let mut re = ui.add(
                     egui::Slider::new(&mut info.pos, 0.0..=info.duration)
                         .show_value(false)
                         .trailing_fill(true),
                 );
+                if let Some(ratio) = re.h_pointer_ratio() {
+                    // TODO: This is not 100% accurate, unfortunately
+                    re = re.on_hover_text_at_pointer(
+                        FfmpegTimeFmt(info.duration * f64::from(ratio)).to_string(),
+                    );
+                }
                 if re.drag_stopped() {
                     core.seek(info.pos).err_popup("Seek error", modal);
                 }
@@ -408,6 +414,19 @@ impl Ui {
                 std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
             ));
         }
+    }
+}
+
+trait EguiResponseExt {
+    fn h_pointer_ratio(&self) -> Option<f32>;
+}
+
+impl EguiResponseExt for egui::Response {
+    fn h_pointer_ratio(&self) -> Option<f32> {
+        self.hover_pos().map(|hover_pos| {
+            let x = (hover_pos - self.rect.left_top()).x;
+            (x / self.rect.width()).clamp(0.0, 1.0)
+        })
     }
 }
 
