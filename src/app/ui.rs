@@ -44,6 +44,8 @@ pub struct Ui {
     ab_loop_b: f64,
     /// If `Some`, focus on the playlist item with that index
     focus_on: Option<usize>,
+    /// Which filtered entry is selected (up and down keys while filter box is focused)
+    selected_filtered_entry: Option<usize>,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -80,11 +82,11 @@ impl Ui {
                 modal.payload = None;
             }
         }
-        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ui));
+        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ui, modal));
         CentralPanel::default().show(ctx, |ui| self.central_panel_ui(core, ui, modal));
         self.windows.update(core, ctx, &mut self.colorix);
     }
-    fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui) {
+    fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         ui.horizontal_centered(|ui| {
             ui.menu_button(crate::APP_LABEL, |ui| {
                 if ui.button("🗁 Open music folder...").clicked() {
@@ -131,11 +133,44 @@ impl Ui {
             });
             ui.label("🔎");
             let ctrl_f = ui.input(|inp| inp.key_pressed(egui::Key::F) && inp.modifiers.ctrl);
+            let (key_up, key_down) = ui.input_mut(|inp| {
+                (
+                    inp.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp),
+                    inp.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown),
+                )
+            });
             let re =
                 ui.add(TextEdit::singleline(&mut self.filter_string).hint_text("Filter (ctrl+f)"));
             if re.changed() {
                 self.filter_changed = true;
                 self.recalc_filt_entries(core);
+                self.selected_filtered_entry = None;
+            }
+            if key_up || key_down {
+                if key_up {
+                    if let Some(selected) = &mut self.selected_filtered_entry {
+                        *selected = selected.saturating_sub(1);
+                    }
+                } else if key_down {
+                    match &mut self.selected_filtered_entry {
+                        Some(selected) => {
+                            if *selected + 1 < self.filtered_entries.len() {
+                                *selected += 1;
+                            }
+                        }
+                        None => self.selected_filtered_entry = Some(0),
+                    }
+                }
+                if let Some(selected) = self.selected_filtered_entry {
+                    core.selected_song = self.filtered_entries[selected];
+                    self.focus_on = Some(self.filtered_entries[selected]);
+                }
+            }
+            if self.selected_filtered_entry.is_some()
+                && re.lost_focus()
+                && ui.input(|inp| inp.key_pressed(egui::Key::Enter))
+            {
+                core.play_selected_song(modal);
             }
             if ctrl_f {
                 re.request_focus();
