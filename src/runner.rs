@@ -50,7 +50,12 @@ pub fn run(
             break;
         }
         if event_flags.activated {
-            toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw);
+            // First, close the tray popup if it's open
+            if tray_popup_win.is_some() {
+                tray_popup_win = None;
+            } else {
+                toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw);
+            }
         }
         if let Some((x, y)) = event_flags.ctx_menu.take() {
             if tray_popup_win.is_some() {
