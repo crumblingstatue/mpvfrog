@@ -130,7 +130,7 @@ pub fn run(
                         );
                     }
                     Event::KeyPressed { code, .. } => {
-                        if code == Key::Escape {
+                        if code == Key::Escape && !sf_egui.context().wants_keyboard_input() {
                             rw.set_visible(false);
                             win_visible = false;
                         }
