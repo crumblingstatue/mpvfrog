@@ -1,7 +1,7 @@
 use {
     crate::app::core::Core,
     egui_colors::{Colorix, tokens::ThemeColor},
-    egui_sfml::egui,
+    egui_sf2g::egui,
     rand::Rng as _,
 };
 

@@ -5,9 +5,9 @@ use {
         app::{App, ResultModalExt, tray::EventFlags},
         rect_math::{Rect, Vec2, rect_ensure_within},
     },
-    egui_sfml::{
+    egui_sf2g::{
         SfEgui, egui,
-        sfml::{
+        sf2g::{
             cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
             window::{Event, Key, Style, VideoMode},

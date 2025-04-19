@@ -15,7 +15,7 @@ use {
         config::Config,
         mpv_handler::{ActivePtyInput, MpvHandler},
     },
-    egui_sfml::egui::{self, Context, Event, Key},
+    egui_sf2g::egui::{self, Context, Event, Key},
     std::{fmt::Display, sync::Mutex, time::Instant},
     zbus::names::BusName,
 };

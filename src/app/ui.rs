@@ -7,7 +7,7 @@ use {
     crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput},
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
-    egui_sfml::egui::{
+    egui_sf2g::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
         TopBottomPanel,
     },

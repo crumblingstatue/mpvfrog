@@ -3,7 +3,7 @@ use {
         app::Core,
         config::{Command, CustomPlayerEntry, Predicate, PredicateKind},
     },
-    egui_sfml::egui::{self, Color32, ComboBox, Context, RichText, ScrollArea, Ui, Window},
+    egui_sf2g::egui::{self, Color32, ComboBox, Context, RichText, ScrollArea, Ui, Window},
 };
 
 #[derive(Default)]
