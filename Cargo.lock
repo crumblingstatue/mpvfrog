@@ -408,9 +408,9 @@ dependencies = [
 
 [[package]]
 name = "egui-sf2g"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79cc04d49e787851a4d37261ce6be5576c9cb2fc60998e071ecd30df1ed4a36d"
+checksum = "9af1d63e271f6fe3989eea654307adb9152e17fefa075e32503187836562fec8"
 dependencies = [
  "arboard",
  "egui",
@@ -568,6 +568,16 @@ checksum = "7ced92e76e966ca2fd84c8f7aa01a4aea65b0eb6648d72f7c8f3e2764a67fece"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+]
+
+[[package]]
+name = "freetype-sys-nopng"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f62dff207fc71a4bf56014d992fb7ea8b1d6f1ff8d81129faaf3e82715bca130"
+dependencies = [
+ "cc",
+ "pkg-config",
 ]
 
 [[package]]
@@ -1246,13 +1256,14 @@ dependencies = [
 
 [[package]]
 name = "sf2g"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a4d7b742a108be4722300788e0f208875e4c225c38ebf9387f434e7c2b341ee"
+checksum = "2acbf533443c25ddbfd23ee2530db9ff85a4651534e7998faaafbd8b4a9efcb5"
 dependencies = [
  "bitflags 2.9.0",
  "cc",
  "cmake",
+ "freetype-sys-nopng",
  "image",
  "link-cplusplus",
  "num-traits",
