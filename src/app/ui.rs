@@ -431,7 +431,7 @@ impl Ui {
                 // But unconditionally surrendering focus also deselects, so we first check if
                 // nothing is being selected.
                 let out = TextEdit::multiline(&mut out.as_str())
-                    .desired_width(620.0)
+                    .desired_width(f32::INFINITY)
                     .font(TextStyle::Monospace)
                     .show(ui);
                 if out
