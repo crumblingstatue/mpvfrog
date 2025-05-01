@@ -4,7 +4,8 @@
     unused_qualifications,
     clippy::redundant_closure_for_method_calls,
     clippy::manual_let_else,
-    clippy::ptr_as_ptr
+    clippy::ptr_as_ptr,
+    clippy::use_self
 )]
 
 use existing_instance::Msg;

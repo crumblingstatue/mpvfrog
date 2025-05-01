@@ -37,8 +37,8 @@ enum EditTargetWhich {
 impl PredicateKind {
     fn label(&self) -> &str {
         match self {
-            PredicateKind::BeginsWith => "Begins with...",
-            PredicateKind::HasExt => "Has extension...",
+            Self::BeginsWith => "Begins with...",
+            Self::HasExt => "Has extension...",
         }
     }
 }

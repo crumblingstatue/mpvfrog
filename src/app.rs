@@ -109,7 +109,7 @@ impl App {
                 None
             }
         };
-        App {
+        Self {
             ui,
             core: state,
             tray_handle,

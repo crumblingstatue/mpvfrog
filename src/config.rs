@@ -144,16 +144,16 @@ pub enum ArgType {
 impl Display for ArgType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgType::Custom(string) => write!(f, "{string}"),
-            ArgType::SongPath => write!(f, "{{}}"),
+            Self::Custom(string) => write!(f, "{string}"),
+            Self::SongPath => write!(f, "{{}}"),
         }
     }
 }
 impl Predicate {
     pub(crate) fn matches(&self, path: &Path) -> bool {
         match self {
-            Predicate::BeginsWith(fragment) => Self::matches_begin(fragment, path),
-            Predicate::HasExt(ext) => Self::matches_ext(ext, path),
+            Self::BeginsWith(fragment) => Self::matches_begin(fragment, path),
+            Self::HasExt(ext) => Self::matches_ext(ext, path),
         }
     }
 

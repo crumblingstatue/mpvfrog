@@ -475,10 +475,10 @@ impl EguiResponseExt for egui::Response {
 impl PlaylistBehavior {
     fn label(&self) -> &'static str {
         match self {
-            PlaylistBehavior::Stop => "Stop",
-            PlaylistBehavior::Continue => "Continue",
-            PlaylistBehavior::RepeatOne => "Repeat one",
-            PlaylistBehavior::RepeatPlaylist => "Repeat playlist",
+            Self::Stop => "Stop",
+            Self::Continue => "Continue",
+            Self::RepeatOne => "Repeat one",
+            Self::RepeatPlaylist => "Repeat playlist",
         }
     }
 }
