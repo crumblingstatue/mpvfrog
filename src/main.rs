@@ -1,4 +1,5 @@
 #![doc(html_no_source)]
+#![forbid(unsafe_code)]
 #![warn(
     unused_qualifications,
     clippy::redundant_closure_for_method_calls,
