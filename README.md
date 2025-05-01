@@ -1,5 +1,11 @@
 # mpvfrog 🐸
-Small personal music player wrapping mpv
+Linux GUI frontend for mpv
+
+## Features
+
+- Custom demuxers
+	Define your own custom demuxers for different file types.
+	For example, you could use fluidsynth to demux midi files.
 
 ## Why?
 I really like mpv.
