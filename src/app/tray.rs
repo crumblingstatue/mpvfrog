@@ -43,10 +43,8 @@ impl AppTray {
         let name = format!("org.kde.StatusNotifierItem-{}-{}", std::process::id(), 0);
         let (s1, r1) = crossbeam_channel::unbounded();
         let (s2, r2) = crossbeam_channel::unbounded();
-        let conn = connection::Builder::session()
-            .unwrap()
-            .name(name.clone())
-            .unwrap()
+        let conn = connection::Builder::session()?
+            .name(name.clone())?
             .serve_at(
                 "/StatusNotifierItem",
                 TrayIface {
@@ -54,10 +52,8 @@ impl AppTray {
                     receiver: r2,
                     tooltip: Mutex::new("mpv-frog".into()),
                 },
-            )
-            .unwrap()
-            .build()
-            .unwrap();
+            )?
+            .build()?;
         conn.call_method(
             Some("org.kde.StatusNotifierWatcher"),
             "/StatusNotifierWatcher",
