@@ -419,9 +419,9 @@ dependencies = [
 
 [[package]]
 name = "egui-sf2g"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12a71fce24de0395338511d3965a246c2ec4528fe0750b030c99b0d7ee889089"
+checksum = "6b6cdd58fa9448f9bd8247c8f4b699dc237074e3af9b190526043d249a7b52ed"
 dependencies = [
  "arboard",
  "egui",
