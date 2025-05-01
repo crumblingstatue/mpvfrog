@@ -150,7 +150,7 @@ impl App {
         self.bg_update();
     }
 
-    pub fn save(&mut self) {
+    pub fn save(&self) {
         let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
         std::fs::write(Config::path(), vec).unwrap();
     }

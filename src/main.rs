@@ -6,7 +6,8 @@
     clippy::manual_let_else,
     clippy::ptr_as_ptr,
     clippy::use_self,
-    clippy::ref_option
+    clippy::ref_option,
+    clippy::needless_pass_by_ref_mut
 )]
 
 use existing_instance::Msg;
