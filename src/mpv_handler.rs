@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        app::{LOG, ModalPopup},
+        app::ModalPopup,
         config::ArgType,
         ipc::{self, IpcEvent},
         logln,
@@ -50,7 +50,6 @@ impl MpvHandler {
         mpv_args: impl IntoIterator<Item = &'a OsStr>,
         custom_demuxer: Option<CustomDemuxer>,
     ) -> anyhow::Result<()> {
-        LOG.lock().unwrap().clear();
         self.read_demuxer = true;
         self.stop_music();
         self.mpv_term.reset();
