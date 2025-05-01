@@ -54,22 +54,20 @@ impl MpvHandler {
         self.stop_music();
         self.mpv_term.reset();
         self.demux_term.reset();
-        let pty = Pty::new().unwrap();
-        let pts = pty.pts().unwrap();
+        let (pty, pts) = pty_process::blocking::open().unwrap();
         let mut mpv_command = PtyCommand::new(mpv_cmd);
-        let demuxer_pty = Pty::new().unwrap();
-        let demux_pts = demuxer_pty.pts().unwrap();
-        mpv_command.args(mpv_args);
+        let (demuxer_pty, demux_pts) = pty_process::blocking::open().unwrap();
+        mpv_command = mpv_command.args(mpv_args);
         if let Some(demuxer) = custom_demuxer {
             logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
             let mut demux_child = PtyCommand::new(demuxer.cmd)
                 .args(demuxer.args)
                 .stdout(Stdio::piped())
-                .spawn(&demux_pts)
+                .spawn(demux_pts)
                 .context("Failed to spawn demuxer")?;
-            mpv_command.stdin(demux_child.stdout.take().unwrap());
+            mpv_command = mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
-        let mut child = mpv_command.spawn(&pts).unwrap();
+        let mut child = mpv_command.spawn(pts).unwrap();
         let attempts = 5;
         let ipc_bridge = 'connect: {
             for i in 0..attempts {
@@ -109,8 +107,8 @@ impl MpvHandler {
         }
         let mut buf = Vec::new();
         let mut demux_buf = Vec::new();
-        let mut nbr = NonBlockingReader::from_fd(&mut inner.mpv_pty).unwrap();
-        let mut demux_nbr = NonBlockingReader::from_fd(&mut inner.demuxer_pty).unwrap();
+        let mut nbr = NonBlockingReader::from_fd(&inner.mpv_pty).unwrap();
+        let mut demux_nbr = NonBlockingReader::from_fd(&inner.demuxer_pty).unwrap();
         match nbr.read_available(&mut buf) {
             Ok(n_read) => {
                 if n_read != 0 {
