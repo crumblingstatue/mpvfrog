@@ -803,7 +803,7 @@ dependencies = [
 
 [[package]]
 name = "mpvfrog"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "ansi_term_buf",
  "anyhow",
