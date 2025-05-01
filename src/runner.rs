@@ -90,7 +90,7 @@ pub fn run(
                 rw.set_vertical_sync_enabled(true);
                 let sf_egui = SfEgui::new(&rw);
                 app.ui
-                    .apply_colorix_theme(&app.core.cfg.theme, sf_egui.context());
+                    .apply_colorix_theme(app.core.cfg.theme.as_ref(), sf_egui.context());
                 tray_popup_win = Some(CtxMenuWin { rw, sf_egui });
             }
         }
