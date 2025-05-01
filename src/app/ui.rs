@@ -111,6 +111,8 @@ impl Ui {
                     self.focus_on = Some(core.selected_song);
                 }
                 ui.separator();
+                ui.label(concat!("🐸 mpvfrog ", env!("CARGO_PKG_VERSION")));
+                ui.separator();
                 if ui.button("🚪 Quit").clicked() {
                     self.quit_requested = true;
                 }
