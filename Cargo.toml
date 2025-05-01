@@ -21,7 +21,7 @@ interprocess = { version = "2.2", default-features = false }
 anyhow = "1.0.79"
 zbus = "5"
 crossbeam-channel = "0.5.12"
-x11 = { version = "2.21.0", features = ["xlib"] }
+x11rb = "0.13"
 egui-file-dialog = "0.9.0"
 egui_colors = "0.8.0"
 rand = "0.9.0"

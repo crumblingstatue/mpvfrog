@@ -14,6 +14,7 @@ use {
         },
     },
     std::time::Duration,
+    x11rb::protocol::xproto::{AtomEnum, ConnectionExt, PropMode},
 };
 
 struct CtxMenuWin {
@@ -81,31 +82,9 @@ pub fn run(
                     &Default::default(),
                 )
                 .unwrap();
-                // Skip taskbar for context menu window
-                unsafe {
-                    let native = rw.system_handle();
-                    let display = x11::xlib::XOpenDisplay(std::ptr::null());
-                    let utility = x11::xlib::XInternAtom(
-                        display,
-                        c"_NET_WM_STATE_SKIP_TASKBAR".as_ptr(),
-                        x11::xlib::False,
-                    );
-                    let property = x11::xlib::XInternAtom(
-                        display,
-                        c"_NET_WM_STATE".as_ptr(),
-                        x11::xlib::False,
-                    );
-                    x11::xlib::XChangeProperty(
-                        display,
-                        native,
-                        property,
-                        x11::xlib::XA_ATOM,
-                        32,
-                        x11::xlib::PropModeReplace,
-                        std::ptr::addr_of!(utility).cast(),
-                        1,
-                    );
-                    x11::xlib::XCloseDisplay(display);
+                // Skip taskbar for context popup window
+                if let Err(e) = skip_taskbar_for_window_x11(&rw) {
+                    eprintln!("Failed to skip taskbar for ctx popup: {e}");
                 }
                 rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
                 rw.set_vertical_sync_enabled(true);
@@ -184,6 +163,28 @@ pub fn run(
         }
     }
     app.save();
+}
+
+fn skip_taskbar_for_window_x11(rw: &RenderWindow) -> anyhow::Result<()> {
+    let native = rw.system_handle();
+    let (conn, _) = x11rb::connect(None)?;
+    let utility = conn
+        .intern_atom(false, b"_NET_WM_STATE_SKIP_TASKBAR")?
+        .reply()?
+        .atom;
+    let property = conn.intern_atom(false, b"_NET_WM_STATE")?.reply()?.atom;
+    x11rb::protocol::xproto::change_property(
+        &conn,
+        PropMode::REPLACE,
+        native as u32,
+        property,
+        AtomEnum::ATOM,
+        32,
+        1,
+        &utility.to_le_bytes(),
+    )?
+    .check()?;
+    Ok(())
 }
 
 fn toggle_win_visible(
