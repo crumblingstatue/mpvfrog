@@ -227,6 +227,10 @@ impl Ui {
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
             .show(ui, |ui| {
+                if self.filtered_entries.is_empty() {
+                    let not_shown_count = core.playlist.len();
+                    ui.label(format!("<No results> ({not_shown_count} not shown)"));
+                }
                 for &i in &self.filtered_entries {
                     let path = &core.playlist[i];
                     let re =
