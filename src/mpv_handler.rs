@@ -54,9 +54,9 @@ impl MpvHandler {
         self.stop_music();
         self.mpv_term.reset();
         self.demux_term.reset();
-        let (pty, pts) = pty_process::blocking::open().unwrap();
+        let (pty, pts) = pty_process::blocking::open()?;
         let mut mpv_command = PtyCommand::new(mpv_cmd);
-        let (demuxer_pty, demux_pts) = pty_process::blocking::open().unwrap();
+        let (demuxer_pty, demux_pts) = pty_process::blocking::open()?;
         mpv_command = mpv_command.args(mpv_args);
         if let Some(demuxer) = custom_demuxer {
             logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
@@ -67,7 +67,7 @@ impl MpvHandler {
                 .context("Failed to spawn demuxer")?;
             mpv_command = mpv_command.stdin(demux_child.stdout.take().unwrap());
         }
-        let mut child = mpv_command.spawn(pts).unwrap();
+        let mut child = mpv_command.spawn(pts)?;
         let attempts = 5;
         let ipc_bridge = 'connect: {
             for i in 0..attempts {
