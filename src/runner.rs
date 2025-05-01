@@ -161,6 +161,9 @@ pub fn run(
                 std::thread::sleep(Duration::from_millis(250));
             }
         }
+        if app.ui.quit_requested {
+            break;
+        }
     }
     app.save();
 }

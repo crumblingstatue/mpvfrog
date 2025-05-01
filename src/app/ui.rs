@@ -46,6 +46,7 @@ pub struct Ui {
     focus_on: Option<usize>,
     /// Which filtered entry is selected (up and down keys while filter box is focused)
     selected_filtered_entry: Option<usize>,
+    pub quit_requested: bool,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -108,6 +109,10 @@ impl Ui {
                 {
                     ui.close_menu();
                     self.focus_on = Some(core.selected_song);
+                }
+                ui.separator();
+                if ui.button("🚪 Quit").clicked() {
+                    self.quit_requested = true;
                 }
             });
             ui.group(|ui| {
