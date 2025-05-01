@@ -131,6 +131,7 @@ pub fn run(
             rw.display();
             // Update tray window if visible
             if let Some(win) = &mut tray_popup_win {
+                app.tray_popup_update(win.sf_egui.context());
                 let msg = update_tray_window(win, &mut app);
                 if let Some(msg) = msg {
                     match msg {
