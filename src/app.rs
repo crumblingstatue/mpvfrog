@@ -86,10 +86,10 @@ impl<T, E: Display> ResultModalExt for Result<T, E> {
 }
 
 impl App {
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new(ctx: &Context, args: &crate::Args) -> Self {
         ctx.set_visuals(egui::Visuals::dark());
         let cfg = Config::load_or_default();
-        let mut state = Core {
+        let mut core = Core {
             cfg,
             playlist: Vec::new(),
             selected_song: 0,
@@ -98,10 +98,22 @@ impl App {
             user_stopped: true,
             song_change: false,
         };
-        state.read_songs();
+        // Handle path argument for opening a folder (and optionally play a file)
+        let mut play_this = None;
+        if let Some(path) = &args.path {
+            if path.is_dir() {
+                core.cfg.music_folder = Some(path.clone());
+            } else if path.is_file() {
+                if let Some(parent) = path.parent() {
+                    core.cfg.music_folder = Some(parent.to_owned());
+                    play_this = Some(path.strip_prefix(parent).unwrap());
+                }
+            }
+        }
+        core.read_songs();
         let mut ui: ui::Ui = Default::default();
-        ui.recalc_filt_entries(&state);
-        ui.apply_colorix_theme(state.cfg.theme.as_ref(), ctx);
+        ui.recalc_filt_entries(&core);
+        ui.apply_colorix_theme(core.cfg.theme.as_ref(), ctx);
         let tray_handle = match AppTray::establish() {
             Ok(handle) => Some(handle),
             Err(e) => {
@@ -109,12 +121,20 @@ impl App {
                 None
             }
         };
+        let mut modal = ModalPopup::default();
+        if let Some(this) = play_this {
+            if let Some(pos) = core.playlist.iter().position(|play_path| play_path == this) {
+                core.selected_song = pos;
+                ui.focus_on = Some(pos);
+                core.play_selected_song(&mut modal);
+            }
+        }
         Self {
             ui,
-            core: state,
+            core,
             tray_handle,
             last_tooltip_update: Instant::now(),
-            modal: ModalPopup::default(),
+            modal,
         }
     }
 

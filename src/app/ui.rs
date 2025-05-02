@@ -43,7 +43,7 @@ pub struct Ui {
     ab_loop_a: f64,
     ab_loop_b: f64,
     /// If `Some`, focus on the playlist item with that index
-    focus_on: Option<usize>,
+    pub focus_on: Option<usize>,
     /// Which filtered entry is selected (up and down keys while filter box is focused)
     selected_filtered_entry: Option<usize>,
     pub quit_requested: bool,

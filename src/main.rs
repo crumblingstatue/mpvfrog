@@ -10,7 +10,7 @@
     clippy::needless_pass_by_ref_mut
 )]
 
-use existing_instance::Msg;
+use {clap::Parser, existing_instance::Msg, std::path::PathBuf};
 
 mod app;
 mod bool_ext;
@@ -22,13 +22,31 @@ mod runner;
 
 const APP_LABEL: &str = "🐸 mpvfrog";
 
+#[derive(clap::Parser)]
+struct Args {
+    /// Path to file or directory
+    ///
+    /// - If it's a directory, mpvfrog will set the music directory to it
+    ///
+    /// - If it's a file, mpvfrog will set music directory to parent, and play the file
+    path: Option<PathBuf>,
+}
+
 /// Entry point
 fn main() {
+    let args = Args::parse();
     let listener = match existing_instance::establish_endpoint("mpvfrog-instance", true) {
         Ok(endpoint) => match endpoint {
             existing_instance::Endpoint::New(listener) => Some(listener),
             existing_instance::Endpoint::Existing(mut stream) => {
-                stream.send(Msg::Nudge);
+                match &args.path {
+                    Some(path) => {
+                        stream.send(Msg::String(path.as_os_str().to_str().unwrap().to_owned()));
+                    }
+                    None => {
+                        stream.send(Msg::Nudge);
+                    }
+                }
                 return;
             }
         },
@@ -37,5 +55,5 @@ fn main() {
             None
         }
     };
-    runner::run(700, 500, "mpvfrog", listener);
+    runner::run(700, 500, "mpvfrog", listener, args);
 }

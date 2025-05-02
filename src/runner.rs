@@ -13,7 +13,7 @@ use {
             window::{Event, Key, Style, VideoMode},
         },
     },
-    std::time::Duration,
+    std::{path::PathBuf, time::Duration},
     x11rb::protocol::xproto::{AtomEnum, ConnectionExt, PropMode},
 };
 
@@ -27,12 +27,13 @@ pub fn run(
     h: u32,
     title: &str,
     mut instance_listener: Option<existing_instance::Listener>,
+    args: crate::Args,
 ) {
     let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default()).unwrap();
     let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
-    let mut app = App::new(sf_egui.context());
+    let mut app = App::new(sf_egui.context(), &args);
     let mut win_visible = true;
     'mainloop: loop {
         let mut event_flags;
@@ -43,8 +44,40 @@ pub fn run(
             event_flags = EventFlags::default();
         }
         if let Some(listener) = &mut instance_listener {
-            if listener.accept().is_some() {
-                event_flags.activated = true;
+            if let Some(mut stream) = listener.accept() {
+                if let Some(msg) = stream.recv() {
+                    match msg {
+                        existing_instance::Msg::String(path) => {
+                            let path: PathBuf = path.into();
+                            if path.is_dir() {
+                                app.core.cfg.music_folder = Some(path);
+                                app.core.read_songs();
+                                app.ui.recalc_filt_entries(&app.core);
+                            } else if path.is_file() {
+                                if let Some(parent) = path.parent() {
+                                    app.core.cfg.music_folder = Some(parent.to_owned());
+                                    app.core.read_songs();
+                                    app.ui.recalc_filt_entries(&app.core);
+                                    let stripped = path.strip_prefix(parent).unwrap();
+                                    if let Some(pos) = app
+                                        .core
+                                        .playlist
+                                        .iter()
+                                        .position(|play_path| play_path == stripped)
+                                    {
+                                        app.core.selected_song = pos;
+                                        app.ui.focus_on = Some(pos);
+                                        app.core.play_selected_song(&mut app.modal);
+                                    }
+                                }
+                            }
+                        }
+                        existing_instance::Msg::Nudge => {
+                            event_flags.activated = true;
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
         if event_flags.quit_clicked {

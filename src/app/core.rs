@@ -11,8 +11,8 @@ use {
 
 pub struct Core {
     pub(crate) cfg: Config,
-    pub(super) playlist: Vec<PathBuf>,
-    pub(super) selected_song: usize,
+    pub(crate) playlist: Vec<PathBuf>,
+    pub(crate) selected_song: usize,
     pub(crate) mpv_handler: MpvHandler,
     pub(super) playlist_behavior: PlaylistBehavior,
     /// This is `true` when the user has initiated a stop, rather than just mpv exiting
@@ -24,7 +24,7 @@ pub struct Core {
 }
 
 impl Core {
-    pub(super) fn read_songs(&mut self) {
+    pub(crate) fn read_songs(&mut self) {
         let Some(music_folder) = &self.cfg.music_folder else {
             return;
         };
@@ -54,7 +54,7 @@ impl Core {
         self.playlist.sort();
     }
 
-    pub(super) fn play_selected_song(&mut self, modal: &mut ModalPopup) {
+    pub(crate) fn play_selected_song(&mut self, modal: &mut ModalPopup) {
         self.save_mpv_values_to_cfg();
         self.user_stopped = false;
         let selection = self.selected_song;
