@@ -136,6 +136,7 @@ impl Ui {
                     || ui.input(|inp| inp.key_pressed(egui::Key::F5))
                 {
                     core.read_songs();
+                    self.recalc_filt_entries(core);
                 }
             });
             ui.label("🔎");
