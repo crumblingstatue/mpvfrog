@@ -65,9 +65,7 @@ pub fn run(
                                         .iter()
                                         .position(|play_path| play_path == stripped)
                                     {
-                                        app.core.selected_song = pos;
-                                        app.ui.focus_on = Some(pos);
-                                        app.core.play_selected_song(&mut app.modal);
+                                        app.focus_and_play(pos);
                                     }
                                 }
                             }

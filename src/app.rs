@@ -121,21 +121,24 @@ impl App {
                 None
             }
         };
-        let mut modal = ModalPopup::default();
-        if let Some(this) = play_this {
-            if let Some(pos) = core.playlist.iter().position(|play_path| play_path == this) {
-                core.selected_song = pos;
-                ui.focus_on = Some(pos);
-                core.play_selected_song(&mut modal);
-            }
-        }
-        Self {
+        let mut app = Self {
             ui,
             core,
             tray_handle,
             last_tooltip_update: Instant::now(),
-            modal,
+            modal: ModalPopup::default(),
+        };
+        if let Some(this) = play_this {
+            if let Some(pos) = app
+                .core
+                .playlist
+                .iter()
+                .position(|play_path| play_path == this)
+            {
+                app.focus_and_play(pos);
+            }
         }
+        app
     }
 
     pub fn update(&mut self, ctx: &Context) {
@@ -265,5 +268,11 @@ impl App {
         if let Some(vol) = self.core.mpv_handler.volume() {
             self.core.cfg.volume = vol;
         }
+    }
+
+    pub(crate) fn focus_and_play(&mut self, idx: usize) {
+        self.core.selected_song = idx;
+        self.ui.focus_on = Some(idx);
+        self.core.play_selected_song(&mut self.modal);
     }
 }
