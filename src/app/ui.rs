@@ -119,9 +119,7 @@ impl Ui {
             });
             ui.group(|ui| {
                 if let Some(path) = self.file_dialog.take_picked() {
-                    core.cfg.music_folder = Some(path);
-                    core.read_songs();
-                    self.recalc_filt_entries(core);
+                    crate::app::open_folder(core, self, path);
                 }
                 self.file_dialog.update(ui.ctx());
                 match &core.cfg.music_folder {
@@ -135,8 +133,7 @@ impl Ui {
                 if ui.button("🔃").on_hover_text("Refresh (F5)").clicked()
                     || ui.input(|inp| inp.key_pressed(egui::Key::F5))
                 {
-                    core.read_songs();
-                    self.recalc_filt_entries(core);
+                    crate::app::refresh_folder(core, self);
                 }
             });
             ui.label("🔎");

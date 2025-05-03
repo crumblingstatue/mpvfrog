@@ -50,14 +50,14 @@ pub fn run(
                         existing_instance::Msg::String(path) => {
                             let path: PathBuf = path.into();
                             if path.is_dir() {
-                                app.core.cfg.music_folder = Some(path);
-                                app.core.read_songs();
-                                app.ui.recalc_filt_entries(&app.core);
+                                crate::app::open_folder(&mut app.core, &mut app.ui, path);
                             } else if path.is_file() {
                                 if let Some(parent) = path.parent() {
-                                    app.core.cfg.music_folder = Some(parent.to_owned());
-                                    app.core.read_songs();
-                                    app.ui.recalc_filt_entries(&app.core);
+                                    crate::app::open_folder(
+                                        &mut app.core,
+                                        &mut app.ui,
+                                        parent.to_owned(),
+                                    );
                                     let stripped = path.strip_prefix(parent).unwrap();
                                     if let Some(pos) = app
                                         .core

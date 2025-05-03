@@ -16,7 +16,7 @@ use {
         mpv_handler::{ActivePtyInput, MpvHandler},
     },
     egui_sf2g::egui::{self, Context, Event, Key},
-    std::{fmt::Display, sync::Mutex, time::Instant},
+    std::{fmt::Display, path::PathBuf, sync::Mutex, time::Instant},
     zbus::names::BusName,
 };
 
@@ -275,4 +275,14 @@ impl App {
         self.ui.focus_on = Some(idx);
         self.core.play_selected_song(&mut self.modal);
     }
+}
+
+pub(crate) fn open_folder(core: &mut Core, ui: &mut ui::Ui, path: PathBuf) {
+    core.cfg.music_folder = Some(path);
+    refresh_folder(core, ui);
+}
+
+pub(crate) fn refresh_folder(core: &mut Core, ui: &mut ui::Ui) {
+    core.read_songs();
+    ui.recalc_filt_entries(core);
 }
