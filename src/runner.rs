@@ -86,7 +86,13 @@ pub fn run(
             if tray_popup_win.is_some() {
                 tray_popup_win = None;
             } else {
-                toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw);
+                // Try to focus unfocused window first, only hide if already focused
+                if win_visible && !rw.has_focus() {
+                    rw.set_visible(false);
+                    rw.set_visible(true);
+                } else {
+                    toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw);
+                }
             }
         }
         if let Some((x, y)) = event_flags.ctx_menu.take() {
