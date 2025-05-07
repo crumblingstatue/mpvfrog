@@ -40,9 +40,15 @@ fn main() {
             existing_instance::Endpoint::New(listener) => Some(listener),
             existing_instance::Endpoint::Existing(mut stream) => {
                 match &args.path {
-                    Some(path) => {
-                        stream.send(Msg::String(path.as_os_str().to_str().unwrap().to_owned()));
-                    }
+                    Some(path) => match path.canonicalize() {
+                        Ok(canon) => {
+                            stream
+                                .send(Msg::String(canon.as_os_str().to_str().unwrap().to_owned()));
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to canonicalize path: {e}");
+                        }
+                    },
                     None => {
                         stream.send(Msg::Nudge);
                     }
