@@ -1,5 +1,6 @@
 mod color_theme_window;
 mod custom_demuxers_window;
+mod mpv_console_window;
 
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
@@ -12,6 +13,7 @@ use {
         TopBottomPanel,
     },
     fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
+    mpv_console_window::MpvConsoleWindow,
     std::fmt,
 };
 
@@ -19,12 +21,14 @@ use {
 struct Windows {
     custom_demuxers: CustomDemuxersWindow,
     color_theme: ColorThemeWindow,
+    mpv_console: MpvConsoleWindow,
 }
 
 impl Windows {
     fn update(&mut self, core: &mut Core, ctx: &Context, colorix: &mut Option<Colorix>) {
         self.custom_demuxers.update(core, ctx);
         self.color_theme.update(core, ctx, colorix);
+        self.mpv_console.update(core, ctx);
     }
 }
 
@@ -100,6 +104,10 @@ impl Ui {
                 }
                 if ui.button("💎 Color theme config").clicked() {
                     self.windows.color_theme.open ^= true;
+                    ui.close_menu();
+                }
+                if ui.button("🖳 Mpv console").clicked() {
+                    self.windows.mpv_console.open ^= true;
                     ui.close_menu();
                 }
                 if ui

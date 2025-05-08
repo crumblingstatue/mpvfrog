@@ -235,6 +235,13 @@ impl MpvHandler {
     pub(crate) fn demuxer_active(&self) -> bool {
         self.read_demuxer
     }
+
+    pub(crate) fn send_ipc_msg(&mut self, text: &str) {
+        let Some(inner) = &mut self.inner else {
+            return;
+        };
+        inner.ipc_bridge.write_str(text).unwrap();
+    }
 }
 
 pub struct TimeInfo {
