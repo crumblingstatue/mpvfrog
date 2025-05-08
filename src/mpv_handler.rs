@@ -164,7 +164,16 @@ impl MpvHandler {
         }
     }
     pub fn mpv_output(&self) -> String {
-        self.mpv_term.contents_to_string()
+        let contents = self.mpv_term.contents_to_string();
+        let mut out = String::new();
+        // Replace trailing whitespace of each line with single line terminator
+        //
+        // This prevents the text viewer wrapping long lines
+        for line in contents.lines() {
+            out.push_str(line.trim_end());
+            out.push('\n');
+        }
+        out
     }
     pub fn volume(&self) -> Option<u8> {
         self.inner
