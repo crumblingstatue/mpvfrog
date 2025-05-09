@@ -36,6 +36,7 @@ pub struct Properties {
     pub ab_loop_b: Option<f64>,
     pub track_count: u8,
     pub lavfi_complex: String,
+    pub loop_file: bool,
 }
 
 trait Command {
@@ -113,6 +114,7 @@ impl Bridge {
         this.write_command(ObserveProperty("ab-loop-b"))?;
         this.write_command(ObserveProperty("track-list/count"))?;
         this.write_command(ObserveProperty("lavfi-complex"))?;
+        this.write_command(ObserveProperty("loop-file"))?;
         Ok(this)
     }
     pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
@@ -198,6 +200,9 @@ impl Bridge {
                                 property::LavfiComplex::NAME => {
                                     self.observed.lavfi_complex = data.as_str().unwrap().to_owned()
                                 }
+                                property::LoopFile::NAME => {
+                                    self.observed.loop_file = data.as_str() == Some("inf")
+                                }
                                 name => logln!("Unhandled property: {} = {}", name, data),
                             }
                         }
@@ -249,5 +254,10 @@ impl Bridge {
     pub(crate) fn remove_track(&mut self, track_num: u64) -> anyhow::Result<()> {
         self.write_command(AudioRemove(track_num))?;
         Ok(())
+    }
+
+    pub(crate) fn set_loop_file(&mut self, loop_file: bool) {
+        self.set_property::<property::LoopFile>(if loop_file { Some("inf") } else { None })
+            .unwrap();
     }
 }

@@ -79,4 +79,5 @@ decl_properties! {
     AbLoopB, "ab-loop-b", Option<f64>;
     LavfiComplex, "lavfi-complex", String;
     Aid, "aid", u64;
+    LoopFile, "loop-file", Option<&'static str>;
 }

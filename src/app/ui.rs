@@ -467,6 +467,11 @@ impl Ui {
                     core.mpv_handler.switch_to_track(1);
                 }
             }
+            if let Some(mut loop_file) = core.mpv_handler.loop_file() {
+                if ui.checkbox(&mut loop_file, "loop").clicked() {
+                    core.mpv_handler.set_loop_file(loop_file);
+                }
+            }
         });
         ScrollArea::vertical()
             .auto_shrink([false; 2])

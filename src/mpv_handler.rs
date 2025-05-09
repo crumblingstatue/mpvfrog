@@ -289,6 +289,19 @@ impl MpvHandler {
             .as_ref()
             .map(|inner| inner.ipc_bridge.observed.track_count)
     }
+
+    pub(crate) fn loop_file(&self) -> Option<bool> {
+        self.inner
+            .as_ref()
+            .map(|inner| inner.ipc_bridge.observed.loop_file)
+    }
+
+    pub(crate) fn set_loop_file(&mut self, loop_file: bool) {
+        let Some(inner) = &mut self.inner else {
+            return;
+        };
+        inner.ipc_bridge.set_loop_file(loop_file);
+    }
 }
 
 pub struct TimeInfo {
