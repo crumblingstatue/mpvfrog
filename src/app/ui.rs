@@ -483,11 +483,6 @@ impl Ui {
                     OutputSource::Demuxer => core.mpv_handler.demux_term.contents_to_string(),
                     OutputSource::Log => LOG.lock().unwrap().clone(),
                 };
-                // Weird hack to make PTY interaction work even if the TextEdit was clicked.
-                // Normally, the `TextEdit` is interested in keyboard events even in the
-                // "immutable" mode, which is not what we want.
-                // But unconditionally surrendering focus also deselects, so we first check if
-                // nothing is being selected.
                 let out = TextEdit::multiline(&mut out.as_str())
                     .desired_width(f32::INFINITY)
                     .font(TextStyle::Monospace)
@@ -513,6 +508,11 @@ impl Ui {
                         }
                     }
                 }
+                // Weird hack to make PTY interaction work even if the TextEdit was clicked.
+                // Normally, the `TextEdit` is interested in keyboard events even in the
+                // "immutable" mode, which is not what we want.
+                // But unconditionally surrendering focus also deselects, so we first check if
+                // nothing is being selected.
                 if out
                     .cursor_range
                     .is_none_or(|range| range.primary == range.secondary)
