@@ -418,10 +418,14 @@ impl Ui {
         });
         ui.separator();
         ui.horizontal(|ui| {
-            if ui
-                .selectable_value(&mut self.output_source, OutputSource::Mpv, "Mpv")
-                .clicked()
-            {
+            let re = ui.selectable_value(&mut self.output_source, OutputSource::Mpv, "Mpv");
+            re.context_menu(|ui| {
+                if ui.button("Clear").clicked() {
+                    core.mpv_handler.mpv_term.reset();
+                    ui.close_menu();
+                }
+            });
+            if re.clicked() {
                 core.mpv_handler.active_pty_input = ActivePtyInput::Mpv;
             }
             let mut demux_enabled = true;

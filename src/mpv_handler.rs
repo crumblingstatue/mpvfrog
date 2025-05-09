@@ -26,7 +26,7 @@ struct MpvHandlerInner {
 }
 
 pub struct MpvHandler {
-    mpv_term: Term,
+    pub mpv_term: Term,
     pub demux_term: Term,
     inner: Option<MpvHandlerInner>,
     read_demuxer: bool,
