@@ -13,13 +13,13 @@
 use {clap::Parser, existing_instance::Msg, std::path::PathBuf};
 
 mod app;
-mod bool_ext;
 mod config;
 mod ipc;
 mod mpv_handler;
 mod rect_math;
 mod runner;
 mod util {
+    pub mod bool_ext;
     pub mod egui_ext;
     pub mod result_ext;
     pub mod str_ext;
