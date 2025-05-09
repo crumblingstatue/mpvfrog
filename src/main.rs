@@ -20,6 +20,7 @@ mod mpv_handler;
 mod rect_math;
 mod runner;
 mod util {
+    pub mod egui_ext;
     pub mod result_ext;
     pub mod str_ext;
 }

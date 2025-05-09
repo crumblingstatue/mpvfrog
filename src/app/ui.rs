@@ -5,7 +5,11 @@ mod mpv_console_window;
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, LOG, ModalPopup, PlaylistBehavior, ResultModalExt as _},
-    crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput, util::str_ext::StrExt as _},
+    crate::{
+        bool_ext::BoolExt,
+        mpv_handler::ActivePtyInput,
+        util::{egui_ext::EguiResponseExt as _, str_ext::StrExt as _},
+    },
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sf2g::egui::{
@@ -528,19 +532,6 @@ impl Ui {
                 std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
             ));
         }
-    }
-}
-
-trait EguiResponseExt {
-    fn h_pointer_ratio(&self) -> Option<f32>;
-}
-
-impl EguiResponseExt for egui::Response {
-    fn h_pointer_ratio(&self) -> Option<f32> {
-        self.hover_pos().map(|hover_pos| {
-            let x = (hover_pos - self.rect.left_top()).x;
-            (x / self.rect.width()).clamp(0.0, 1.0)
-        })
     }
 }
 
