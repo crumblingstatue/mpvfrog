@@ -432,17 +432,17 @@ impl Ui {
             if !core.mpv_handler.demuxer_active() && core.mpv_handler.demux_term.is_empty() {
                 demux_enabled = false;
             }
-            if ui
-                .add_enabled(
-                    demux_enabled,
-                    egui::SelectableLabel::new(
-                        self.output_source == OutputSource::Demuxer,
-                        "Demuxer",
-                    ),
-                )
-                .on_disabled_hover_text("No active demuxer")
-                .clicked()
-            {
+            let re = ui.add_enabled(
+                demux_enabled,
+                egui::SelectableLabel::new(self.output_source == OutputSource::Demuxer, "Demuxer"),
+            );
+            re.context_menu(|ui| {
+                if ui.button("Clear").clicked() {
+                    core.mpv_handler.demux_term.reset();
+                    ui.close_menu();
+                }
+            });
+            if re.on_disabled_hover_text("No active demuxer").clicked() {
                 self.output_source = OutputSource::Demuxer;
                 core.mpv_handler.active_pty_input = ActivePtyInput::Demuxer;
             };
