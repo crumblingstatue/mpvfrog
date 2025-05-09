@@ -5,7 +5,7 @@ mod mpv_console_window;
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, LOG, ModalPopup, PlaylistBehavior, ResultModalExt as _},
-    crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput},
+    crate::{bool_ext::BoolExt, mpv_handler::ActivePtyInput, util::str_ext::StrExt as _},
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sf2g::egui::{
@@ -528,23 +528,6 @@ impl Ui {
                 std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
             ));
         }
-    }
-}
-
-trait StrExt {
-    fn find_after(&self, pattern: &str) -> Option<usize>;
-    fn find_token_after(&self, pattern: &str) -> Option<std::ops::Range<usize>>;
-}
-
-impl StrExt for str {
-    fn find_after(&self, pattern: &str) -> Option<usize> {
-        self.find(pattern).map(|pos| pos + pattern.len())
-    }
-
-    fn find_token_after(&self, pattern: &str) -> Option<std::ops::Range<usize>> {
-        let pos = self.find_after(pattern)?;
-        let ws = self[pos..].find(|c: char| c.is_whitespace())?;
-        Some(pos..pos + ws)
     }
 }
 

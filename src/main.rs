@@ -21,6 +21,7 @@ mod rect_math;
 mod runner;
 mod util {
     pub mod result_ext;
+    pub mod str_ext;
 }
 
 const APP_LABEL: &str = "🐸 mpvfrog";
