@@ -1,4 +1,5 @@
 use {
+    crate::util::result_ext::LogErrExt,
     crossbeam_channel::{Receiver, Sender},
     std::sync::Mutex,
     zbus::{blocking::connection, interface, object_server::SignalEmitter},
@@ -139,10 +140,12 @@ impl TrayIface {
     fn context_menu(&self, x: i32, y: i32) {
         self.sender
             .send(TrayToAppMsg::ShowCtxMenu { x, y })
-            .unwrap();
+            .log_err("Failed to send context menu msg");
     }
     fn activate(&self, _x: i32, _y: i32) {
-        self.sender.send(TrayToAppMsg::Activate).unwrap();
+        self.sender
+            .send(TrayToAppMsg::Activate)
+            .log_err("Failed to send context menu msg");
     }
     #[zbus(signal)]
     async fn new_tool_tip(_ctx: &SignalEmitter<'_>) -> zbus::Result<()>;

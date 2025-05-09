@@ -3,7 +3,7 @@
 mod property;
 
 use {
-    crate::logln,
+    crate::{logln, util::result_ext::LogErrExt as _},
     interprocess::local_socket::{
         GenericFilePath, Stream as LocalSocketStream, ToFsName, traits::Stream as _,
     },
@@ -258,6 +258,6 @@ impl Bridge {
 
     pub(crate) fn set_loop_file(&mut self, loop_file: bool) {
         self.set_property::<property::LoopFile>(if loop_file { Some("inf") } else { None })
-            .unwrap();
+            .log_err("Failed to set loop");
     }
 }
