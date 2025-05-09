@@ -245,7 +245,7 @@ impl Bridge {
         Ok(())
     }
 
-    pub(crate) fn play_track(&mut self, id: u64) -> anyhow::Result<()> {
+    pub(crate) fn switch_to_track(&mut self, id: u64) -> anyhow::Result<()> {
         self.set_property::<property::LavfiComplex>("".into())?;
         self.set_property::<property::Aid>(id)?;
         Ok(())

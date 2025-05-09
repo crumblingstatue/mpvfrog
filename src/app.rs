@@ -253,7 +253,7 @@ impl App {
     }
 
     pub(crate) fn update_volume(&mut self) {
-        if let Some(vol) = self.core.mpv_handler.volume() {
+        if let Some(vol) = self.core.mpv_handler.ipc(|b| b.observed.volume) {
             self.core.cfg.volume = vol;
         }
     }

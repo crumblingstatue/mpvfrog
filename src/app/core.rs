@@ -2,8 +2,10 @@ use {
     super::{ModalPopup, PlaylistBehavior},
     crate::{
         config::{Config, PredicateSliceExt},
+        ipc::Bridge,
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
+        util::result_ext::ResultModalExt,
     },
     std::{ffi::OsStr, path::PathBuf},
     walkdir::WalkDir,
@@ -126,20 +128,18 @@ impl Core {
     }
 
     fn save_mpv_values_to_cfg(&mut self) {
-        if let Some(vol) = self.mpv_handler.volume() {
-            self.cfg.volume = vol;
-        }
-        if let Some(speed) = self.mpv_handler.speed() {
-            self.cfg.speed = speed;
-        }
+        self.mpv_handler.ipc(|b| {
+            self.cfg.volume = b.observed.volume;
+            self.cfg.speed = b.observed.speed;
+        });
     }
 
     /// Plays the selected song, or toggles the pause state if already playing
     pub fn play_or_toggle_pause(&mut self, modal: &mut ModalPopup) {
         if self.mpv_handler.active() {
-            if let Err(e) = self.mpv_handler.toggle_pause() {
-                modal.error("Play error", e);
-            }
+            self.mpv_handler
+                .ipc(Bridge::toggle_pause)
+                .err_popup("Play error", modal);
         } else {
             self.play_selected_song(modal);
         }
@@ -174,11 +174,7 @@ impl Core {
     }
 
     pub(crate) fn seek(&mut self, pos: f64) -> anyhow::Result<()> {
-        self.mpv_handler.seek(pos)
-    }
-
-    pub fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
-        self.mpv_handler.set_video(show)
+        self.mpv_handler.ipc(|b| b.seek(pos)).unwrap_or(Ok(()))
     }
 
     pub(crate) fn handle_event(&mut self, event: crate::ipc::IpcEvent) {

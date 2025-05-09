@@ -92,12 +92,6 @@ impl MpvHandler {
         });
         Ok(())
     }
-    pub fn add_audio(&mut self, path: &str) -> anyhow::Result<()> {
-        let Some(inner) = &mut self.inner else {
-            return Ok(());
-        };
-        inner.ipc_bridge.add_audio(path)
-    }
     pub fn stop_music(&mut self) {
         let Some(inner) = &mut self.inner else { return };
         inner.mpv_pty.write_all(b"q").unwrap();
@@ -156,13 +150,6 @@ impl MpvHandler {
         self.inner.is_some()
     }
 
-    pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
-        if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.toggle_pause()?;
-        }
-        Ok(())
-    }
-
     pub fn paused(&self) -> bool {
         match &self.inner {
             Some(inner) => inner.ipc_bridge.observed.paused,
@@ -181,16 +168,6 @@ impl MpvHandler {
         }
         out
     }
-    pub fn volume(&self) -> Option<u8> {
-        self.inner
-            .as_ref()
-            .map(|inner| inner.ipc_bridge.observed.volume)
-    }
-    pub fn speed(&self) -> Option<f64> {
-        self.inner
-            .as_ref()
-            .map(|inner| inner.ipc_bridge.observed.speed)
-    }
     pub fn ab_loop(&self) -> Option<(Option<f64>, Option<f64>)> {
         self.inner.as_ref().map(|inner| {
             (
@@ -199,45 +176,12 @@ impl MpvHandler {
             )
         })
     }
-    pub fn set_volume(&mut self, vol: u8) -> anyhow::Result<()> {
-        if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_volume(vol)?;
-        }
-        Ok(())
-    }
-    pub fn set_speed(&mut self, speed: f64) -> anyhow::Result<()> {
-        if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_speed(speed)?;
-        }
-        Ok(())
-    }
 
     pub(crate) fn time_info(&self) -> Option<TimeInfo> {
         self.inner.as_ref().map(|inner| TimeInfo {
             pos: inner.ipc_bridge.observed.time_pos,
             duration: inner.ipc_bridge.observed.duration,
         })
-    }
-
-    pub(crate) fn seek(&mut self, pos: f64) -> anyhow::Result<()> {
-        if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.seek(pos)?;
-        }
-        Ok(())
-    }
-
-    pub(crate) fn set_video(&mut self, show: bool) -> anyhow::Result<()> {
-        if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_video(show)?;
-        }
-        Ok(())
-    }
-
-    pub(crate) fn set_ab_loop(&mut self, a: Option<f64>, b: Option<f64>) -> anyhow::Result<()> {
-        if let Some(inner) = &mut self.inner {
-            inner.ipc_bridge.set_ab_loop(a, b)?;
-        }
-        Ok(())
     }
 
     pub(crate) fn poll_event(&mut self) -> Option<IpcEvent> {
@@ -250,57 +194,15 @@ impl MpvHandler {
     pub(crate) fn demuxer_active(&self) -> bool {
         self.read_demuxer
     }
-
-    pub(crate) fn send_ipc_msg(&mut self, text: &str) {
-        let Some(inner) = &mut self.inner else {
-            return;
-        };
-        inner.ipc_bridge.write_str(text).unwrap();
-    }
-
-    pub(crate) fn switch_to_track(&mut self, id: u64) {
-        let Some(inner) = &mut self.inner else {
-            return;
-        };
-        inner.ipc_bridge.play_track(id).unwrap();
-    }
-
-    pub(crate) fn mix_t1_with_track(&mut self, id: u64) {
-        let Some(inner) = &mut self.inner else {
-            return;
-        };
-        inner.ipc_bridge.mix_t1_with_track(id).unwrap();
-    }
-    pub(crate) fn lavfi_complex(&self) -> Option<&str> {
-        self.inner
-            .as_ref()
-            .map(|inner| inner.ipc_bridge.observed.lavfi_complex.as_str())
-    }
-
-    pub(crate) fn remove_track(&mut self, track_num: u64) -> anyhow::Result<()> {
-        let Some(inner) = &mut self.inner else {
-            return Ok(());
-        };
-        inner.ipc_bridge.remove_track(track_num)
-    }
-
-    pub(crate) fn track_count(&self) -> Option<u8> {
-        self.inner
-            .as_ref()
-            .map(|inner| inner.ipc_bridge.observed.track_count)
-    }
-
-    pub(crate) fn loop_file(&self) -> Option<bool> {
-        self.inner
-            .as_ref()
-            .map(|inner| inner.ipc_bridge.observed.loop_file)
-    }
-
-    pub(crate) fn set_loop_file(&mut self, loop_file: bool) {
-        let Some(inner) = &mut self.inner else {
-            return;
-        };
-        inner.ipc_bridge.set_loop_file(loop_file);
+    /// Send a command to the IPC bridge, if it exists
+    pub(crate) fn ipc<'br, T, F>(&'br mut self, fun: F) -> Option<T>
+    where
+        F: FnOnce(&'br mut ipc::Bridge) -> T,
+    {
+        match &mut self.inner {
+            Some(inner) => Some(fun(&mut inner.ipc_bridge)),
+            None => None,
+        }
     }
 }
 

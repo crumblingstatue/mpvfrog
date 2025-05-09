@@ -28,7 +28,7 @@ impl MpvConsoleWindow {
                     ipc_msg.push_str("]}");
                     self.backlog.push_str(&ipc_msg);
                     self.backlog.push('\n');
-                    core.mpv_handler.send_ipc_msg(&ipc_msg);
+                    core.mpv_handler.ipc(|b| b.write_str(&ipc_msg));
                     self.cmd_buf.clear();
                 }
             });

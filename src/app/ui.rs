@@ -6,6 +6,7 @@ use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, LOG, ModalPopup, PlaylistBehavior},
     crate::{
+        ipc::Bridge,
         mpv_handler::ActivePtyInput,
         util::{
             bool_ext::BoolExt as _, egui_ext::EguiResponseExt as _,
@@ -251,12 +252,9 @@ impl Ui {
                         if ui.button("Mix with current").clicked() {
                             ui.close_menu();
                             let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
-                            if let Err(e) = core
-                                .mpv_handler
-                                .add_audio(full_path.as_os_str().to_str().unwrap())
-                            {
-                                modal.error("Failed to add track", e);
-                            }
+                            core.mpv_handler
+                                .ipc(|b| b.add_audio(full_path.as_os_str().to_str().unwrap()))
+                                .err_popup("Failed to add track", modal);
                         }
                     });
                     let filter_changed = self.filter_changed.take();
@@ -292,7 +290,7 @@ impl Ui {
                 if ui.add(Button::new(icon)).clicked() {
                     if active {
                         core.mpv_handler
-                            .toggle_pause()
+                            .ipc(Bridge::toggle_pause)
                             .err_popup("Toggle pause error", modal);
                     } else {
                         core.play_selected_song(modal);
@@ -307,13 +305,13 @@ impl Ui {
             });
             ui.group(|ui| {
                 ui.label("🔈");
-                match core.mpv_handler.volume() {
+                match core.mpv_handler.ipc(|b| b.observed.volume) {
                     Some(mut vol) => {
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut vol, 0..=150));
                         if re.changed() {
                             core.mpv_handler
-                                .set_volume(vol)
+                                .ipc(|b| b.set_volume(vol))
                                 .err_popup("Volume change error", modal);
                         }
                     }
@@ -324,13 +322,13 @@ impl Ui {
             });
             ui.group(|ui| {
                 ui.label("⏩");
-                match core.mpv_handler.speed() {
+                match core.mpv_handler.ipc(|b| b.observed.speed) {
                     Some(mut speed) => {
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0));
                         if re.changed() {
                             core.mpv_handler
-                                .set_speed(speed)
+                                .ipc(|b| b.set_speed(speed))
                                 .err_popup("Speed change error", modal);
                         }
                     }
@@ -340,7 +338,8 @@ impl Ui {
                 }
             });
             if ui.checkbox(&mut core.cfg.video, "video").clicked() {
-                core.set_video(core.cfg.video)
+                core.mpv_handler
+                    .ipc(|b| b.set_video(core.cfg.video))
                     .err_popup("Video set error", modal);
             }
         });
@@ -365,9 +364,9 @@ impl Ui {
                                 ab_changed = true;
                             }
                             if ui.button("jump").clicked() {
-                                if let Err(e) = core.mpv_handler.seek(self.ab_loop_a) {
-                                    modal.error("Error jumping", e);
-                                }
+                                core.mpv_handler
+                                    .ipc(|b| b.seek(self.ab_loop_a))
+                                    .err_popup("Error jumping", modal);
                             }
                         });
                         ui.horizontal(|ui| {
@@ -379,24 +378,21 @@ impl Ui {
                                 ab_changed = true;
                             }
                             if ui.button("jump").clicked() {
-                                if let Err(e) = core.mpv_handler.seek(self.ab_loop_b) {
-                                    modal.error("Error jumping", e);
-                                }
+                                core.mpv_handler
+                                    .ipc(|b| b.seek(self.ab_loop_b))
+                                    .err_popup("Error jumping", modal);
                             }
                         });
                         if ui.button("Set").clicked() || ab_changed {
-                            if let Err(e) = core
-                                .mpv_handler
-                                .set_ab_loop(Some(self.ab_loop_a), Some(self.ab_loop_b))
-                            {
-                                modal.error("Error setting A-B loop", e);
-                            }
+                            core.mpv_handler
+                                .ipc(|b| b.set_ab_loop(Some(self.ab_loop_a), Some(self.ab_loop_b)))
+                                .err_popup("Error setting A-B loop", modal);
                         }
                         if let Some((Some(a), Some(b))) = core.mpv_handler.ab_loop() {
                             if ui.button("Unset").clicked() {
-                                if let Err(e) = core.mpv_handler.set_ab_loop(None, None) {
-                                    modal.error("Error unsetting A-B loop", e);
-                                }
+                                core.mpv_handler
+                                    .ipc(|b| b.set_ab_loop(None, None))
+                                    .err_popup("Error unsetting A-B loop", modal);
                             }
                             ui.label(format!(
                                 "Current a-b loop\n{}-{}",
@@ -454,11 +450,11 @@ impl Ui {
             };
             ui.selectable_value(&mut self.output_source, OutputSource::Log, "Log");
             ui.separator();
-            if let Some(track_count) = core.mpv_handler.track_count() {
+            if let Some(track_count) = core.mpv_handler.ipc(|b| b.observed.track_count) {
                 let s = if track_count == 1 { "" } else { "s" };
                 ui.label(format!("{track_count} active track{s}"));
             }
-            if let Some(complex) = core.mpv_handler.lavfi_complex() {
+            if let Some(complex) = core.mpv_handler.ipc(|b| b.observed.lavfi_complex.as_str()) {
                 let mut remove = false;
                 if !complex.is_empty() {
                     ui.menu_button("lavfi-complex filter active", |ui| {
@@ -470,12 +466,12 @@ impl Ui {
                     });
                 }
                 if remove {
-                    core.mpv_handler.switch_to_track(1);
+                    core.mpv_handler.ipc(|b| b.switch_to_track(1));
                 }
             }
-            if let Some(mut loop_file) = core.mpv_handler.loop_file() {
+            if let Some(mut loop_file) = core.mpv_handler.ipc(|b| b.observed.loop_file) {
                 if ui.checkbox(&mut loop_file, "loop").clicked() {
-                    core.mpv_handler.set_loop_file(loop_file);
+                    core.mpv_handler.ipc(|b| b.set_loop_file(loop_file));
                 }
             }
         });
@@ -502,13 +498,15 @@ impl Ui {
                                 let [ctrl, shift] =
                                     ui.input(|inp| [inp.modifiers.ctrl, inp.modifiers.shift]);
                                 if shift {
-                                    core.mpv_handler.mix_t1_with_track(track_num);
+                                    core.mpv_handler.ipc(|b| b.mix_t1_with_track(track_num));
                                 } else if ctrl {
-                                    if let Err(e) = core.mpv_handler.remove_track(track_num) {
+                                    if let Some(Err(e)) =
+                                        core.mpv_handler.ipc(|b| b.remove_track(track_num))
+                                    {
                                         modal.error("Error removing track", e);
                                     }
                                 } else {
-                                    core.mpv_handler.switch_to_track(track_num);
+                                    core.mpv_handler.ipc(|b| b.switch_to_track(track_num));
                                 }
                             }
                         }

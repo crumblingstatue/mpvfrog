@@ -272,7 +272,8 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
                 }
                 if ui.checkbox(&mut app.core.cfg.video, "video").clicked() {
                     app.core
-                        .set_video(app.core.cfg.video)
+                        .mpv_handler
+                        .ipc(|b| b.set_video(app.core.cfg.video))
                         .err_popup("Video set error", &mut app.modal);
                 }
             })
@@ -284,7 +285,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
             if re.changed() {
                 app.core
                     .mpv_handler
-                    .set_volume(app.core.cfg.volume)
+                    .ipc(|b| b.set_volume(app.core.cfg.volume))
                     .err_popup("Volume set error", &mut app.modal);
             }
         });
