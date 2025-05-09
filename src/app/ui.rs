@@ -241,6 +241,18 @@ impl Ui {
                     let path = &core.playlist[i];
                     let re =
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
+                    re.context_menu(|ui| {
+                        if ui.button("Mix with current").clicked() {
+                            ui.close_menu();
+                            let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
+                            if let Err(e) = core
+                                .mpv_handler
+                                .add_audio(full_path.as_os_str().to_str().unwrap())
+                            {
+                                modal.error("Failed to add track", e);
+                            }
+                        }
+                    });
                     let filter_changed = self.filter_changed.take();
                     if filter_changed {
                         ui.scroll_to_rect(egui::Rect::ZERO, Some(Align::TOP));
@@ -431,6 +443,26 @@ impl Ui {
                 core.mpv_handler.active_pty_input = ActivePtyInput::Demuxer;
             };
             ui.selectable_value(&mut self.output_source, OutputSource::Log, "Log");
+            ui.separator();
+            if let Some(track_count) = core.mpv_handler.track_count() {
+                let s = if track_count == 1 { "" } else { "s" };
+                ui.label(format!("{track_count} active track{s}"));
+            }
+            if let Some(complex) = core.mpv_handler.lavfi_complex() {
+                let mut remove = false;
+                if !complex.is_empty() {
+                    ui.menu_button("lavfi-complex filter active", |ui| {
+                        ui.label(complex);
+                        if ui.button("Remove").clicked() {
+                            ui.close_menu();
+                            remove = true;
+                        }
+                    });
+                }
+                if remove {
+                    core.mpv_handler.switch_to_track(1);
+                }
+            }
         });
         ScrollArea::vertical()
             .auto_shrink([false; 2])
@@ -451,6 +483,27 @@ impl Ui {
                     .desired_width(f32::INFINITY)
                     .font(TextStyle::Monospace)
                     .show(ui);
+                if out.response.clicked() {
+                    if let Some(range) = out.cursor_range {
+                        let row = range.primary.rcursor.row;
+                        if let Some(line) = core.mpv_handler.mpv_output().lines().nth(row) {
+                            if let Some(range) = line.find_token_after("--aid=") {
+                                let track_num: u64 = line[range].parse().unwrap();
+                                let [ctrl, shift] =
+                                    ui.input(|inp| [inp.modifiers.ctrl, inp.modifiers.shift]);
+                                if shift {
+                                    core.mpv_handler.mix_t1_with_track(track_num);
+                                } else if ctrl {
+                                    if let Err(e) = core.mpv_handler.remove_track(track_num) {
+                                        modal.error("Error removing track", e);
+                                    }
+                                } else {
+                                    core.mpv_handler.switch_to_track(track_num);
+                                }
+                            }
+                        }
+                    }
+                }
                 if out
                     .cursor_range
                     .is_none_or(|range| range.primary == range.secondary)
@@ -466,6 +519,23 @@ impl Ui {
                 std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
             ));
         }
+    }
+}
+
+trait StrExt {
+    fn find_after(&self, pattern: &str) -> Option<usize>;
+    fn find_token_after(&self, pattern: &str) -> Option<std::ops::Range<usize>>;
+}
+
+impl StrExt for str {
+    fn find_after(&self, pattern: &str) -> Option<usize> {
+        self.find(pattern).map(|pos| pos + pattern.len())
+    }
+
+    fn find_token_after(&self, pattern: &str) -> Option<std::ops::Range<usize>> {
+        let pos = self.find_after(pattern)?;
+        let ws = self[pos..].find(|c: char| c.is_whitespace())?;
+        Some(pos..pos + ws)
     }
 }
 

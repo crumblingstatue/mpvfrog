@@ -13,6 +13,12 @@ impl PropValue for f64 {
     }
 }
 
+impl PropValue for u64 {
+    fn to_json(&self) -> serde_json::Value {
+        (*self).into()
+    }
+}
+
 impl PropValue for bool {
     fn to_json(&self) -> serde_json::Value {
         (*self).into()
@@ -34,6 +40,12 @@ impl PropValue for Option<&'static str> {
             &Some(val) => val.into(),
             None => "no".into(),
         }
+    }
+}
+
+impl PropValue for String {
+    fn to_json(&self) -> serde_json::Value {
+        serde_json::Value::from(self.clone())
     }
 }
 
@@ -65,4 +77,6 @@ decl_properties! {
     Video, "vid", Option<&'static str>;
     AbLoopA, "ab-loop-a", Option<f64>;
     AbLoopB, "ab-loop-b", Option<f64>;
+    LavfiComplex, "lavfi-complex", String;
+    Aid, "aid", u64;
 }

@@ -34,6 +34,8 @@ pub struct Properties {
     pub time_pos: f64,
     pub ab_loop_a: Option<f64>,
     pub ab_loop_b: Option<f64>,
+    pub track_count: u8,
+    pub lavfi_complex: String,
 }
 
 trait Command {
@@ -52,6 +54,26 @@ impl Command for ObserveProperty<'_> {
     type R = [serde_json::Value; 3];
     fn json_values(&self) -> Self::R {
         ["observe_property".into(), 1.into(), self.0.into()]
+    }
+}
+
+struct AudioAdd<'a>(&'a str);
+
+impl Command for AudioAdd<'_> {
+    type R = [serde_json::Value; 2];
+
+    fn json_values(&self) -> Self::R {
+        ["audio-add".into(), self.0.into()]
+    }
+}
+
+struct AudioRemove(u64);
+
+impl Command for AudioRemove {
+    type R = [serde_json::Value; 2];
+
+    fn json_values(&self) -> Self::R {
+        ["audio-remove".into(), self.0.into()]
     }
 }
 
@@ -89,6 +111,8 @@ impl Bridge {
         this.write_command(ObserveProperty("duration"))?;
         this.write_command(ObserveProperty("ab-loop-a"))?;
         this.write_command(ObserveProperty("ab-loop-b"))?;
+        this.write_command(ObserveProperty("track-list/count"))?;
+        this.write_command(ObserveProperty("lavfi-complex"))?;
         Ok(this)
     }
     pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
@@ -168,6 +192,12 @@ impl Bridge {
                                 }
                                 property::AbLoopA::NAME => self.observed.ab_loop_a = data.as_f64(),
                                 property::AbLoopB::NAME => self.observed.ab_loop_b = data.as_f64(),
+                                "track-list/count" => {
+                                    self.observed.track_count = data.as_u64().unwrap() as u8
+                                }
+                                property::LavfiComplex::NAME => {
+                                    self.observed.lavfi_complex = data.as_str().unwrap().to_owned()
+                                }
                                 name => logln!("Unhandled property: {} = {}", name, data),
                             }
                         }
@@ -199,5 +229,25 @@ impl Bridge {
     pub fn set_ab_loop(&mut self, a: Option<f64>, b: Option<f64>) -> anyhow::Result<()> {
         self.set_property::<property::AbLoopA>(a)?;
         self.set_property::<property::AbLoopB>(b)
+    }
+    pub fn add_audio(&mut self, path: &str) -> anyhow::Result<()> {
+        self.write_command(AudioAdd(path))?;
+        self.set_property::<property::LavfiComplex>("[aid1] [aid2] amix [ao]".into())
+    }
+
+    pub fn mix_t1_with_track(&mut self, track: u64) -> anyhow::Result<()> {
+        self.set_property::<property::LavfiComplex>(format!("[aid1] [aid{track}] amix [ao]"))?;
+        Ok(())
+    }
+
+    pub(crate) fn play_track(&mut self, id: u64) -> anyhow::Result<()> {
+        self.set_property::<property::LavfiComplex>("".into())?;
+        self.set_property::<property::Aid>(id)?;
+        Ok(())
+    }
+
+    pub(crate) fn remove_track(&mut self, track_num: u64) -> anyhow::Result<()> {
+        self.write_command(AudioRemove(track_num))?;
+        Ok(())
     }
 }

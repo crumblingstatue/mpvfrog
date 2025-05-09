@@ -92,6 +92,12 @@ impl MpvHandler {
         });
         Ok(())
     }
+    pub fn add_audio(&mut self, path: &str) -> anyhow::Result<()> {
+        let Some(inner) = &mut self.inner else {
+            return Ok(());
+        };
+        inner.ipc_bridge.add_audio(path)
+    }
     pub fn stop_music(&mut self) {
         let Some(inner) = &mut self.inner else { return };
         inner.mpv_pty.write_all(b"q").unwrap();
@@ -250,6 +256,38 @@ impl MpvHandler {
             return;
         };
         inner.ipc_bridge.write_str(text).unwrap();
+    }
+
+    pub(crate) fn switch_to_track(&mut self, id: u64) {
+        let Some(inner) = &mut self.inner else {
+            return;
+        };
+        inner.ipc_bridge.play_track(id).unwrap();
+    }
+
+    pub(crate) fn mix_t1_with_track(&mut self, id: u64) {
+        let Some(inner) = &mut self.inner else {
+            return;
+        };
+        inner.ipc_bridge.mix_t1_with_track(id).unwrap();
+    }
+    pub(crate) fn lavfi_complex(&self) -> Option<&str> {
+        self.inner
+            .as_ref()
+            .map(|inner| inner.ipc_bridge.observed.lavfi_complex.as_str())
+    }
+
+    pub(crate) fn remove_track(&mut self, track_num: u64) -> anyhow::Result<()> {
+        let Some(inner) = &mut self.inner else {
+            return Ok(());
+        };
+        inner.ipc_bridge.remove_track(track_num)
+    }
+
+    pub(crate) fn track_count(&self) -> Option<u8> {
+        self.inner
+            .as_ref()
+            .map(|inner| inner.ipc_bridge.observed.track_count)
     }
 }
 
