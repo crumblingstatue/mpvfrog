@@ -2,8 +2,9 @@
 
 use {
     crate::{
-        app::{App, ResultModalExt, tray::EventFlags},
+        app::{App, tray::EventFlags},
         rect_math::{Rect, Vec2, rect_ensure_within},
+        util::result_ext::ResultModalExt as _,
     },
     egui_sf2g::{
         SfEgui, egui,

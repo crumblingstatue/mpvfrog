@@ -17,3 +17,15 @@ where
         }
     }
 }
+
+pub trait ResultModalExt {
+    fn err_popup(&self, title: &str, modal: &mut crate::app::ModalPopup);
+}
+
+impl<T, E: Display> ResultModalExt for Result<T, E> {
+    fn err_popup(&self, title: &str, modal: &mut crate::app::ModalPopup) {
+        if let Err(e) = self {
+            modal.error(title, e);
+        }
+    }
+}

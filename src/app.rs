@@ -73,18 +73,6 @@ impl ModalPopup {
     }
 }
 
-pub trait ResultModalExt {
-    fn err_popup(&self, title: &str, modal: &mut ModalPopup);
-}
-
-impl<T, E: Display> ResultModalExt for Result<T, E> {
-    fn err_popup(&self, title: &str, modal: &mut ModalPopup) {
-        if let Err(e) = self {
-            modal.error(title, e);
-        }
-    }
-}
-
 impl App {
     pub fn new(ctx: &Context, args: &crate::Args) -> Self {
         ctx.set_visuals(egui::Visuals::dark());

@@ -4,10 +4,13 @@ mod mpv_console_window;
 
 use {
     self::custom_demuxers_window::CustomDemuxersWindow,
-    super::{Core, LOG, ModalPopup, PlaylistBehavior, ResultModalExt as _},
+    super::{Core, LOG, ModalPopup, PlaylistBehavior},
     crate::{
         mpv_handler::ActivePtyInput,
-        util::{bool_ext::BoolExt as _, egui_ext::EguiResponseExt as _, str_ext::StrExt as _},
+        util::{
+            bool_ext::BoolExt as _, egui_ext::EguiResponseExt as _,
+            result_ext::ResultModalExt as _, str_ext::StrExt as _,
+        },
     },
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
