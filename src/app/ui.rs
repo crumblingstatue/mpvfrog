@@ -113,6 +113,8 @@ impl Ui {
                     self.windows.color_theme.open ^= true;
                     ui.close_menu();
                 }
+                ui.checkbox(&mut core.cfg.follow_symlinks, "Follow symlinks")
+                    .on_hover_text("Follow symbolic links when reading a directory");
                 if ui.button("🖳 Mpv console").clicked() {
                     self.windows.mpv_console.open ^= true;
                     ui.close_menu();

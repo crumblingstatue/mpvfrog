@@ -27,6 +27,9 @@ pub struct Config {
     pub video: bool,
     #[serde(default)]
     pub theme: Option<ThemeColors>,
+    /// Follow symbolic links when loading files from a dir
+    #[serde(default)]
+    pub follow_symlinks: bool,
 }
 
 impl Default for Config {
@@ -38,6 +41,7 @@ impl Default for Config {
             speed: default_speed(),
             video: false,
             theme: None,
+            follow_symlinks: false,
         }
     }
 }

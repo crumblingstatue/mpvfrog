@@ -32,6 +32,7 @@ impl Core {
         };
         self.playlist.clear();
         for entry in WalkDir::new(music_folder)
+            .follow_links(self.cfg.follow_symlinks)
             .into_iter()
             .filter_map(Result::ok)
         {
