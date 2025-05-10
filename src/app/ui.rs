@@ -256,6 +256,11 @@ impl Ui {
                                 .ipc(|b| b.add_audio(full_path.as_os_str().to_str().unwrap()))
                                 .err_popup("Failed to add track", modal);
                         }
+                        if ui.button("Copy full path").clicked() {
+                            ui.close_menu();
+                            let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
+                            ui.ctx().copy_text(full_path.to_string_lossy().into_owned());
+                        }
                     });
                     let filter_changed = self.filter_changed.take();
                     if filter_changed {
