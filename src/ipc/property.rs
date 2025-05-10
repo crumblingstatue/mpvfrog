@@ -80,4 +80,5 @@ decl_properties! {
     LavfiComplex, "lavfi-complex", String;
     Aid, "aid", u64;
     LoopFile, "loop-file", Option<&'static str>;
+    TrackListCount, "track-list/count", u64;
 }

@@ -12,6 +12,7 @@ use {
     std::{
         collections::{HashMap, VecDeque},
         io::{Read, Write},
+        marker::PhantomData,
     },
 };
 
@@ -49,12 +50,12 @@ trait Command {
     }
 }
 
-struct ObserveProperty<'a>(&'a str);
+struct ObserveProperty<T>(PhantomData<T>);
 
-impl Command for ObserveProperty<'_> {
+impl<T: Property> Command for ObserveProperty<T> {
     type R = [serde_json::Value; 3];
     fn json_values(&self) -> Self::R {
-        ["observe_property".into(), 1.into(), self.0.into()]
+        ["observe_property".into(), 1.into(), T::NAME.into()]
     }
 }
 
@@ -106,16 +107,19 @@ impl Bridge {
             observed: Default::default(),
             event_queue: Default::default(),
         };
-        this.write_command(ObserveProperty("speed"))?;
-        this.write_command(ObserveProperty("volume"))?;
-        this.write_command(ObserveProperty("time-pos"))?;
-        this.write_command(ObserveProperty("duration"))?;
-        this.write_command(ObserveProperty("ab-loop-a"))?;
-        this.write_command(ObserveProperty("ab-loop-b"))?;
-        this.write_command(ObserveProperty("track-list/count"))?;
-        this.write_command(ObserveProperty("lavfi-complex"))?;
-        this.write_command(ObserveProperty("loop-file"))?;
+        this.observe_property::<property::Speed>()?;
+        this.observe_property::<property::Volume>()?;
+        this.observe_property::<property::TimePos>()?;
+        this.observe_property::<property::Duration>()?;
+        this.observe_property::<property::AbLoopA>()?;
+        this.observe_property::<property::AbLoopB>()?;
+        this.observe_property::<property::TrackListCount>()?;
+        this.observe_property::<property::LavfiComplex>()?;
+        this.observe_property::<property::LoopFile>()?;
         Ok(this)
+    }
+    pub fn observe_property<T: Property>(&mut self) -> anyhow::Result<()> {
+        self.write_command(ObserveProperty::<T>(PhantomData))
     }
     pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
         // We assume here that the pause command will succeed.
@@ -194,7 +198,7 @@ impl Bridge {
                                 }
                                 property::AbLoopA::NAME => self.observed.ab_loop_a = data.as_f64(),
                                 property::AbLoopB::NAME => self.observed.ab_loop_b = data.as_f64(),
-                                "track-list/count" => {
+                                property::TrackListCount::NAME => {
                                     self.observed.track_count = data.as_u64().unwrap() as u8
                                 }
                                 property::LavfiComplex::NAME => {
