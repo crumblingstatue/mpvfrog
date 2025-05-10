@@ -237,7 +237,7 @@ impl Ui {
 
     fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         let row_h = ui.text_style_height(&egui::TextStyle::Body);
-        ScrollArea::vertical()
+        let mut out = ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
@@ -282,6 +282,16 @@ impl Ui {
                     }
                 }
             });
+        if let Some(playlist_idx) = self.focus_on {
+            if let Some(filtlist_idx) = self
+                .filtered_entries
+                .iter()
+                .position(|&i| i == playlist_idx)
+            {
+                out.state.offset.y = filtlist_idx as f32 * (row_h + 3.0);
+                out.state.store(ui.ctx(), out.id);
+            }
+        }
         ui.separator();
         ui.horizontal(|ui| {
             ui.group(|ui| {
