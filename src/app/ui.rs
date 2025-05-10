@@ -16,8 +16,7 @@ use {
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sf2g::egui::{
-        self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TextStyle,
-        TopBottomPanel,
+        self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TopBottomPanel,
     },
     fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
     mpv_console_window::MpvConsoleWindow,
@@ -237,16 +236,17 @@ impl Ui {
     }
 
     fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
+        let row_h = ui.text_style_height(&egui::TextStyle::Body);
         ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
-            .show(ui, |ui| {
+            .show_rows(ui, row_h, self.filtered_entries.len(), |ui, range| {
                 if self.filtered_entries.is_empty() {
                     let not_shown_count = core.playlist.len();
                     ui.label(format!("<No results> ({not_shown_count} not shown)"));
                 }
-                for &i in &self.filtered_entries {
+                for &i in &self.filtered_entries[range] {
                     let path = &core.playlist[i];
                     let re =
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
@@ -494,7 +494,7 @@ impl Ui {
                 };
                 let out = TextEdit::multiline(&mut out.as_str())
                     .desired_width(f32::INFINITY)
-                    .font(TextStyle::Monospace)
+                    .font(egui::TextStyle::Monospace)
                     .show(ui);
                 if out.response.clicked() {
                     if let Some(range) = out.cursor_range {
