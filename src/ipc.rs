@@ -1,14 +1,15 @@
 //! Interprocess comunication with spawned mpv process
 
+mod command;
 mod property;
 
 use {
     crate::{logln, util::result_ext::LogErrExt as _},
+    command::{AudioAdd, AudioRemove, Command, ObserveProperty, SetProperty},
     interprocess::local_socket::{
         GenericFilePath, Stream as LocalSocketStream, ToFsName, traits::Stream as _,
     },
     property::{PropValue, Property},
-    serde::Serialize,
     std::{
         collections::{HashMap, VecDeque},
         io::{Read, Write},
@@ -38,62 +39,6 @@ pub struct Properties {
     pub track_count: u8,
     pub lavfi_complex: String,
     pub loop_file: bool,
-}
-
-trait Command {
-    type R: Serialize;
-    fn json_values(&self) -> Self::R;
-    fn to_command_json(&self) -> CommandJson<Self::R> {
-        CommandJson {
-            command: self.json_values(),
-        }
-    }
-}
-
-struct ObserveProperty<T>(PhantomData<T>);
-
-impl<T: Property> Command for ObserveProperty<T> {
-    type R = [serde_json::Value; 3];
-    fn json_values(&self) -> Self::R {
-        ["observe_property".into(), 1.into(), T::NAME.into()]
-    }
-}
-
-struct AudioAdd<'a>(&'a str);
-
-impl Command for AudioAdd<'_> {
-    type R = [serde_json::Value; 2];
-
-    fn json_values(&self) -> Self::R {
-        ["audio-add".into(), self.0.into()]
-    }
-}
-
-struct AudioRemove(u64);
-
-impl Command for AudioRemove {
-    type R = [serde_json::Value; 2];
-
-    fn json_values(&self) -> Self::R {
-        ["audio-remove".into(), self.0.into()]
-    }
-}
-
-#[derive(Serialize)]
-struct CommandJson<T: Serialize> {
-    command: T,
-}
-
-struct SetProperty<P: Property>(P::Value);
-
-impl<P: Property> Command for SetProperty<P>
-where
-    P::Value: PropValue,
-{
-    type R = [serde_json::Value; 3];
-    fn json_values(&self) -> Self::R {
-        ["set_property".into(), P::NAME.into(), self.0.to_json()]
-    }
 }
 
 impl Bridge {
