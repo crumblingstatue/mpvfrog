@@ -18,6 +18,7 @@ mod ipc;
 mod mpv_handler;
 mod rect_math;
 mod runner;
+mod time_fmt;
 mod util {
     pub mod bool_ext;
     pub mod egui_ext;
