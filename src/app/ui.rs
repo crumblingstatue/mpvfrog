@@ -509,6 +509,12 @@ impl Ui {
                 if out.response.clicked() {
                     if let Some(range) = out.cursor_range {
                         let row = range.primary.rcursor.row;
+                        // The little audio "handles" are at the beginning of lines,
+                        // so let's ignore the later columns, so the user doesn't accidentally
+                        // switch tracks when clicking lines that contain --aid bits
+                        if range.primary.rcursor.column > 18 {
+                            return;
+                        }
                         if let Some(line) = core.mpv_handler.mpv_output().lines().nth(row) {
                             if let Some(range) = line.find_token_after("--aid=") {
                                 let track_num: u64 = line[range].parse().unwrap();
