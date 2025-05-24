@@ -64,7 +64,7 @@ pub fn run(
                                         .core
                                         .playlist
                                         .iter()
-                                        .position(|play_path| play_path == stripped)
+                                        .position(|item| item.path == stripped)
                                     {
                                         app.focus_and_play(pos);
                                     }

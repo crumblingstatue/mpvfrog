@@ -226,8 +226,8 @@ impl Ui {
             .playlist
             .iter()
             .enumerate()
-            .filter_map(|(idx, path)| {
-                path.to_str().and_then(|path_str| {
+            .filter_map(|(idx, item)| {
+                item.path.to_str().and_then(|path_str| {
                     matcher
                         .fuzzy_match(path_str, &prepared_filter)
                         .map(|score| (idx, score))
@@ -253,7 +253,7 @@ impl Ui {
                     ui.label(format!("<No results> ({not_shown_count} not shown)"));
                 }
                 for &i in &self.filtered_entries[range] {
-                    let path = &core.playlist[i];
+                    let path = &core.playlist.get(i).unwrap().path;
                     let re =
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
                     re.context_menu(|ui| {

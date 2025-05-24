@@ -1,6 +1,7 @@
 //! Application state management
 
 mod core;
+mod playlist;
 mod playlist_behavior;
 pub mod tray;
 pub mod ui;
@@ -16,6 +17,7 @@ use {
         mpv_handler::{ActivePtyInput, MpvHandler},
     },
     egui_sf2g::egui::{self, Context, Event, Key},
+    playlist::Playlist,
     std::{fmt::Display, path::PathBuf, sync::Mutex, time::Instant},
     zbus::names::BusName,
 };
@@ -79,7 +81,7 @@ impl App {
         let cfg = Config::load_or_default();
         let mut core = Core {
             cfg,
-            playlist: Vec::new(),
+            playlist: Playlist::default(),
             selected_song: 0,
             mpv_handler: MpvHandler::default(),
             playlist_behavior: PlaylistBehavior::Continue,
@@ -117,12 +119,7 @@ impl App {
             modal: ModalPopup::default(),
         };
         if let Some(this) = play_this {
-            if let Some(pos) = app
-                .core
-                .playlist
-                .iter()
-                .position(|play_path| play_path == this)
-            {
+            if let Some(pos) = app.core.playlist.iter().position(|item| item.path == this) {
                 app.focus_and_play(pos);
             }
         }
@@ -216,6 +213,7 @@ impl App {
         self.core
             .playlist
             .get(self.core.selected_song)?
+            .path
             .file_name()
             .and_then(|name| name.to_str())
     }

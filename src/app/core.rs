@@ -1,5 +1,5 @@
 use {
-    super::{ModalPopup, PlaylistBehavior},
+    super::{ModalPopup, PlaylistBehavior, playlist::Playlist},
     crate::{
         config::{Config, PredicateSliceExt},
         ipc::Bridge,
@@ -8,12 +8,11 @@ use {
         util::result_ext::ResultModalExt,
     },
     std::{ffi::OsStr, path::PathBuf},
-    walkdir::WalkDir,
 };
 
 pub struct Core {
     pub(crate) cfg: Config,
-    pub(crate) playlist: Vec<PathBuf>,
+    pub(crate) playlist: Playlist,
     pub(crate) selected_song: usize,
     pub(crate) mpv_handler: MpvHandler,
     pub(super) playlist_behavior: PlaylistBehavior,
@@ -27,43 +26,19 @@ pub struct Core {
 
 impl Core {
     pub(crate) fn read_songs(&mut self) {
-        let Some(music_folder) = &self.cfg.music_folder else {
-            return;
-        };
-        self.playlist.clear();
-        for entry in WalkDir::new(music_folder)
-            .follow_links(self.cfg.follow_symlinks)
-            .into_iter()
-            .filter_map(Result::ok)
-        {
-            if entry.file_type().is_file() {
-                let en_path = entry.path();
-                if let Some(ext) = en_path.extension().and_then(|ext| ext.to_str()) {
-                    if ["jpg", "png", "txt"]
-                        .into_iter()
-                        .any(|filter_ext| filter_ext == ext)
-                    {
-                        continue;
-                    }
-                }
-                let path = en_path.strip_prefix(music_folder).unwrap().to_owned();
-                self.playlist.push(path);
-            }
-        }
-        self.sort_songs();
-    }
-
-    pub(super) fn sort_songs(&mut self) {
-        self.playlist.sort();
+        self.playlist.read_songs(&self.cfg);
     }
 
     pub(crate) fn play_selected_song(&mut self, modal: &mut ModalPopup) {
         self.save_mpv_values_to_cfg();
         self.user_stopped = false;
         let selection = self.selected_song;
-        let sel_path = &self.playlist[selection];
+        let Some(sel_item) = &self.playlist.get(selection) else {
+            logln!("play_selected_song: Dangling index: {selection}");
+            return;
+        };
         let path: PathBuf = match &self.cfg.music_folder {
-            Some(folder) => folder.join(sel_path),
+            Some(folder) => folder.join(&sel_item.path),
             None => {
                 logln!("Can't play song, there is no music folder");
                 return;
