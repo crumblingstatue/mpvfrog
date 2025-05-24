@@ -47,7 +47,7 @@ pub struct Ui {
     /// When this happens, we'll try to scroll to the selected song if we can
     filter_changed: bool,
     output_source: OutputSource,
-    file_dialog: egui_file_dialog::FileDialog,
+    pub file_dialog: egui_file_dialog::FileDialog,
     colorix: Option<Colorix>,
     filtered_entries: Vec<usize>,
     ab_loop_a: f64,
@@ -100,7 +100,10 @@ impl Ui {
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         ui.horizontal_centered(|ui| {
             ui.menu_button(crate::APP_LABEL, |ui| {
-                if ui.button("🗁 Open music folder...").clicked() {
+                if ui
+                    .add(Button::new("🗁 Open music folder...").shortcut_text("Ctrl+O"))
+                    .clicked()
+                {
                     self.file_dialog.pick_directory();
                     ui.close_menu();
                 }
@@ -129,7 +132,10 @@ impl Ui {
                 ui.separator();
                 ui.label(concat!("🐸 mpvfrog ", env!("CARGO_PKG_VERSION")));
                 ui.separator();
-                if ui.button("🚪 Quit").clicked() {
+                if ui
+                    .add(Button::new("🚪 Quit").shortcut_text("Ctrl+Q"))
+                    .clicked()
+                {
                     self.quit_requested = true;
                 }
             });

@@ -151,10 +151,17 @@ pub fn run(
                                 .unwrap(),
                         );
                     }
-                    Event::KeyPressed { code, .. } => {
+                    Event::KeyPressed { code, ctrl, .. } => {
+                        // Shortcut keys
                         if code == Key::Escape && !sf_egui.context().wants_keyboard_input() {
                             rw.set_visible(false);
                             win_visible = false;
+                        }
+                        if code == Key::Q && ctrl {
+                            break 'mainloop;
+                        }
+                        if code == Key::O && ctrl {
+                            app.ui.file_dialog.pick_directory();
                         }
                     }
                     _ => {}
