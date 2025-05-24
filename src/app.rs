@@ -161,7 +161,8 @@ impl App {
         self.bg_update();
     }
 
-    pub fn save(&self) {
+    pub fn save(&mut self) {
+        self.core.save_mpv_values_to_cfg();
         let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
         std::fs::write(Config::path(), vec).unwrap();
     }

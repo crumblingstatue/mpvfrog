@@ -128,7 +128,7 @@ impl Core {
         self.user_stopped = true;
     }
 
-    fn save_mpv_values_to_cfg(&mut self) {
+    pub(super) fn save_mpv_values_to_cfg(&mut self) {
         self.mpv_handler.ipc(|b| {
             self.cfg.volume = b.observed.volume;
             self.cfg.speed = b.observed.speed;
