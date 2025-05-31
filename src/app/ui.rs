@@ -263,6 +263,12 @@ impl Ui {
                             core.mpv_handler
                                 .ipc(|b| b.add_audio(full_path.as_os_str().to_str().unwrap()))
                                 .err_popup("Failed to add track", modal);
+                            // FIXME: Due to a bug(?) in mpv/libavfilter, more often than not
+                            // there is a desync unless we seek to 0 first.
+                            core.mpv_handler.ipc(|br| br.seek(0.));
+                            crate::logln!(
+                                "Note: There might be desync when seeking with mixed tracks"
+                            );
                         }
                         if ui.button("Copy full path").clicked() {
                             ui.close_menu();
