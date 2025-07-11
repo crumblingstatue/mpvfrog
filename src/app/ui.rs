@@ -105,28 +105,23 @@ impl Ui {
                     .clicked()
                 {
                     self.file_dialog.pick_directory();
-                    ui.close_menu();
                 }
                 if ui.button("🎶 Custom demuxers...").clicked() {
                     self.windows.custom_demuxers.open ^= true;
-                    ui.close_menu();
                 }
                 if ui.button("💎 Color theme config").clicked() {
                     self.windows.color_theme.open ^= true;
-                    ui.close_menu();
                 }
                 ui.checkbox(&mut core.cfg.follow_symlinks, "Follow symlinks")
                     .on_hover_text("Follow symbolic links when reading a directory");
                 if ui.button("🖳 Mpv console").clicked() {
                     self.windows.mpv_console.open ^= true;
-                    ui.close_menu();
                 }
                 if ui
                     .button("🔍 Focus song")
                     .on_hover_text("Focus currently playing song in playlist")
                     .clicked()
                 {
-                    ui.close_menu();
                     self.focus_on = Some(core.selected_song);
                 }
                 ui.separator();
@@ -258,7 +253,6 @@ impl Ui {
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
                     re.context_menu(|ui| {
                         if ui.button("Mix with current").clicked() {
-                            ui.close_menu();
                             let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
                             core.mpv_handler
                                 .ipc(|b| b.add_audio(full_path.as_os_str().to_str().unwrap()))
@@ -271,7 +265,6 @@ impl Ui {
                             );
                         }
                         if ui.button("Copy full path").clicked() {
-                            ui.close_menu();
                             let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
                             ui.ctx().copy_text(full_path.to_string_lossy().into_owned());
                         }
@@ -453,7 +446,6 @@ impl Ui {
             re.context_menu(|ui| {
                 if ui.button("Clear").clicked() {
                     core.mpv_handler.mpv_term.reset();
-                    ui.close_menu();
                 }
             });
             if re.clicked() {
@@ -465,12 +457,11 @@ impl Ui {
             }
             let re = ui.add_enabled(
                 demux_enabled,
-                egui::SelectableLabel::new(self.output_source == OutputSource::Demuxer, "Demuxer"),
+                Button::selectable(self.output_source == OutputSource::Demuxer, "Demuxer"),
             );
             re.context_menu(|ui| {
                 if ui.button("Clear").clicked() {
                     core.mpv_handler.demux_term.reset();
-                    ui.close_menu();
                 }
             });
             if re.on_disabled_hover_text("No active demuxer").clicked() {
@@ -489,7 +480,6 @@ impl Ui {
                     ui.menu_button("lavfi-complex filter active", |ui| {
                         ui.label(complex);
                         if ui.button("Remove").clicked() {
-                            ui.close_menu();
                             remove = true;
                         }
                     });
@@ -520,11 +510,12 @@ impl Ui {
                     .show(ui);
                 if out.response.clicked() {
                     if let Some(range) = out.cursor_range {
-                        let row = range.primary.rcursor.row;
+                        let l_cur = out.galley.layout_from_cursor(range.primary);
+                        let row = l_cur.row;
                         // The little audio "handles" are at the beginning of lines,
                         // so let's ignore the later columns, so the user doesn't accidentally
                         // switch tracks when clicking lines that contain --aid bits
-                        if range.primary.rcursor.column > 18 {
+                        if l_cur.column > 18 {
                             return;
                         }
                         if let Some(line) = core.mpv_handler.mpv_output().lines().nth(row) {
