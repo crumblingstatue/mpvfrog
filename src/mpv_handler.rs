@@ -109,6 +109,23 @@ impl MpvHandler {
         let mut demux_buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&inner.mpv_pty).unwrap();
         let mut demux_nbr = NonBlockingReader::from_fd(&inner.demuxer_pty).unwrap();
+        match inner.child.try_wait() {
+            Ok(None) => {}
+            Ok(Some(status)) => {
+                if !status.success() {
+                    modal.error(
+                        "Abnormal mpv termination",
+                        format!("Mpv exited with status {status}"),
+                    );
+                }
+            }
+            Err(e) => {
+                modal.error(
+                    "Abnormal mpv termination",
+                    format!("Error waiting on mpv: {e}"),
+                );
+            }
+        }
         match nbr.read_available(&mut buf) {
             Ok(n_read) => {
                 if n_read != 0 {
