@@ -39,6 +39,8 @@ pub struct Properties {
     pub track_count: u8,
     pub lavfi_complex: String,
     pub loop_file: bool,
+    pub playlist_pos: u64,
+    pub playlist_count: u64,
 }
 
 impl Bridge {
@@ -61,6 +63,8 @@ impl Bridge {
         this.observe_property::<property::TrackListCount>()?;
         this.observe_property::<property::LavfiComplex>()?;
         this.observe_property::<property::LoopFile>()?;
+        this.observe_property::<property::PlaylistPos>()?;
+        this.observe_property::<property::PlaylistCount>()?;
         Ok(this)
     }
     pub fn observe_property<T: Property>(&mut self) -> anyhow::Result<()> {
@@ -152,6 +156,12 @@ impl Bridge {
                                 property::LoopFile::NAME => {
                                     self.observed.loop_file = data.as_str() == Some("inf")
                                 }
+                                property::PlaylistCount::NAME => {
+                                    self.observed.playlist_count = data.as_u64().unwrap()
+                                }
+                                property::PlaylistPos::NAME => {
+                                    self.observed.playlist_pos = data.as_u64().unwrap()
+                                }
                                 name => logln!("Unhandled property: {} = {}", name, data),
                             }
                         }
@@ -208,5 +218,11 @@ impl Bridge {
     pub(crate) fn set_loop_file(&mut self, loop_file: bool) {
         self.set_property::<property::LoopFile>(if loop_file { Some("inf") } else { None })
             .log_err("Failed to set loop");
+    }
+    pub fn playlist_prev(&mut self) {
+        let _ = self.write_command(command::PlaylistPrev);
+    }
+    pub fn playlist_next(&mut self) {
+        let _ = self.write_command(command::PlaylistNext);
     }
 }

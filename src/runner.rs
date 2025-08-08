@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        app::{App, tray::EventFlags},
+        app::{self, App, tray::EventFlags},
         rect_math::{Rect, Vec2, rect_ensure_within},
         util::result_ext::ResultModalExt as _,
     },
@@ -51,14 +51,10 @@ pub fn run(
                         existing_instance::Msg::String(path) => {
                             let path: PathBuf = path.into();
                             if path.is_dir() {
-                                crate::app::open_folder(&mut app.core, &mut app.ui, path);
+                                app::open_folder(&mut app.core, &mut app.ui, path);
                             } else if path.is_file() {
                                 if let Some(parent) = path.parent() {
-                                    crate::app::open_folder(
-                                        &mut app.core,
-                                        &mut app.ui,
-                                        parent.to_owned(),
-                                    );
+                                    app::open_folder(&mut app.core, &mut app.ui, parent.to_owned());
                                     let stripped = path.strip_prefix(parent).unwrap();
                                     if let Some(pos) = app
                                         .core
@@ -307,7 +303,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             ui.add_space(38.0);
-            if ui.button("⏪").clicked() {
+            if ui.button(app::ui::ICO_PREV).clicked() {
                 app.core.play_prev(&mut app.modal);
             }
             if ui.button(play_pause_label).clicked() {
@@ -316,7 +312,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
             if ui.button("⏹").clicked() {
                 app.core.stop_music();
             }
-            if ui.button("⏩").clicked() {
+            if ui.button(app::ui::ICO_NEXT).clicked() {
                 app.core.play_next(&mut app.modal);
             }
         });

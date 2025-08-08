@@ -59,3 +59,22 @@ where
         ["set_property".into(), P::NAME.into(), self.0.to_json()]
     }
 }
+
+pub(super) struct PlaylistPrev;
+pub(super) struct PlaylistNext;
+
+impl Command for PlaylistPrev {
+    type R = [&'static str; 1];
+
+    fn json_values(&self) -> Self::R {
+        ["playlist-prev"]
+    }
+}
+
+impl Command for PlaylistNext {
+    type R = [&'static str; 1];
+
+    fn json_values(&self) -> Self::R {
+        ["playlist-next"]
+    }
+}

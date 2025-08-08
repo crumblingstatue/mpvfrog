@@ -67,6 +67,9 @@ enum OutputSource {
     Log,
 }
 
+pub const ICO_PREV: &str = "⏮";
+pub const ICO_NEXT: &str = "⏭";
+
 impl Ui {
     pub(super) fn update(&mut self, core: &mut Core, ctx: &Context, modal: &mut ModalPopup) {
         if let Some(payload) = &mut modal.payload {
@@ -300,7 +303,7 @@ impl Ui {
         ui.separator();
         ui.horizontal(|ui| {
             ui.group(|ui| {
-                if ui.add(Button::new("⏪")).clicked() {
+                if ui.add(Button::new(ICO_PREV)).clicked() {
                     core.play_prev(modal);
                 }
                 let active = core.mpv_handler.active();
@@ -321,7 +324,7 @@ impl Ui {
                 if ui.add_enabled(active, Button::new("⏹")).clicked() {
                     core.stop_music();
                 }
-                if ui.add(Button::new("⏩")).clicked() {
+                if ui.add(Button::new(ICO_NEXT)).clicked() {
                     core.play_next(modal);
                 }
             });
@@ -473,6 +476,21 @@ impl Ui {
             if let Some(track_count) = core.mpv_handler.ipc(|b| b.observed.track_count) {
                 let s = if track_count == 1 { "" } else { "s" };
                 ui.label(format!("{track_count} active track{s}"));
+            }
+            if let Some([playlist_count, playlist_pos]) = core
+                .mpv_handler
+                .ipc(|b| [b.observed.playlist_count, b.observed.playlist_pos])
+                && playlist_count > 1
+            {
+                ui.separator();
+                let pos = playlist_pos + 1;
+                ui.label(format!("mpv playlist: {pos}/{playlist_count}"));
+                if ui.button(ICO_PREV).clicked() {
+                    core.mpv_handler.ipc(Bridge::playlist_prev);
+                }
+                if ui.button(ICO_NEXT).clicked() {
+                    core.mpv_handler.ipc(Bridge::playlist_next);
+                }
             }
             if let Some(complex) = core.mpv_handler.ipc(|b| b.observed.lavfi_complex.as_str()) {
                 let mut remove = false;

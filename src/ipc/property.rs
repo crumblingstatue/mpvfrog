@@ -81,4 +81,6 @@ decl_properties! {
     Aid, "aid", u64;
     LoopFile, "loop-file", Option<&'static str>;
     TrackListCount, "track-list/count", u64;
+    PlaylistPos, "playlist-pos", u64;
+    PlaylistCount, "playlist-count", u64;
 }
