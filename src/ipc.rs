@@ -132,37 +132,10 @@ impl Bridge {
                                 logln!("data-less property change: {}", name);
                                 return;
                             };
-                            match name {
-                                property::Speed::NAME => {
-                                    self.observed.speed = data.as_f64().unwrap()
-                                }
-                                property::Volume::NAME => {
-                                    self.observed.volume = data.as_f64().unwrap() as u8
-                                }
-                                property::Duration::NAME => {
-                                    self.observed.duration = data.as_f64().unwrap()
-                                }
-                                property::TimePos::NAME => {
-                                    self.observed.time_pos = data.as_f64().unwrap()
-                                }
-                                property::AbLoopA::NAME => self.observed.ab_loop_a = data.as_f64(),
-                                property::AbLoopB::NAME => self.observed.ab_loop_b = data.as_f64(),
-                                property::TrackListCount::NAME => {
-                                    self.observed.track_count = data.as_u64().unwrap() as u8
-                                }
-                                property::LavfiComplex::NAME => {
-                                    self.observed.lavfi_complex = data.as_str().unwrap().to_owned()
-                                }
-                                property::LoopFile::NAME => {
-                                    self.observed.loop_file = data.as_str() == Some("inf")
-                                }
-                                property::PlaylistCount::NAME => {
-                                    self.observed.playlist_count = data.as_u64().unwrap()
-                                }
-                                property::PlaylistPos::NAME => {
-                                    self.observed.playlist_pos = data.as_u64().unwrap()
-                                }
-                                name => logln!("Unhandled property: {} = {}", name, data),
+                            if self.handle_property_change(name, data).is_none() {
+                                logln!(
+                                    "Failed to change property `{name}`: Type mismatch. Got {data}"
+                                );
                             }
                         }
                         "end-file" => {
@@ -177,6 +150,23 @@ impl Bridge {
                 logln!("Unserialized event: {}", line);
             }
         }
+    }
+    fn handle_property_change(&mut self, name: &str, data: &serde_json::Value) -> Option<()> {
+        match name {
+            property::Speed::NAME => self.observed.speed = data.as_f64()?,
+            property::Volume::NAME => self.observed.volume = data.as_f64()? as u8,
+            property::Duration::NAME => self.observed.duration = data.as_f64()?,
+            property::TimePos::NAME => self.observed.time_pos = data.as_f64()?,
+            property::AbLoopA::NAME => self.observed.ab_loop_a = data.as_f64(),
+            property::AbLoopB::NAME => self.observed.ab_loop_b = data.as_f64(),
+            property::TrackListCount::NAME => self.observed.track_count = data.as_u64()? as u8,
+            property::LavfiComplex::NAME => self.observed.lavfi_complex = data.as_str()?.to_owned(),
+            property::LoopFile::NAME => self.observed.loop_file = data.as_str() == Some("inf"),
+            property::PlaylistCount::NAME => self.observed.playlist_count = data.as_u64()?,
+            property::PlaylistPos::NAME => self.observed.playlist_pos = data.as_u64()?,
+            name => logln!("Unhandled property: {} = {}", name, data),
+        }
+        Some(())
     }
     pub fn set_volume(&mut self, vol: u8) -> anyhow::Result<()> {
         self.set_property::<property::Volume>(vol as f64)
