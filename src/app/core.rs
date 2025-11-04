@@ -74,7 +74,7 @@ impl Core {
         crate::app::LOG.lock().unwrap().clear();
         logln!("Mpv args: {mpv_args:?}");
         if let Err(e) = self.mpv_handler.play_music("mpv", mpv_args, demuxer) {
-            modal.error("Play error", e);
+            modal.error("Play error", format!("{e:?}"));
             self.playlist_behavior = PlaylistBehavior::Stop;
         }
     }
