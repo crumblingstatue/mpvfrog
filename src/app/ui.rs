@@ -455,19 +455,32 @@ impl Ui {
                         }
                     });
                 });
-                let mut re = ui.add(
-                    egui::Slider::new(&mut info.pos, 0.0..=info.duration)
-                        .show_value(false)
-                        .trailing_fill(true),
-                );
-                if let Some(ratio) = re.h_pointer_ratio() {
-                    // TODO: This is not 100% accurate, unfortunately
-                    re = re.on_hover_text_at_pointer(
-                        FfmpegTimeFmt(info.duration * f64::from(ratio)).to_string(),
+                let seekable = core
+                    .mpv_handler
+                    .ipc(|b| b.observed.seekable)
+                    .unwrap_or(false);
+                if seekable {
+                    let mut re = ui.add(
+                        egui::Slider::new(&mut info.pos, 0.0..=info.duration)
+                            .show_value(false)
+                            .trailing_fill(true),
                     );
-                }
-                if re.drag_stopped() {
-                    core.seek(info.pos).err_popup("Seek error", modal);
+                    if let Some(ratio) = re.h_pointer_ratio() {
+                        // TODO: This is not 100% accurate, unfortunately
+                        re = re.on_hover_text_at_pointer(
+                            FfmpegTimeFmt(info.duration * f64::from(ratio)).to_string(),
+                        );
+                    }
+                    if re.drag_stopped() {
+                        core.seek(info.pos).err_popup("Seek error", modal);
+                    }
+                } else {
+                    let progress = info.pos / info.duration;
+                    ui.add(
+                        egui::ProgressBar::new(progress as f32)
+                            .animate(true)
+                            .text("Streaming..."),
+                    );
                 }
             }
         });

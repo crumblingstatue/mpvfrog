@@ -41,6 +41,7 @@ pub struct Properties {
     pub loop_file: bool,
     pub playlist_pos: u64,
     pub playlist_count: u64,
+    pub seekable: bool,
 }
 
 impl Bridge {
@@ -65,6 +66,7 @@ impl Bridge {
         this.observe_property::<property::LoopFile>()?;
         this.observe_property::<property::PlaylistPos>()?;
         this.observe_property::<property::PlaylistCount>()?;
+        this.observe_property::<property::Seekable>()?;
         Ok(this)
     }
     pub fn observe_property<T: Property>(&mut self) -> anyhow::Result<()> {
@@ -159,6 +161,7 @@ impl Bridge {
             property::LoopFile::NAME => self.observed.loop_file = data.as_str() == Some("inf"),
             property::PlaylistCount::NAME => self.observed.playlist_count = data.as_u64()?,
             property::PlaylistPos::NAME => self.observed.playlist_pos = data.as_u64()?,
+            property::Seekable::NAME => self.observed.seekable = data.as_bool()?,
             name => logln!("Unhandled property: {} = {}", name, data),
         }
         Some(())

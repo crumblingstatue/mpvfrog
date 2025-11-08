@@ -83,4 +83,5 @@ decl_properties! {
     TrackListCount, "track-list/count", u64;
     PlaylistPos, "playlist-pos", u64;
     PlaylistCount, "playlist-count", u64;
+    Seekable, "seekable", bool;
 }
