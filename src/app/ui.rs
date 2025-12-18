@@ -211,7 +211,16 @@ impl Ui {
                                 *selected += 1;
                             }
                         }
-                        None => self.selected_filtered_entry = Some(0),
+                        None => {
+                            // Try to find currently playing song and set the selected filtered
+                            // entry to that.
+                            // If that fails, set it to 0.
+                            let pos_of_cur_playing = self
+                                .filtered_entries
+                                .iter()
+                                .position(|en| *en == core.selected_song);
+                            self.selected_filtered_entry = Some(pos_of_cur_playing.unwrap_or(0));
+                        }
                     }
                 }
                 if let Some(selected) = self.selected_filtered_entry {
