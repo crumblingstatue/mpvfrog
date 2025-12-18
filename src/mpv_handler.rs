@@ -21,6 +21,7 @@ use {
 
 struct MpvHandlerInner {
     child: Child,
+    demux_child: Option<Child>,
     mpv_pty: Pty,
     demuxer_pty: Pty,
     ipc_bridge: ipc::Bridge,
@@ -63,6 +64,7 @@ impl MpvHandler {
         let mut mpv_command = PtyCommand::new(mpv_cmd);
         let (demuxer_pty, demux_pts) = pty_process::blocking::open()?;
         mpv_command = mpv_command.args(mpv_args);
+        let mut opt_demux_child = None;
         if let Some(demuxer) = custom_demuxer {
             logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
             self.demux_cmd_name = demuxer.cmd.clone();
@@ -72,6 +74,7 @@ impl MpvHandler {
                 .spawn(demux_pts)
                 .context("Failed to spawn demuxer")?;
             mpv_command = mpv_command.stdin(demux_child.stdout.take().unwrap());
+            opt_demux_child = Some(demux_child);
         }
         let mut child = mpv_command.spawn(pts)?;
         let attempts = 5;
@@ -102,6 +105,7 @@ impl MpvHandler {
             child,
             mpv_pty: pty,
             demuxer_pty,
+            demux_child: opt_demux_child,
             ipc_bridge,
         });
         Ok(())
@@ -110,6 +114,9 @@ impl MpvHandler {
         let Some(inner) = &mut self.inner else { return };
         inner.mpv_pty.write_all(b"q").unwrap();
         inner.child.wait().unwrap();
+        if let Some(mut demux_child) = inner.demux_child.take() {
+            demux_child.wait().unwrap();
+        }
         self.inner = None;
     }
     pub fn update(&mut self, modal: &mut ModalPopup) {
