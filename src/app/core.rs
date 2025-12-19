@@ -1,13 +1,16 @@
 use {
     super::{ModalPopup, PlaylistBehavior, playlist::Playlist},
     crate::{
-        config::{Config, PredicateSliceExt},
+        config::{Config, CustomDemuxerEntry, PredicateSliceExt},
         ipc::Bridge,
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
         util::result_ext::ResultModalExt,
     },
-    std::{ffi::OsStr, path::PathBuf},
+    std::{
+        ffi::OsStr,
+        path::{Path, PathBuf},
+    },
 };
 
 pub struct Core {
@@ -28,22 +31,40 @@ impl Core {
     pub(crate) fn read_songs(&mut self) {
         self.playlist.read_songs(&self.cfg);
     }
-
-    pub(crate) fn play_selected_song(&mut self, modal: &mut ModalPopup) {
-        self.save_mpv_values_to_cfg();
-        self.user_stopped = false;
-        let selection = self.selected_song;
-        let Some(sel_item) = &self.playlist.get(selection) else {
-            logln!("play_selected_song: Dangling index: {selection}");
-            return;
+    pub(crate) fn path_of_song_at_playlist_index(&self, index: usize) -> Option<PathBuf> {
+        let Some(sel_item) = &self.playlist.get(index) else {
+            logln!("play_selected_song: Dangling index: {index}");
+            return None;
         };
-        let path: PathBuf = match &self.cfg.music_folder {
-            Some(folder) => folder.join(&sel_item.path),
+        match &self.cfg.music_folder {
+            Some(folder) => Some(folder.join(&sel_item.path)),
             None => {
                 logln!("Can't play song, there is no music folder");
-                return;
+                None
             }
+        }
+    }
+    pub(crate) fn play_selected_song(&mut self, modal: &mut ModalPopup) {
+        let Some(path) = self.path_of_song_at_playlist_index(self.selected_song) else {
+            return;
         };
+        let demuxer_en = self
+            .cfg
+            .custom_demuxers
+            .iter()
+            .find(|en| en.predicates.find_predicate_match(&path))
+            .cloned();
+        self.play_song_with_demuxer(&path, demuxer_en, modal);
+    }
+    pub(crate) fn play_song_with_demuxer(
+        &mut self,
+        path: &Path,
+        demuxer_en: Option<CustomDemuxerEntry>,
+        modal: &mut ModalPopup,
+    ) {
+        self.save_mpv_values_to_cfg();
+        self.user_stopped = false;
+
         let vol_arg = format!("--volume={}", self.cfg.volume);
         let speed_arg = format!("--speed={}", self.cfg.speed);
         let mut mpv_args = vec![
@@ -55,12 +76,7 @@ impl Core {
         if !self.cfg.video {
             mpv_args.push("--no-video".as_ref());
         }
-        let demuxer = match self
-            .cfg
-            .custom_demuxers
-            .iter()
-            .find(|en| en.predicates.find_predicate_match(&path))
-        {
+        let demuxer = match &demuxer_en {
             Some(en) => {
                 mpv_args.remove(0);
                 mpv_args.extend(en.extra_mpv_args.iter().map(<_ as AsRef<OsStr>>::as_ref));

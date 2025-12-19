@@ -6,6 +6,7 @@ use {
     self::custom_demuxers_window::CustomDemuxersWindow,
     super::{Core, LOG, ModalPopup, PlaylistBehavior},
     crate::{
+        config::CustomDemuxerEntry,
         ipc::Bridge,
         mpv_handler::ActivePtyInput,
         time_fmt::FfmpegTimeFmt,
@@ -291,7 +292,15 @@ impl Ui {
                     let path = &core.playlist.get(i).unwrap().path;
                     let re =
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
+                    let mut play_with: Option<CustomDemuxerEntry> = None;
                     re.context_menu(|ui| {
+                        ui.menu_button("Play as", |ui| {
+                            for demux in &core.cfg.custom_demuxers {
+                                if ui.button(&demux.name).clicked() {
+                                    play_with = Some(demux.clone());
+                                }
+                            }
+                        });
                         if ui.button("Mix with current").clicked() {
                             let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
                             core.mpv_handler
@@ -309,6 +318,11 @@ impl Ui {
                             ui.ctx().copy_text(full_path.to_string_lossy().into_owned());
                         }
                     });
+                    if let Some(demux) = play_with
+                        && let Some(path) = core.path_of_song_at_playlist_index(i)
+                    {
+                        core.play_song_with_demuxer(&path, Some(demux), modal);
+                    }
                     let filter_changed = self.filter_changed.take();
                     if filter_changed {
                         ui.scroll_to_rect(egui::Rect::ZERO, Some(Align::TOP));
