@@ -14,3 +14,15 @@ impl StrExt for str {
         Some(pos..pos + ws)
     }
 }
+
+// Replace trailing whitespace of each line with single line terminator
+//
+// This prevents the text viewer wrapping long lines
+pub fn trim_lines(s: String) -> String {
+    let mut out = String::new();
+    for line in s.lines() {
+        out.push_str(line.trim_end());
+        out.push('\n');
+    }
+    out
+}

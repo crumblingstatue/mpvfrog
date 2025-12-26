@@ -11,8 +11,10 @@ use {
         mpv_handler::ActivePtyInput,
         time_fmt::FfmpegTimeFmt,
         util::{
-            bool_ext::BoolExt as _, egui_ext::EguiResponseExt as _,
-            result_ext::ResultModalExt as _, str_ext::StrExt as _,
+            bool_ext::BoolExt as _,
+            egui_ext::EguiResponseExt as _,
+            result_ext::ResultModalExt as _,
+            str_ext::{StrExt as _, trim_lines},
         },
     },
     anyhow::Context as _,
@@ -588,7 +590,9 @@ impl Ui {
             .show(ui, |ui| {
                 let out = match self.output_source {
                     OutputSource::Mpv => core.mpv_handler.mpv_output(),
-                    OutputSource::Demuxer => core.mpv_handler.demux_term.contents_to_string(),
+                    OutputSource::Demuxer => {
+                        trim_lines(core.mpv_handler.demux_term.contents_to_string())
+                    }
                     OutputSource::Log => LOG.lock().unwrap().clone(),
                 };
                 let out = TextEdit::multiline(&mut out.as_str())

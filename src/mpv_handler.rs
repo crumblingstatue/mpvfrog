@@ -6,6 +6,7 @@ use {
         config::ArgType,
         ipc::{self, IpcEvent},
         logln,
+        util::str_ext::trim_lines,
     },
     ansi_term_buf::Term,
     anyhow::Context,
@@ -13,8 +14,7 @@ use {
     pty_process::blocking::{Command as PtyCommand, Pty},
     std::{
         ffi::{OsStr, OsString},
-        io::Read as _,
-        io::Write as _,
+        io::{Read as _, Write as _},
         process::{Child, Stdio},
     },
 };
@@ -92,7 +92,7 @@ impl MpvHandler {
                             }
                             let mut term = Term::new(80);
                             term.feed(&stderr);
-                            let stderr = term.contents_to_string();
+                            let stderr = trim_lines(term.contents_to_string());
                             anyhow::bail!("mpv exited with {status}.\nStderr:\n{stderr}");
                         }
                         logln!("mpv connection attempt #{i}: {e}");
@@ -140,7 +140,7 @@ impl MpvHandler {
                         logln!("Failed to read mpv pty: {e}");
                     }
                     self.mpv_term.feed(&remaining_data);
-                    let stderr = self.mpv_term.contents_to_string();
+                    let stderr = trim_lines(self.mpv_term.contents_to_string());
                     modal.error(
                         "Abnormal mpv termination",
                         format!("Mpv exited with status {status}\nStderr:\n{stderr}"),
@@ -202,16 +202,7 @@ impl MpvHandler {
         }
     }
     pub fn mpv_output(&self) -> String {
-        let contents = self.mpv_term.contents_to_string();
-        let mut out = String::new();
-        // Replace trailing whitespace of each line with single line terminator
-        //
-        // This prevents the text viewer wrapping long lines
-        for line in contents.lines() {
-            out.push_str(line.trim_end());
-            out.push('\n');
-        }
-        out
+        trim_lines(self.mpv_term.contents_to_string())
     }
     pub fn ab_loop(&self) -> Option<(Option<f64>, Option<f64>)> {
         self.inner.as_ref().map(|inner| {
