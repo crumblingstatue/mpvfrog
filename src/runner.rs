@@ -55,35 +55,34 @@ pub fn run(
         } else {
             event_flags = EventFlags::default();
         }
-        if let Some(listener) = &mut instance_listener {
-            if let Some(mut stream) = listener.accept() {
-                if let Some(msg) = stream.recv() {
-                    match msg {
-                        existing_instance::Msg::String(path) => {
-                            let path: PathBuf = path.into();
-                            if path.is_dir() {
-                                app::open_folder(&mut app.core, &mut app.ui, path);
-                            } else if path.is_file() {
-                                if let Some(parent) = path.parent() {
-                                    app::open_folder(&mut app.core, &mut app.ui, parent.to_owned());
-                                    let stripped = path.strip_prefix(parent).unwrap();
-                                    if let Some(pos) = app
-                                        .core
-                                        .playlist
-                                        .iter()
-                                        .position(|item| item.path == stripped)
-                                    {
-                                        app.focus_and_play(pos);
-                                    }
-                                }
-                            }
+        if let Some(listener) = &mut instance_listener
+            && let Some(mut stream) = listener.accept()
+            && let Some(msg) = stream.recv()
+        {
+            match msg {
+                existing_instance::Msg::String(path) => {
+                    let path: PathBuf = path.into();
+                    if path.is_dir() {
+                        app::open_folder(&mut app.core, &mut app.ui, path);
+                    } else if path.is_file()
+                        && let Some(parent) = path.parent()
+                    {
+                        app::open_folder(&mut app.core, &mut app.ui, parent.to_owned());
+                        let stripped = path.strip_prefix(parent).unwrap();
+                        if let Some(pos) = app
+                            .core
+                            .playlist
+                            .iter()
+                            .position(|item| item.path == stripped)
+                        {
+                            app.focus_and_play(pos);
                         }
-                        existing_instance::Msg::Nudge => {
-                            event_flags.activated = true;
-                        }
-                        _ => {}
                     }
                 }
+                existing_instance::Msg::Nudge => {
+                    event_flags.activated = true;
+                }
+                _ => {}
             }
         }
         if event_flags.quit_clicked {

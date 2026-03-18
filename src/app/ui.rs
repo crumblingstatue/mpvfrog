@@ -343,15 +343,14 @@ impl Ui {
                     }
                 }
             });
-        if let Some(playlist_idx) = self.focus_on {
-            if let Some(filtlist_idx) = self
+        if let Some(playlist_idx) = self.focus_on
+            && let Some(filtlist_idx) = self
                 .filtered_entries
                 .iter()
                 .position(|&i| i == playlist_idx)
-            {
-                out.state.offset.y = filtlist_idx as f32 * (row_h + 3.0);
-                out.state.store(ui.ctx(), out.id);
-            }
+        {
+            out.state.offset.y = filtlist_idx as f32 * (row_h + 3.0);
+            out.state.store(ui.ctx(), out.id);
         }
         ui.separator();
         ui.horizontal(|ui| {
@@ -577,10 +576,10 @@ impl Ui {
                     core.mpv_handler.ipc(|b| b.switch_to_track(1));
                 }
             }
-            if let Some(mut loop_file) = core.mpv_handler.ipc(|b| b.observed.loop_file) {
-                if ui.checkbox(&mut loop_file, "loop").clicked() {
-                    core.mpv_handler.ipc(|b| b.set_loop_file(loop_file));
-                }
+            if let Some(mut loop_file) = core.mpv_handler.ipc(|b| b.observed.loop_file)
+                && ui.checkbox(&mut loop_file, "loop").clicked()
+            {
+                core.mpv_handler.ipc(|b| b.set_loop_file(loop_file));
             }
         });
         ScrollArea::vertical()
@@ -599,33 +598,33 @@ impl Ui {
                     .desired_width(f32::INFINITY)
                     .font(egui::TextStyle::Monospace)
                     .show(ui);
-                if out.response.clicked() {
-                    if let Some(range) = out.cursor_range {
-                        let l_cur = out.galley.layout_from_cursor(range.primary);
-                        let row = l_cur.row;
-                        // The little audio "handles" are at the beginning of lines,
-                        // so let's ignore the later columns, so the user doesn't accidentally
-                        // switch tracks when clicking lines that contain --aid bits
-                        if l_cur.column > 18 {
-                            return;
-                        }
-                        if let Some(line) = core.mpv_handler.mpv_output().lines().nth(row) {
-                            if let Some(range) = line.find_token_after("--aid=") {
-                                let track_num: u64 = line[range].parse().unwrap();
-                                let [ctrl, shift] =
-                                    ui.input(|inp| [inp.modifiers.ctrl, inp.modifiers.shift]);
-                                if shift {
-                                    core.mpv_handler.ipc(|b| b.mix_t1_with_track(track_num));
-                                } else if ctrl {
-                                    if let Some(Err(e)) =
-                                        core.mpv_handler.ipc(|b| b.remove_track(track_num))
-                                    {
-                                        modal.error("Error removing track", e);
-                                    }
-                                } else {
-                                    core.mpv_handler.ipc(|b| b.switch_to_track(track_num));
-                                }
+                if out.response.clicked()
+                    && let Some(range) = out.cursor_range
+                {
+                    let l_cur = out.galley.layout_from_cursor(range.primary);
+                    let row = l_cur.row;
+                    // The little audio "handles" are at the beginning of lines,
+                    // so let's ignore the later columns, so the user doesn't accidentally
+                    // switch tracks when clicking lines that contain --aid bits
+                    if l_cur.column > 18 {
+                        return;
+                    }
+                    if let Some(line) = core.mpv_handler.mpv_output().lines().nth(row)
+                        && let Some(range) = line.find_token_after("--aid=")
+                    {
+                        let track_num: u64 = line[range].parse().unwrap();
+                        let [ctrl, shift] =
+                            ui.input(|inp| [inp.modifiers.ctrl, inp.modifiers.shift]);
+                        if shift {
+                            core.mpv_handler.ipc(|b| b.mix_t1_with_track(track_num));
+                        } else if ctrl {
+                            if let Some(Err(e)) =
+                                core.mpv_handler.ipc(|b| b.remove_track(track_num))
+                            {
+                                modal.error("Error removing track", e);
                             }
+                        } else {
+                            core.mpv_handler.ipc(|b| b.switch_to_track(track_num));
                         }
                     }
                 }

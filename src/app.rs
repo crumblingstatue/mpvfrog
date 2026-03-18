@@ -97,11 +97,11 @@ impl App {
         if let Some(path) = &args.path {
             if path.is_dir() {
                 core.cfg.music_folder = Some(path.clone());
-            } else if path.is_file() {
-                if let Some(parent) = path.parent() {
-                    core.cfg.music_folder = Some(parent.to_owned());
-                    play_this = Some(path.strip_prefix(parent).unwrap());
-                }
+            } else if path.is_file()
+                && let Some(parent) = path.parent()
+            {
+                core.cfg.music_folder = Some(parent.to_owned());
+                play_this = Some(path.strip_prefix(parent).unwrap());
             }
         }
         core.read_songs();
@@ -122,10 +122,10 @@ impl App {
             last_tooltip_update: Instant::now(),
             modal: ModalPopup::default(),
         };
-        if let Some(this) = play_this {
-            if let Some(pos) = app.core.playlist.iter().position(|item| item.path == this) {
-                app.focus_and_play(pos);
-            }
+        if let Some(this) = play_this
+            && let Some(pos) = app.core.playlist.iter().position(|item| item.path == this)
+        {
+            app.focus_and_play(pos);
         }
         Ok(app)
     }

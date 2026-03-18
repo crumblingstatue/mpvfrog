@@ -21,17 +21,17 @@ impl MpvConsoleWindow {
             .show(ctx, |ui| {
                 ui.label(HELP);
                 ui.text_edit_singleline(&mut self.cmd_buf);
-                if ctx.input(|inp| inp.key_pressed(egui::Key::Enter)) {
-                    if let Some((cmd, args)) = self.cmd_buf.split_once(' ') {
-                        match cmd {
-                            "lavfi" => {
-                                core.mpv_handler
-                                    .ipc(|ipc| ipc.set_property::<LavfiComplex>(args.into()));
-                            }
-                            _ => logln!("Unknown command: {cmd}"),
+                if ctx.input(|inp| inp.key_pressed(egui::Key::Enter))
+                    && let Some((cmd, args)) = self.cmd_buf.split_once(' ')
+                {
+                    match cmd {
+                        "lavfi" => {
+                            core.mpv_handler
+                                .ipc(|ipc| ipc.set_property::<LavfiComplex>(args.into()));
                         }
-                    };
-                }
+                        _ => logln!("Unknown command: {cmd}"),
+                    }
+                };
                 ui.code(crate::app::LOG.lock().unwrap().as_str());
             });
     }
