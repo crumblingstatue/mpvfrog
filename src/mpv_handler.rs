@@ -16,6 +16,7 @@ use {
         ffi::{OsStr, OsString},
         io::{Read as _, Write as _},
         process::{Child, Stdio},
+        time::Duration,
     },
 };
 
@@ -80,7 +81,7 @@ impl MpvHandler {
         let attempts = 5;
         let ipc_bridge = 'connect: {
             for i in 0..attempts {
-                std::thread::sleep(std::time::Duration::from_millis(100));
+                std::thread::sleep(Duration::from_millis(100));
                 match ipc::Bridge::connect() {
                     Ok(bridge) => break 'connect bridge,
                     Err(e) => {
@@ -114,8 +115,19 @@ impl MpvHandler {
         let Some(inner) = &mut self.inner else { return };
         inner.mpv_pty.write_all(b"q").unwrap();
         inner.child.wait().unwrap();
-        if let Some(mut demux_child) = inner.demux_child.take() {
-            demux_child.wait().unwrap();
+        'wait_demuxer: {
+            if let Some(mut demux_child) = inner.demux_child.take() {
+                for i in 0..5 {
+                    logln!("Wait for demuxer to exit (attempt {i})");
+                    if let Some(status) = demux_child.try_wait().unwrap() {
+                        logln!("Demuxer exited with status: {status}");
+                        break 'wait_demuxer;
+                    }
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+                demux_child.kill().unwrap();
+                logln!("Killed demuxer");
+            }
         }
         self.inner = None;
     }
