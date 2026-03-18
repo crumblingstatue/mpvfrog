@@ -2,7 +2,7 @@ use {
     crate::app::core::Core,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sf2g::egui,
-    rand::Rng as _,
+    rand::RngExt as _,
 };
 
 #[derive(Default)]
