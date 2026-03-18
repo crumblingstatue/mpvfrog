@@ -25,7 +25,7 @@ It provides a volume slider, and even forwards key events to mpv.
 
 ## Installing
 
-If you have Rust 1.86 or later, you can do `cargo install --git https://github.com/crumblingstatue/mpvfrog.git`.
+If you have Rust 1.92 or later, you can do `cargo install --git https://github.com/crumblingstatue/mpvfrog.git`.
 
 Otherwise, check out the [Releases](<https://github.com/crumblingstatue/mpvfrog/releases>).
 
