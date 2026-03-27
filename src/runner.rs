@@ -275,68 +275,72 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         }
     }
     win.rw.clear(Color::MAGENTA);
-    win.sf_egui.begin_pass();
-    let mut quit = false;
-    egui::CentralPanel::default().show(win.sf_egui.context(), |ui| {
-        ui.horizontal(|ui| {
-            if ui
-                .add(egui::Label::new(crate::APP_LABEL).sense(egui::Sense::click()))
-                .clicked()
-            {
-                msg = Some(TrayUpdateMsg::FocusApp);
-            }
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("Quit").clicked() {
-                    quit = true;
+    let di = win
+        .sf_egui
+        .run(&mut win.rw, |_rw, ui| {
+            let mut quit = false;
+            egui::CentralPanel::default().show_inside(ui, |ui| {
+                ui.horizontal(|ui| {
+                    if ui
+                        .add(egui::Label::new(crate::APP_LABEL).sense(egui::Sense::click()))
+                        .clicked()
+                    {
+                        msg = Some(TrayUpdateMsg::FocusApp);
+                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("Quit").clicked() {
+                            quit = true;
+                        }
+                        if ui.checkbox(&mut app.core.cfg.video, "video").clicked() {
+                            app.core
+                                .mpv_handler
+                                .ipc(|b| b.set_video(app.core.cfg.video))
+                                .err_popup("Video set error", &mut app.modal);
+                        }
+                    })
+                });
+                ui.horizontal(|ui| {
+                    ui.label("🔈");
+                    app.update_volume();
+                    let re = ui.add(egui::Slider::new(&mut app.core.cfg.volume, 0..=150));
+                    if re.changed() {
+                        app.core
+                            .mpv_handler
+                            .ipc(|b| b.set_volume(app.core.cfg.volume))
+                            .err_popup("Volume set error", &mut app.modal);
+                    }
+                });
+                let play_pause_label = if app.paused_or_stopped() {
+                    "▶"
+                } else {
+                    "⏸"
+                };
+                if let Some(name) = app.currently_playing_name() {
+                    ui.add(egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
                 }
-                if ui.checkbox(&mut app.core.cfg.video, "video").clicked() {
-                    app.core
-                        .mpv_handler
-                        .ipc(|b| b.set_video(app.core.cfg.video))
-                        .err_popup("Video set error", &mut app.modal);
-                }
-            })
-        });
-        ui.horizontal(|ui| {
-            ui.label("🔈");
-            app.update_volume();
-            let re = ui.add(egui::Slider::new(&mut app.core.cfg.volume, 0..=150));
-            if re.changed() {
-                app.core
-                    .mpv_handler
-                    .ipc(|b| b.set_volume(app.core.cfg.volume))
-                    .err_popup("Volume set error", &mut app.modal);
+                ui.add_space(4.0);
+                ui.horizontal(|ui| {
+                    ui.add_space(38.0);
+                    if ui.button(app::ui::ICO_PREV).clicked() {
+                        app.core.play_prev(&mut app.modal);
+                    }
+                    if ui.button(play_pause_label).clicked() {
+                        app.core.play_or_toggle_pause(&mut app.modal);
+                    }
+                    if ui.button("⏹").clicked() {
+                        app.core.stop_music();
+                    }
+                    if ui.button(app::ui::ICO_NEXT).clicked() {
+                        app.core.play_next(&mut app.modal);
+                    }
+                });
+            });
+            if quit {
+                msg = Some(TrayUpdateMsg::QuitApp);
             }
-        });
-        let play_pause_label = if app.paused_or_stopped() {
-            "▶"
-        } else {
-            "⏸"
-        };
-        if let Some(name) = app.currently_playing_name() {
-            ui.add(egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
-        }
-        ui.add_space(4.0);
-        ui.horizontal(|ui| {
-            ui.add_space(38.0);
-            if ui.button(app::ui::ICO_PREV).clicked() {
-                app.core.play_prev(&mut app.modal);
-            }
-            if ui.button(play_pause_label).clicked() {
-                app.core.play_or_toggle_pause(&mut app.modal);
-            }
-            if ui.button("⏹").clicked() {
-                app.core.stop_music();
-            }
-            if ui.button(app::ui::ICO_NEXT).clicked() {
-                app.core.play_next(&mut app.modal);
-            }
-        });
-    });
-    if quit {
-        msg = Some(TrayUpdateMsg::QuitApp);
-    }
-    let di = win.sf_egui.end_pass(&mut win.rw).unwrap();
+        })
+        .unwrap();
+
     win.sf_egui.draw(di, &mut win.rw, None);
     win.rw.display();
     msg
