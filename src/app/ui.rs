@@ -21,7 +21,7 @@ use {
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sf2g::egui::{
-        self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit, TopBottomPanel,
+        self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit,
         epaint::text::{FontInsert, FontPriority, InsertFontFamily},
     },
     fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
@@ -82,10 +82,10 @@ enum FileDialogOp {
 }
 
 impl Ui {
-    pub(super) fn update(&mut self, core: &mut Core, ctx: &Context, modal: &mut ModalPopup) {
+    pub(super) fn update(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         if let Some(payload) = &mut modal.payload {
             let mut close = false;
-            egui::Modal::new("modal_popup".into()).show(ctx, |ui| {
+            egui::Modal::new("modal_popup".into()).show(ui, |ui| {
                 let (icon, color) = match payload.kind {
                     super::ModalPayloadKind::Warning => ("⚠️", egui::Color32::YELLOW),
                     super::ModalPayloadKind::Error => ("❗", egui::Color32::RED),
@@ -107,11 +107,11 @@ impl Ui {
                 modal.payload = None;
             }
         }
-        self.file_dialog.update(ctx);
+        self.file_dialog.update(ui);
         if let Some(path) = self.file_dialog.take_picked() {
             match self.file_dialog.user_data::<FileDialogOp>() {
                 Some(FileDialogOp::AddFont) => {
-                    let result = try_add_fallback_font(ctx, &path);
+                    let result = try_add_fallback_font(ui, &path);
                     if let Err(e) = result {
                         modal.error("Failed to add fallback font", e.to_string());
                     } else if let Some(path_as_str) = path.to_str() {
@@ -122,9 +122,9 @@ impl Ui {
                 None => eprintln!("BUG: No operation!"),
             }
         }
-        TopBottomPanel::top("top_panel").show(ctx, |ui| self.top_panel_ui(core, ui, modal));
-        CentralPanel::default().show(ctx, |ui| self.central_panel_ui(core, ui, modal));
-        self.windows.update(core, ctx, &mut self.colorix);
+        egui::Panel::top("top_panel").show_inside(ui, |ui| self.top_panel_ui(core, ui, modal));
+        CentralPanel::default().show_inside(ui, |ui| self.central_panel_ui(core, ui, modal));
+        self.windows.update(core, ui, &mut self.colorix);
     }
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         ui.horizontal_centered(|ui| {

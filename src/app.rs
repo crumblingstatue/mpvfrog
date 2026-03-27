@@ -130,15 +130,15 @@ impl App {
         Ok(app)
     }
 
-    pub fn update(&mut self, ctx: &Context) {
-        if !ctx.wants_keyboard_input() {
-            self.handle_egui_input(ctx);
+    pub fn update(&mut self, ui: &mut egui::Ui) {
+        if !ui.egui_wants_keyboard_input() {
+            self.handle_egui_input(ui);
         }
         self.handle_mpv_events();
         self.core.mpv_handler.update(&mut self.modal);
         self.core.handle_mpv_not_active(&mut self.modal);
         // Do the ui
-        self.ui.update(&mut self.core, ctx, &mut self.modal);
+        self.ui.update(&mut self.core, ui, &mut self.modal);
     }
 
     fn handle_mpv_events(&mut self) {
@@ -156,7 +156,7 @@ impl App {
 
     /// Update when tray popup is open
     pub fn tray_popup_update(&mut self, ctx: &Context) {
-        if !ctx.wants_keyboard_input() {
+        if !ctx.egui_wants_keyboard_input() {
             self.handle_egui_input(ctx);
         }
         self.bg_update();

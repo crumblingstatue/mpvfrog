@@ -165,7 +165,7 @@ pub fn run(
                     }
                     Event::KeyPressed { code, ctrl, .. } => {
                         // Shortcut keys
-                        if code == Key::Escape && !sf_egui.context().wants_keyboard_input() {
+                        if code == Key::Escape && !sf_egui.context().egui_wants_keyboard_input() {
                             rw.set_visible(false);
                             win_visible = false;
                         }
@@ -180,8 +180,8 @@ pub fn run(
                 }
             }
             let di = sf_egui
-                .run(&mut rw, |_rw, ctx| {
-                    app.update(ctx);
+                .run(&mut rw, |_rw, ui| {
+                    app.update(ui);
                 })
                 .unwrap();
             sf_egui.draw(di, &mut rw, None);
