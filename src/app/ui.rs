@@ -118,7 +118,7 @@ impl Ui {
                         core.cfg.fallback_font_paths.push(path_as_str.to_owned());
                     }
                 }
-                Some(FileDialogOp::LoadMusicFolder) => crate::app::open_folder(core, self, path),
+                Some(FileDialogOp::LoadMusicFolder) => crate::app::open_folder(core, path),
                 None => eprintln!("BUG: No operation!"),
             }
         }
@@ -147,6 +147,10 @@ impl Ui {
                     .on_hover_text("Follow symbolic links when reading a directory");
                 ui.checkbox(&mut core.cfg.skip_hidden, "Skip hidden entries")
                     .on_hover_text("Skip hidden files/directories");
+                ui.horizontal(|ui| {
+                    ui.label("Scan max depth");
+                    ui.add(egui::DragValue::new(&mut core.cfg.scan_max_depth).range(1..=50));
+                });
                 if ui.button("🖳 Mpv console").clicked() {
                     self.windows.mpv_console.open ^= true;
                 }
@@ -181,10 +185,10 @@ impl Ui {
                         ui.label("<none>");
                     }
                 }
-                if ui.button("🔃").on_hover_text("Refresh (F5)").clicked()
+                if ui.button("🔃").on_hover_text("Rescan (F5)").clicked()
                     || ui.input(|inp| inp.key_pressed(egui::Key::F5))
                 {
-                    crate::app::refresh_folder(core, self);
+                    core.start_scan();
                 }
             });
             ui.label("🔎");
@@ -253,7 +257,13 @@ impl Ui {
                         RepeatPlaylist,
                         RepeatPlaylist.label(),
                     );
-                })
+                });
+            if core.playlist.is_scanning() {
+                ui.spinner();
+                if ui.button("X").clicked() {
+                    core.playlist.cancel_scan();
+                }
+            }
         });
     }
 
@@ -291,7 +301,11 @@ impl Ui {
                     ui.label(format!("<No results> ({not_shown_count} not shown)"));
                 }
                 for &i in &self.filtered_entries[range] {
-                    let path = &core.playlist.get(i).unwrap().path;
+                    let Some(item) = &core.playlist.get(i) else {
+                        ui.label("<oob index error>");
+                        break;
+                    };
+                    let path = &item.path;
                     let re =
                         ui.selectable_label(core.selected_song == i, path.display().to_string());
                     let mut play_with: Option<CustomDemuxerEntry> = None;

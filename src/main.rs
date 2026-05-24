@@ -9,6 +9,8 @@
     clippy::ref_option,
     clippy::needless_pass_by_ref_mut
 )]
+// Annoying lints
+#![allow(clippy::collapsible_if)]
 
 use {clap::Parser, existing_instance::Msg, std::path::PathBuf};
 

@@ -35,6 +35,12 @@ pub struct Config {
     /// Paths to fallback fonts to load on startup
     #[serde(default)]
     pub fallback_font_paths: Vec<String>,
+    #[serde(default = "default_scan_max_depth")]
+    pub scan_max_depth: u8,
+}
+
+fn default_scan_max_depth() -> u8 {
+    4
 }
 
 impl Default for Config {
@@ -49,6 +55,7 @@ impl Default for Config {
             follow_symlinks: false,
             skip_hidden: false,
             fallback_font_paths: Vec::new(),
+            scan_max_depth: default_scan_max_depth(),
         }
     }
 }
@@ -123,7 +130,6 @@ pub struct CustomDemuxerEntry {
     #[serde(default)]
     pub name: String,
 }
-
 #[derive(thiserror::Error, Debug)]
 #[error("parse error: {kind}")]
 pub struct CommandParseError {

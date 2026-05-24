@@ -63,20 +63,13 @@ pub fn run(
                 existing_instance::Msg::String(path) => {
                     let path: PathBuf = path.into();
                     if path.is_dir() {
-                        app::open_folder(&mut app.core, &mut app.ui, path);
+                        app::open_folder(&mut app.core, path);
                     } else if path.is_file()
                         && let Some(parent) = path.parent()
                     {
-                        app::open_folder(&mut app.core, &mut app.ui, parent.to_owned());
+                        app::open_folder(&mut app.core, parent.to_owned());
                         let stripped = path.strip_prefix(parent).unwrap();
-                        if let Some(pos) = app
-                            .core
-                            .playlist
-                            .iter()
-                            .position(|item| item.path == stripped)
-                        {
-                            app.focus_and_play(pos);
-                        }
+                        app.queue_to_play(stripped.to_path_buf());
                     }
                 }
                 existing_instance::Msg::Nudge => {
@@ -181,7 +174,7 @@ pub fn run(
             }
             let di = sf_egui
                 .run(&mut rw, |_rw, ui| {
-                    app.update(ui);
+                    app.fg_update(ui);
                 })
                 .unwrap();
             sf_egui.draw(di, &mut rw, None);

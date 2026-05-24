@@ -28,8 +28,8 @@ pub struct Core {
 }
 
 impl Core {
-    pub(crate) fn read_songs(&mut self) {
-        self.playlist.read_songs(&self.cfg);
+    pub(crate) fn start_scan(&mut self) {
+        self.playlist.start_scan(&self.cfg);
     }
     pub(crate) fn path_of_song_at_playlist_index(&self, index: usize) -> Option<PathBuf> {
         let Some(sel_item) = &self.playlist.get(index) else {

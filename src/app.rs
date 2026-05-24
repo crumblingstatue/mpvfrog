@@ -41,6 +41,8 @@ pub struct App {
     pub tray_handle: Option<AppTray>,
     last_tooltip_update: Instant,
     pub modal: ModalPopup,
+    // On every update, try to find and play this song
+    try_to_play: Option<PathBuf>,
 }
 
 #[derive(Default)]
@@ -104,7 +106,7 @@ impl App {
                 play_this = Some(path.strip_prefix(parent).unwrap());
             }
         }
-        core.read_songs();
+        core.start_scan();
         let mut ui: ui::Ui = Default::default();
         ui.recalc_filt_entries(&core);
         ui.apply_colorix_theme(core.cfg.theme.as_ref(), ctx);
@@ -121,6 +123,7 @@ impl App {
             tray_handle,
             last_tooltip_update: Instant::now(),
             modal: ModalPopup::default(),
+            try_to_play: None,
         };
         if let Some(this) = play_this
             && let Some(pos) = app.core.playlist.iter().position(|item| item.path == this)
@@ -129,14 +132,33 @@ impl App {
         }
         Ok(app)
     }
-
-    pub fn update(&mut self, ui: &mut egui::Ui) {
-        if !ui.egui_wants_keyboard_input() {
-            self.handle_egui_input(ui);
-        }
+    // Update common to bg and fg
+    pub fn common_update(&mut self) {
         self.handle_mpv_events();
         self.core.mpv_handler.update(&mut self.modal);
         self.core.handle_mpv_not_active(&mut self.modal);
+        if self.core.playlist.update() {
+            self.ui.recalc_filt_entries(&self.core);
+        }
+        if let Some(path) = &self.try_to_play {
+            if let Some(pos) = self
+                .core
+                .playlist
+                .iter()
+                .position(|item| item.path == *path)
+            {
+                self.focus_and_play(pos);
+                // Make sure to consume to not keep playing the same thing over and over again
+                self.try_to_play = None;
+            }
+        }
+    }
+
+    pub fn fg_update(&mut self, ui: &mut egui::Ui) {
+        self.common_update();
+        if !ui.egui_wants_keyboard_input() {
+            self.handle_egui_input(ui);
+        }
         // Do the ui
         self.ui.update(&mut self.core, ui, &mut self.modal);
     }
@@ -149,9 +171,7 @@ impl App {
 
     /// Update when in the background (window not open)
     pub fn bg_update(&mut self) {
-        self.handle_mpv_events();
-        self.core.mpv_handler.update(&mut self.modal);
-        self.core.handle_mpv_not_active(&mut self.modal);
+        self.common_update();
     }
 
     /// Update when tray popup is open
@@ -266,14 +286,12 @@ impl App {
         self.ui.focus_on = Some(idx);
         self.core.play_selected_song(&mut self.modal);
     }
+    pub(crate) fn queue_to_play(&mut self, path: PathBuf) {
+        self.try_to_play = Some(path);
+    }
 }
 
-pub(crate) fn open_folder(core: &mut Core, ui: &mut ui::Ui, path: PathBuf) {
+pub(crate) fn open_folder(core: &mut Core, path: PathBuf) {
     core.cfg.music_folder = Some(path);
-    refresh_folder(core, ui);
-}
-
-pub(crate) fn refresh_folder(core: &mut Core, ui: &mut ui::Ui) {
-    core.read_songs();
-    ui.recalc_filt_entries(core);
+    core.start_scan();
 }
