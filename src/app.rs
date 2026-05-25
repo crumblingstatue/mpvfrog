@@ -125,10 +125,8 @@ impl App {
             modal: ModalPopup::default(),
             try_to_play: None,
         };
-        if let Some(this) = play_this
-            && let Some(pos) = app.core.playlist.iter().position(|item| item.path == this)
-        {
-            app.focus_and_play(pos);
+        if let Some(this) = play_this {
+            app.queue_to_play(this.to_path_buf());
         }
         Ok(app)
     }
