@@ -16,16 +16,31 @@ use {
         ffi::{OsStr, OsString},
         io::{Read as _, Write as _},
         process::{Child, Stdio},
+        sync::Arc,
         time::Duration,
     },
 };
 
 struct MpvHandlerInner {
     child: Child,
-    demux_child: Option<Child>,
+    demux: Option<DemuxState>,
     mpv_pty: Pty,
-    demuxer_pty: Pty,
     ipc_bridge: ipc::Bridge,
+}
+
+const DEMUX_READ_CAPACITY: usize = 4096;
+
+enum DemuxMsg {
+    PtyRead {
+        buf: [u8; DEMUX_READ_CAPACITY],
+        len: usize,
+    },
+}
+
+struct DemuxState {
+    child: Child,
+    recv: std::sync::mpsc::Receiver<DemuxMsg>,
+    pty: Arc<Pty>,
 }
 
 pub struct MpvHandler {
@@ -35,7 +50,6 @@ pub struct MpvHandler {
     /// shows the same name as the command that produced the term output.
     pub demux_cmd_name: String,
     inner: Option<MpvHandlerInner>,
-    read_demuxer: bool,
     pub active_pty_input: ActivePtyInput,
 }
 
@@ -56,7 +70,6 @@ impl MpvHandler {
         mpv_args: impl IntoIterator<Item = &'a OsStr>,
         custom_demuxer: Option<CustomDemuxer>,
     ) -> anyhow::Result<()> {
-        self.read_demuxer = true;
         self.stop_music();
         self.mpv_term.reset();
         self.demux_term.reset();
@@ -64,8 +77,9 @@ impl MpvHandler {
         let (mut pty, pts) = pty_process::blocking::open()?;
         let mut mpv_command = PtyCommand::new(mpv_cmd);
         let (demuxer_pty, demux_pts) = pty_process::blocking::open()?;
+        let demuxer_pty = Arc::new(demuxer_pty);
         mpv_command = mpv_command.args(mpv_args);
-        let mut opt_demux_child = None;
+        let mut demux = None;
         if let Some(demuxer) = custom_demuxer {
             logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
             self.demux_cmd_name = demuxer.cmd.clone();
@@ -75,7 +89,32 @@ impl MpvHandler {
                 .spawn(demux_pts)
                 .context("Failed to spawn demuxer")?;
             mpv_command = mpv_command.stdin(demux_child.stdout.take().unwrap());
-            opt_demux_child = Some(demux_child);
+            let (msg_send, msg_recv) = std::sync::mpsc::channel();
+            let demuxer_pty_clone = demuxer_pty.clone();
+            std::thread::spawn(move || {
+                let mut demux_buf = [0u8; DEMUX_READ_CAPACITY];
+                loop {
+                    match (&*demuxer_pty_clone).read(&mut demux_buf) {
+                        Ok(len) => {
+                            msg_send
+                                .send(DemuxMsg::PtyRead {
+                                    buf: demux_buf,
+                                    len,
+                                })
+                                .unwrap();
+                        }
+                        Err(e) => {
+                            logln!("Demuxer pty read error: {}", e);
+                            return;
+                        }
+                    }
+                }
+            });
+            demux = Some(DemuxState {
+                child: demux_child,
+                recv: msg_recv,
+                pty: demuxer_pty,
+            });
         }
         let mut child = mpv_command.spawn(pts)?;
         let attempts = 5;
@@ -105,8 +144,7 @@ impl MpvHandler {
         self.inner = Some(MpvHandlerInner {
             child,
             mpv_pty: pty,
-            demuxer_pty,
-            demux_child: opt_demux_child,
+            demux,
             ipc_bridge,
         });
         Ok(())
@@ -116,16 +154,16 @@ impl MpvHandler {
         inner.mpv_pty.write_all(b"q").unwrap();
         inner.child.wait().unwrap();
         'wait_demuxer: {
-            if let Some(mut demux_child) = inner.demux_child.take() {
+            if let Some(mut demux) = inner.demux.take() {
                 for i in 0..5 {
                     logln!("Wait for demuxer to exit (attempt {i})");
-                    if let Some(status) = demux_child.try_wait().unwrap() {
+                    if let Some(status) = demux.child.try_wait().unwrap() {
                         logln!("Demuxer exited with status: {status}");
                         break 'wait_demuxer;
                     }
                     std::thread::sleep(Duration::from_millis(100));
                 }
-                demux_child.kill().unwrap();
+                demux.child.kill().unwrap();
                 logln!("Killed demuxer");
             }
         }
@@ -139,9 +177,7 @@ impl MpvHandler {
             modal.warn("Mpv IPC error", e);
         }
         let mut buf = Vec::new();
-        let mut demux_buf = Vec::new();
         let mut nbr = NonBlockingReader::from_fd(&inner.mpv_pty).unwrap();
-        let mut demux_nbr = NonBlockingReader::from_fd(&inner.demuxer_pty).unwrap();
         match inner.child.try_wait() {
             Ok(None) => {}
             Ok(Some(status)) => {
@@ -179,16 +215,21 @@ impl MpvHandler {
                 return;
             }
         }
-        if self.read_demuxer {
-            match demux_nbr.read_available(&mut demux_buf) {
-                Ok(n_read) => {
-                    if n_read != 0 {
-                        self.demux_term.feed(&demux_buf);
-                    }
-                }
-                Err(e) => {
-                    logln!("Demuxer pty read error: {}", e);
-                    self.read_demuxer = false;
+        if let Some(demux) = &inner.demux {
+            loop {
+                match demux.recv.try_recv() {
+                    Ok(msg) => match msg {
+                        DemuxMsg::PtyRead { buf, len } => {
+                            self.demux_term.feed(&buf[..len]);
+                        }
+                    },
+                    Err(e) => match e {
+                        std::sync::mpsc::TryRecvError::Empty => break,
+                        std::sync::mpsc::TryRecvError::Disconnected => {
+                            eprintln!("Chanel disconnected!");
+                            break;
+                        }
+                    },
                 }
             }
         }
@@ -196,9 +237,15 @@ impl MpvHandler {
 
     pub fn send_input(&mut self, s: &str) {
         let Some(inner) = &mut self.inner else { return };
-        let pty = match self.active_pty_input {
-            ActivePtyInput::Mpv => &mut inner.mpv_pty,
-            ActivePtyInput::Demuxer => &mut inner.demuxer_pty,
+        let mut pty = match self.active_pty_input {
+            ActivePtyInput::Mpv => &inner.mpv_pty,
+            ActivePtyInput::Demuxer => match &inner.demux {
+                Some(demux) => &demux.pty,
+                None => {
+                    logln!("Trying to write to demux while no demux");
+                    return;
+                }
+            },
         };
         pty.write_all(s.as_bytes()).unwrap();
     }
@@ -240,7 +287,9 @@ impl MpvHandler {
     }
 
     pub(crate) fn demuxer_active(&self) -> bool {
-        self.read_demuxer
+        self.inner
+            .as_ref()
+            .is_some_and(|inner| inner.demux.is_some())
     }
     /// Send a command to the IPC bridge, if it exists
     pub(crate) fn ipc<'br, T, F>(&'br mut self, fun: F) -> Option<T>
@@ -266,7 +315,6 @@ impl Default for MpvHandler {
             demux_term: Term::new(80),
             demux_cmd_name: String::new(),
             inner: None,
-            read_demuxer: true,
             active_pty_input: ActivePtyInput::Mpv,
         }
     }
