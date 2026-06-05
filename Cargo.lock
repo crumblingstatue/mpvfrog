@@ -1067,7 +1067,6 @@ dependencies = [
  "existing_instance",
  "fuzzy-matcher",
  "interprocess",
- "nonblock",
  "pty-process",
  "rand",
  "serde",
@@ -1083,15 +1082,6 @@ name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
-
-[[package]]
-name = "nonblock"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51c7a4f22e5f2e2bd805d6ab56f1ae87eb1815673e1b452048896fb687a8a3d4"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "num-traits"
