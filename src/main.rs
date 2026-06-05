@@ -42,21 +42,26 @@ struct Args {
 
 /// Entry point
 fn main() {
-    let args = Args::parse();
+    let mut args = Args::parse();
+    if let Some(path) = &mut args.path {
+        // Canonicalize the path argument, so we can get the parent even for relative paths
+        match path.canonicalize() {
+            Ok(canon) => {
+                *path = canon;
+            }
+            Err(e) => {
+                eprintln!("Failed to canonicalize path {path:?}: {e}");
+            }
+        }
+    }
     let listener = match existing_instance::establish_endpoint("mpvfrog-instance", true) {
         Ok(endpoint) => match endpoint {
             existing_instance::Endpoint::New(listener) => Some(listener),
             existing_instance::Endpoint::Existing(mut stream) => {
                 match &args.path {
-                    Some(path) => match path.canonicalize() {
-                        Ok(canon) => {
-                            stream
-                                .send(Msg::String(canon.as_os_str().to_str().unwrap().to_owned()));
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to canonicalize path: {e}");
-                        }
-                    },
+                    Some(path) => {
+                        stream.send(Msg::String(path.as_os_str().to_str().unwrap().to_owned()));
+                    }
                     None => {
                         stream.send(Msg::Nudge);
                     }
