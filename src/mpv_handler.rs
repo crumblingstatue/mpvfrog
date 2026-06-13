@@ -46,12 +46,13 @@ fn spawn_pty_child(pty: Arc<Pty>, child: Child) -> PtyChildState {
         loop {
             match (&*pty_clone).read(&mut demux_buf) {
                 Ok(len) => {
-                    msg_send
-                        .send(PtyChildMsg::Read {
-                            buf: demux_buf,
-                            len,
-                        })
-                        .unwrap();
+                    let result = msg_send.send(PtyChildMsg::Read {
+                        buf: demux_buf,
+                        len,
+                    });
+                    if let Err(e) = result {
+                        logln!("Pty send error: {e}");
+                    }
                 }
                 Err(e) => {
                     logln!("Demuxer pty read error: {}", e);
