@@ -25,6 +25,9 @@ pub struct Core {
     ///
     /// We can use this to scroll to the changed song in the ui for example.
     pub(super) song_change: bool,
+    /// We also keep track of which path we're playing, so we can recalculate
+    /// its index in the playlist, if needed.
+    pub(crate) played_path: Option<PathBuf>,
 }
 
 impl Core {
@@ -64,6 +67,9 @@ impl Core {
     ) {
         self.save_mpv_values_to_cfg();
         self.user_stopped = false;
+        if let Some(music_folder) = &self.cfg.music_folder {
+            self.played_path = Some(path.strip_prefix(music_folder).unwrap().to_owned());
+        }
 
         let vol_arg = format!("--volume={}", self.cfg.volume);
         let speed_arg = format!("--speed={}", self.cfg.speed);

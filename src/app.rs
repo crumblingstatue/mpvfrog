@@ -93,6 +93,7 @@ impl App {
             playlist_behavior: PlaylistBehavior::Continue,
             user_stopped: true,
             song_change: false,
+            played_path: None,
         };
         // Handle path argument for opening a folder (and optionally play a file)
         let mut play_this = None;
@@ -139,6 +140,7 @@ impl App {
         self.core.handle_mpv_not_active(&mut self.modal);
         if self.core.playlist.update() {
             self.ui.recalc_filt_entries(&self.core);
+            self.refocus();
         }
         if let Some(path) = &self.try_to_play {
             if let Some(pos) = self
@@ -280,11 +282,20 @@ impl App {
             self.core.cfg.volume = vol;
         }
     }
-
-    pub(crate) fn focus_and_play(&mut self, idx: usize) {
+    pub(crate) fn focus(&mut self, idx: usize) {
         self.core.selected_song = idx;
         self.ui.focus_on = Some(idx);
+    }
+    pub(crate) fn focus_and_play(&mut self, idx: usize) {
+        self.focus(idx);
         self.core.play_selected_song(&mut self.modal);
+    }
+    pub(crate) fn refocus(&mut self) {
+        if let Some(path) = &self.core.played_path {
+            if let Some(pos) = self.core.playlist.pos_of_path(path) {
+                self.focus(pos);
+            }
+        }
     }
     pub(crate) fn queue_to_play(&mut self, path: PathBuf) {
         self.try_to_play = Some(path);

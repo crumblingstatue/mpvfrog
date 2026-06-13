@@ -1,6 +1,9 @@
 use {
     crate::{config::Config, logln},
-    std::{cmp::Ordering, path::PathBuf},
+    std::{
+        cmp::Ordering,
+        path::{Path, PathBuf},
+    },
     walkdir::WalkDir,
 };
 
@@ -135,5 +138,8 @@ impl Playlist {
     pub(crate) fn cancel_scan(&mut self) {
         // This relies on the scan thread stopping if it fails to send
         self.walkdir_recv = None;
+    }
+    pub fn pos_of_path(&self, path: &Path) -> Option<usize> {
+        self.iter().position(|item| item.path == path)
     }
 }
