@@ -14,6 +14,7 @@ use {
     std::{
         ffi::{OsStr, OsString},
         io::{Read as _, Write as _},
+        ops::ControlFlow,
         process::{Child, Stdio},
         sync::Arc,
         time::Duration,
@@ -168,9 +169,9 @@ impl MpvHandler {
         }
         self.inner = None;
     }
-    pub fn update(&mut self, modal: &mut ModalPopup) {
+    pub fn update(&mut self, modal: &mut ModalPopup) -> ControlFlow<()> {
         let Some(inner) = &mut self.inner else {
-            return;
+            return ControlFlow::Break(());
         };
         if let Err(e) = inner.ipc_bridge.handle_responses() {
             modal.warn("Mpv IPC error", e);
@@ -190,6 +191,8 @@ impl MpvHandler {
                         "Abnormal mpv termination",
                         format!("Mpv exited with status {status}\nStderr:\n{stderr}"),
                     );
+                    self.inner = None;
+                    return ControlFlow::Break(());
                 }
             }
             Err(e) => {
@@ -197,6 +200,8 @@ impl MpvHandler {
                     "Abnormal mpv termination",
                     format!("Error waiting on mpv: {e}"),
                 );
+                self.inner = None;
+                return ControlFlow::Break(());
             }
         }
         loop {
@@ -209,7 +214,7 @@ impl MpvHandler {
                 Err(e) => match e {
                     std::sync::mpsc::TryRecvError::Empty => break,
                     std::sync::mpsc::TryRecvError::Disconnected => {
-                        eprintln!("Chanel disconnected!");
+                        logln!("Mpv channel disconnected!");
                         break;
                     }
                 },
@@ -226,13 +231,14 @@ impl MpvHandler {
                     Err(e) => match e {
                         std::sync::mpsc::TryRecvError::Empty => break,
                         std::sync::mpsc::TryRecvError::Disconnected => {
-                            eprintln!("Chanel disconnected!");
+                            logln!("Demux channel disconnected!");
                             break;
                         }
                     },
                 }
             }
         }
+        ControlFlow::Continue(())
     }
 
     pub fn send_input(&mut self, s: &str) {

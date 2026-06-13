@@ -133,7 +133,9 @@ impl App {
     // Update common to bg and fg
     pub fn common_update(&mut self) {
         self.handle_mpv_events();
-        self.core.mpv_handler.update(&mut self.modal);
+        if self.core.mpv_handler.update(&mut self.modal).is_break() {
+            self.core.playlist_behavior = PlaylistBehavior::Stop;
+        }
         self.core.handle_mpv_not_active(&mut self.modal);
         if self.core.playlist.update() {
             self.ui.recalc_filt_entries(&self.core);
