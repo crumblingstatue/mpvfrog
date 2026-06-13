@@ -11,7 +11,6 @@ use {
         mpv_handler::ActivePtyInput,
         time_fmt::FfmpegTimeFmt,
         util::{
-            bool_ext::BoolExt as _,
             egui_ext::EguiResponseExt as _,
             result_ext::ResultModalExt as _,
             str_ext::{StrExt as _, trim_lines},
@@ -291,6 +290,7 @@ impl Ui {
 
     fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         let row_h = ui.text_style_height(&egui::TextStyle::Body);
+        let mut scroll_to_y = None;
         let mut out = ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
@@ -339,13 +339,6 @@ impl Ui {
                     {
                         core.play_song_with_demuxer(&path, Some(demux), modal);
                     }
-                    let filter_changed = self.filter_changed.take();
-                    if filter_changed {
-                        ui.scroll_to_rect(egui::Rect::ZERO, Some(Align::TOP));
-                    }
-                    if core.selected_song == i && (filter_changed || core.song_change.take()) {
-                        re.scroll_to_me(Some(Align::Center));
-                    }
                     if self.focus_on.is_some_and(|idx| idx == i) {
                         re.scroll_to_me(Some(Align::Center));
                         self.focus_on = None;
@@ -364,6 +357,28 @@ impl Ui {
                 .position(|&i| i == playlist_idx)
         {
             out.state.offset.y = filtlist_idx as f32 * (row_h + 3.0);
+            out.state.store(ui.ctx(), out.id);
+        }
+        if self.filter_changed || core.song_change {
+            if let Some(i) = self
+                .filtered_entries
+                .iter()
+                .position(|en| *en == core.selected_song)
+            {
+                // Try to nudge the position a little bit towards the center
+                // so it's not at the very top
+                let y_off = row_h * 2.0;
+                scroll_to_y = Some(i as f32 * (row_h + 3.0) - y_off);
+            } else {
+                scroll_to_y = Some(0.0);
+            }
+        }
+        if let Some(mut y) = scroll_to_y {
+            // Avoid scrolling negative ("glitches" scroll area for a frame)
+            if y < 0. {
+                y = 0.;
+            }
+            out.state.offset.y = y;
             out.state.store(ui.ctx(), out.id);
         }
         ui.separator();
@@ -654,6 +669,8 @@ impl Ui {
                     out.response.surrender_focus();
                 }
             });
+        self.filter_changed = false;
+        core.song_change = false;
     }
     pub fn apply_colorix_theme(&mut self, theme: Option<&[[u8; 3]; 12]>, ctx: &Context) {
         if let Some(theme) = theme {
