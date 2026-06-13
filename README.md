@@ -25,6 +25,8 @@ It provides a volume slider, and even forwards key events to mpv.
 
 ## Installing
 
+Prerequisites: A C++ compiler, cmake, and the following libraries: `libGL libX11 libXcursor libXrandr`
+
 If you have Rust 1.92 or later, you can do `cargo install --git https://github.com/crumblingstatue/mpvfrog.git`.
 
 Otherwise, check out the [Releases](<https://github.com/crumblingstatue/mpvfrog/releases>).
