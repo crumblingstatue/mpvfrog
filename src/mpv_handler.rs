@@ -216,7 +216,8 @@ impl MpvHandler {
                     std::sync::mpsc::TryRecvError::Empty => break,
                     std::sync::mpsc::TryRecvError::Disconnected => {
                         logln!("Mpv channel disconnected!");
-                        break;
+                        self.inner = None;
+                        return ControlFlow::Continue(());
                     }
                 },
             }
