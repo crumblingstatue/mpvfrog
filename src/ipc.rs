@@ -12,7 +12,7 @@ use {
     property::{PropValue, Property},
     std::{
         collections::{HashMap, VecDeque},
-        io::{Read, Write},
+        io::{BufRead as _, BufReader, Write},
         marker::PhantomData,
     },
 };
@@ -22,7 +22,7 @@ pub enum IpcEvent {
 }
 
 pub struct Bridge {
-    ipc_stream: LocalSocketStream,
+    ipc_stream: BufReader<LocalSocketStream>,
     pub observed: Properties,
     pub event_queue: VecDeque<IpcEvent>,
 }
@@ -51,7 +51,7 @@ impl Bridge {
         )?;
         ipc_stream.set_nonblocking(true)?;
         let mut this = Self {
-            ipc_stream,
+            ipc_stream: BufReader::new(ipc_stream),
             observed: Default::default(),
             event_queue: Default::default(),
         };
@@ -86,7 +86,7 @@ impl Bridge {
         let mut serialized = serde_json::to_vec(&command_json).unwrap();
         // Commands need to be terminated with newline
         serialized.push(b'\n');
-        self.ipc_stream.write_all(&serialized)?;
+        self.ipc_stream.get_mut().write_all(&serialized)?;
         Ok(())
     }
     pub fn set_property<P: Property>(&mut self, value: P::Value) -> anyhow::Result<()>
@@ -97,15 +97,14 @@ impl Bridge {
     }
     pub fn handle_responses(&mut self) -> anyhow::Result<()> {
         loop {
-            let mut buf = [0; 1000];
-            match self.ipc_stream.read(&mut buf) {
+            let mut buf = String::new();
+            match self.ipc_stream.read_line(&mut buf) {
                 Ok(amount) => {
                     if amount == 0 {
                         // Assume EOF and return
                         return Ok(());
                     }
-                    let string = std::str::from_utf8(&buf[..amount]).unwrap();
-                    for line in string.lines() {
+                    for line in buf.lines() {
                         self.handle_response_line(line)
                     }
                 }
