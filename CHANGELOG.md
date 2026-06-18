@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1] - 2026-06-18
+
+## Fixed
+- Sometimes mpvfrog wouldn't realize mpv has exited
+- Sometimes mpvfrog would read incomplete json responses from mpv
+
 ## [0.3.0] - 2026-06-13
 
 ## Added
