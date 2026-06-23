@@ -11,7 +11,7 @@ use {
         sf2g::{
             cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
-            window::{Event, Key, Style, VideoMode},
+            window::{Event, Key, Scancode, Style, VideoMode},
         },
     },
     std::{path::PathBuf, time::Duration},
@@ -156,7 +156,9 @@ pub fn run(
                                 .unwrap(),
                         );
                     }
-                    Event::KeyPressed { code, ctrl, .. } => {
+                    Event::KeyPressed {
+                        code, ctrl, scan, ..
+                    } => {
                         // Shortcut keys
                         if code == Key::Escape && !sf_egui.context().egui_wants_keyboard_input() {
                             rw.set_visible(false);
@@ -167,6 +169,12 @@ pub fn run(
                         }
                         if code == Key::O && ctrl {
                             app.ui.file_dialog.pick_directory();
+                        }
+                        if scan == Scancode::VolumeDown {
+                            app.core.mpv_handler.send_input("9");
+                        }
+                        if scan == Scancode::VolumeUp {
+                            app.core.mpv_handler.send_input("0");
                         }
                     }
                     _ => {}
@@ -263,8 +271,19 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
     let mut msg = None;
     while let Some(event) = win.rw.poll_event() {
         win.sf_egui.add_event(&event);
-        if let Event::LostFocus = event {
-            return Some(TrayUpdateMsg::CloseTray);
+        match event {
+            Event::KeyPressed { scan, .. } => {
+                if scan == Scancode::VolumeDown {
+                    app.core.mpv_handler.send_input("9");
+                }
+                if scan == Scancode::VolumeUp {
+                    app.core.mpv_handler.send_input("0");
+                }
+            }
+            Event::LostFocus => {
+                return Some(TrayUpdateMsg::CloseTray);
+            }
+            _ => {}
         }
     }
     win.rw.clear(Color::MAGENTA);
