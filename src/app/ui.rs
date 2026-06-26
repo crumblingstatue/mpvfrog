@@ -22,6 +22,7 @@ use {
     egui_sf2g::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit,
         epaint::text::{FontInsert, FontPriority, InsertFontFamily},
+        text::CharIndex,
     },
     fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
     mpv_console_window::MpvConsoleWindow,
@@ -121,8 +122,8 @@ impl Ui {
                 None => eprintln!("BUG: No operation!"),
             }
         }
-        egui::Panel::top("top_panel").show_inside(ui, |ui| self.top_panel_ui(core, ui, modal));
-        CentralPanel::default().show_inside(ui, |ui| self.central_panel_ui(core, ui, modal));
+        egui::Panel::top("top_panel").show(ui, |ui| self.top_panel_ui(core, ui, modal));
+        CentralPanel::default().show(ui, |ui| self.central_panel_ui(core, ui, modal));
         self.windows.update(core, ui, &mut self.colorix);
     }
     fn top_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
@@ -635,7 +636,7 @@ impl Ui {
                     // The little audio "handles" are at the beginning of lines,
                     // so let's ignore the later columns, so the user doesn't accidentally
                     // switch tracks when clicking lines that contain --aid bits
-                    if l_cur.column > 18 {
+                    if l_cur.column > CharIndex(18) {
                         return;
                     }
                     if let Some(line) = core.mpv_handler.mpv_output().lines().nth(row)

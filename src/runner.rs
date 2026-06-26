@@ -291,7 +291,7 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
         .sf_egui
         .run(&mut win.rw, |_rw, ui| {
             let mut quit = false;
-            egui::CentralPanel::default().show_inside(ui, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     if ui
                         .add(egui::Label::new(crate::APP_LABEL).sense(egui::Sense::click()))
