@@ -11,6 +11,7 @@ use {
         sf2g::{
             cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
+            system::Vector2i,
             window::{Event, Key, Scancode, Style, VideoMode},
         },
     },
@@ -46,7 +47,7 @@ pub fn run(
             eprintln!("Failed to load fallback font {path:?}: {e}")
         }
     }
-    let mut win_visible = true;
+    let mut win_vis_state = WindowVisState::Visible;
     'mainloop: loop {
         let mut event_flags;
         if let Some(trhandle) = &mut app.tray_handle {
@@ -87,11 +88,11 @@ pub fn run(
                 tray_popup_win = None;
             } else {
                 // Try to focus unfocused window first, only hide if already focused
-                if win_visible && !rw.has_focus() {
+                if matches!(win_vis_state, WindowVisState::Visible) && !rw.has_focus() {
                     rw.set_visible(false);
                     rw.set_visible(true);
                 } else {
-                    toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw);
+                    toggle_win_visible(&mut tray_popup_win, &mut win_vis_state, &mut rw);
                 }
             }
         }
@@ -138,7 +139,7 @@ pub fn run(
             }
         }
         app.update_tooltip();
-        if win_visible {
+        if matches!(win_vis_state, WindowVisState::Visible) {
             while let Some(event) = rw.poll_event() {
                 sf_egui.add_event(&event);
                 match event {
@@ -147,8 +148,7 @@ pub fn run(
                             eprintln!("No tray handle, quitting.");
                             break 'mainloop;
                         }
-                        rw.set_visible(false);
-                        win_visible = false;
+                        toggle_win_visible(&mut tray_popup_win, &mut win_vis_state, &mut rw);
                     }
                     Event::Resized { width, height } => {
                         rw.set_view(
@@ -161,8 +161,7 @@ pub fn run(
                     } => {
                         // Shortcut keys
                         if code == Key::Escape && !sf_egui.context().egui_wants_keyboard_input() {
-                            rw.set_visible(false);
-                            win_visible = false;
+                            toggle_win_visible(&mut tray_popup_win, &mut win_vis_state, &mut rw);
                         }
                         if code == Key::Q && ctrl {
                             break 'mainloop;
@@ -196,7 +195,7 @@ pub fn run(
                         TrayUpdateMsg::QuitApp => break 'mainloop,
                         TrayUpdateMsg::CloseTray => tray_popup_win = None,
                         TrayUpdateMsg::FocusApp => {
-                            toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw)
+                            toggle_win_visible(&mut tray_popup_win, &mut win_vis_state, &mut rw)
                         }
                     }
                 }
@@ -211,7 +210,7 @@ pub fn run(
                         TrayUpdateMsg::QuitApp => break 'mainloop,
                         TrayUpdateMsg::CloseTray => tray_popup_win = None,
                         TrayUpdateMsg::FocusApp => {
-                            toggle_win_visible(&mut tray_popup_win, &mut win_visible, &mut rw)
+                            toggle_win_visible(&mut tray_popup_win, &mut win_vis_state, &mut rw)
                         }
                     }
                 }
@@ -249,16 +248,32 @@ fn skip_taskbar_for_window_x11(rw: &RenderWindow) -> anyhow::Result<()> {
     Ok(())
 }
 
+enum WindowVisState {
+    Visible,
+    Hidden { prev_pos: Vector2i },
+}
+
 fn toggle_win_visible(
     tray_popup_win: &mut Option<CtxMenuWin>,
-    win_visible: &mut bool,
+    state: &mut WindowVisState,
     rw: &mut RenderWindow,
 ) {
     if tray_popup_win.is_some() {
         *tray_popup_win = None;
     }
-    *win_visible ^= true;
-    rw.set_visible(*win_visible);
+    match *state {
+        WindowVisState::Visible => {
+            *state = WindowVisState::Hidden {
+                prev_pos: rw.position(),
+            };
+            rw.set_visible(false);
+        }
+        WindowVisState::Hidden { prev_pos } => {
+            rw.set_visible(true);
+            rw.set_position(prev_pos);
+            *state = WindowVisState::Visible;
+        }
+    }
 }
 
 enum TrayUpdateMsg {
