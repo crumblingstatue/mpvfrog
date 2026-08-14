@@ -22,6 +22,7 @@ use {
     egui_sf2g::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit,
         epaint::text::{FontInsert, FontPriority, InsertFontFamily},
+        scroll_area::ScrollSource,
         text::CharIndex,
     },
     fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
@@ -296,6 +297,7 @@ impl Ui {
             .max_height(200.0)
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
+            .scroll_source(ScrollSource::ALL)
             .show_rows(ui, row_h, self.filtered_entries.len(), |ui, range| {
                 if self.filtered_entries.is_empty() {
                     let not_shown_count = core.playlist.len();
