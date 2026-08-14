@@ -512,9 +512,9 @@ dependencies = [
 
 [[package]]
 name = "egui-sf2g"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a7ef0b5c13d012253453198cf79c96b65c3805819387978b0b69485fba9a749"
+checksum = "365c79f443ffa0cfb61a4540c47c2b3723587578ef09b924fba0355a54a0c937"
 dependencies = [
  "arboard",
  "egui",
@@ -982,9 +982,9 @@ checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
 name = "libredox"
-version = "0.1.19"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2026a5056764a10b2bf5d56488cba40da507f5493a6a429340e2004d9ed085fa"
+checksum = "28d0a00925a9f930d679b6789b721e3a7f9ed110f41b86d2497caa780c3a070a"
 dependencies = [
  "libc",
 ]
