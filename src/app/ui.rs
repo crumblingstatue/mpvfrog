@@ -597,11 +597,14 @@ impl Ui {
             if let Some(complex) = core.mpv_handler.ipc(|b| b.observed.lavfi_complex.as_str()) {
                 let mut remove = false;
                 if !complex.is_empty() {
-                    ui.menu_button("lavfi-complex filter active", |ui| {
-                        ui.label(complex);
-                        if ui.button("Remove").clicked() {
-                            remove = true;
-                        }
+                    ui.menu_button("❕ lavfi-complex filter active 🔽", |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("🔹");
+                            ui.code(complex);
+                            if ui.button("🗑").on_hover_text("Remove").clicked() {
+                                remove = true;
+                            }
+                        });
                     });
                 }
                 if remove {
