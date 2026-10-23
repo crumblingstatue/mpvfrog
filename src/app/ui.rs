@@ -526,7 +526,7 @@ impl Ui {
         });
         ui.separator();
         ui.horizontal(|ui| {
-            let re = ui.selectable_value(&mut self.output_source, OutputSource::Mpv, "Mpv");
+            let re = ui.selectable_value(&mut self.output_source, OutputSource::Mpv, "▶️ Mpv");
             re.context_menu(|ui| {
                 if ui.button("Clear").clicked() {
                     core.mpv_handler.mpv_term.reset();
@@ -557,7 +557,7 @@ impl Ui {
                 self.output_source = OutputSource::Demuxer;
                 core.mpv_handler.active_pty_input = ActivePtyInput::Demuxer;
             };
-            ui.selectable_value(&mut self.output_source, OutputSource::Log, "Log");
+            ui.selectable_value(&mut self.output_source, OutputSource::Log, "📜 Log");
             ui.separator();
             if let Some(track_count) = core.mpv_handler.ipc(|b| b.observed.track_count) {
                 let s = if track_count == 1 { "" } else { "s" };
@@ -581,7 +581,7 @@ impl Ui {
             if let Some(complex) = core.mpv_handler.ipc(|b| b.observed.lavfi_complex.as_str()) {
                 let mut remove = false;
                 if !complex.is_empty() {
-                    ui.menu_button("❕ lavfi-complex filter active 🔽", |ui| {
+                    ui.menu_button("🎛️ lavfi-complex filter active 🔽", |ui| {
                         ui.horizontal(|ui| {
                             ui.label("🔹");
                             ui.code(complex);
@@ -596,8 +596,12 @@ impl Ui {
                 }
             }
             if let Some(mut loop_file) = core.mpv_handler.ipc(|b| b.observed.loop_file)
-                && ui.checkbox(&mut loop_file, "loop").clicked()
+                && ui
+                    .selectable_label(loop_file, "🔁")
+                    .on_hover_text("loop")
+                    .clicked()
             {
+                loop_file ^= true;
                 core.mpv_handler.ipc(|b| b.set_loop_file(loop_file));
             }
         });
