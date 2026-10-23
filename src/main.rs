@@ -73,5 +73,5 @@ fn main() {
             None
         }
     };
-    runner::run(700, 500, "mpvfrog", listener, args);
+    runner::run(740, 500, "mpvfrog", listener, args);
 }
