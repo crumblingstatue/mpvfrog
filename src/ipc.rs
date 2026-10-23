@@ -69,18 +69,14 @@ impl Bridge {
         this.observe_property::<property::PlaylistCount>()?;
         this.observe_property::<property::Seekable>()?;
         this.observe_property::<property::Mute>()?;
+        this.observe_property::<property::Pause>()?;
         Ok(this)
     }
     pub fn observe_property<T: Property>(&mut self) -> anyhow::Result<()> {
         self.write_command(ObserveProperty::<T>(PhantomData))
     }
     pub fn toggle_pause(&mut self) -> anyhow::Result<()> {
-        // We assume here that the pause command will succeed.
-        //
-        // Yeah, I don't know what else to do here, because mpv doesn't seem
-        // to fire a pause event anymore when it gets paused.
-        self.observed.paused ^= true;
-        self.set_property::<property::Pause>(self.observed.paused)?;
+        self.set_property::<property::Pause>(!self.observed.paused)?;
         Ok(())
     }
     pub fn toggle_mute(&mut self) -> anyhow::Result<()> {
@@ -168,6 +164,7 @@ impl Bridge {
             property::PlaylistPos::NAME => self.observed.playlist_pos = data.as_u64()?,
             property::Seekable::NAME => self.observed.seekable = data.as_bool()?,
             property::Mute::NAME => self.observed.mute = data.as_bool()?,
+            property::Pause::NAME => self.observed.paused = data.as_bool()?,
             name => logln!("Unhandled property: {} = {}", name, data),
         }
         Some(())
