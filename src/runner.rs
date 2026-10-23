@@ -35,6 +35,10 @@ pub fn run(
     let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
+    let sys_font_provider = std::sync::Arc::new(egui_system_font_frog::SystemFontProvider::new());
+    sf_egui
+        .context()
+        .add_font_provider(sys_font_provider.clone());
     let mut app = match App::new(sf_egui.context(), &args) {
         Ok(app) => app,
         Err(e) => {
@@ -42,11 +46,6 @@ pub fn run(
             return;
         }
     };
-    for path in &app.core.cfg.fallback_font_paths {
-        if let Err(e) = app::ui::try_add_fallback_font(sf_egui.context(), path.as_ref()) {
-            eprintln!("Failed to load fallback font {path:?}: {e}")
-        }
-    }
     let mut win_vis_state = WindowVisState::Visible;
     'mainloop: loop {
         let mut event_flags;
@@ -127,12 +126,9 @@ pub fn run(
                 rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
                 rw.set_vertical_sync_enabled(true);
                 let sf_egui = SfEgui::new(&rw);
-                for path in &app.core.cfg.fallback_font_paths {
-                    if let Err(e) = app::ui::try_add_fallback_font(sf_egui.context(), path.as_ref())
-                    {
-                        eprintln!("Failed to load fallback font {path:?}: {e}")
-                    }
-                }
+                sf_egui
+                    .context()
+                    .add_font_provider(sys_font_provider.clone());
                 app.ui
                     .apply_colorix_theme(app.core.cfg.theme.as_ref(), sf_egui.context());
                 tray_popup_win = Some(CtxMenuWin { rw, sf_egui });

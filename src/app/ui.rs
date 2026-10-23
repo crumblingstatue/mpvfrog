@@ -16,18 +16,15 @@ use {
             str_ext::{StrExt as _, trim_lines},
         },
     },
-    anyhow::Context as _,
     color_theme_window::ColorThemeWindow,
     egui_colors::{Colorix, tokens::ThemeColor},
     egui_sf2g::egui::{
         self, Align, Button, CentralPanel, ComboBox, Context, ScrollArea, TextEdit,
-        epaint::text::{FontInsert, FontPriority, InsertFontFamily},
-        scroll_area::ScrollSource,
-        text::CharIndex,
+        scroll_area::ScrollSource, text::CharIndex,
     },
     fuzzy_matcher::{FuzzyMatcher as _, skim::SkimMatcherV2},
     mpv_console_window::MpvConsoleWindow,
-    std::{borrow::Cow, path::Path},
+    std::borrow::Cow,
 };
 
 #[derive(Default)]
@@ -79,14 +76,13 @@ pub const ICO_NEXT: &str = "⏭";
 
 enum FileDialogOp {
     LoadMusicFolder,
-    AddFont,
 }
 
 impl Ui {
     pub(super) fn update(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         if let Some(payload) = &mut modal.payload {
             let mut close = false;
-            egui::Modal::new("modal_popup".into()).show(ui, |ui| {
+            egui::Modal::new(egui::Id::unique("modal_popup")).show(ui, |ui| {
                 let (icon, color) = match payload.kind {
                     super::ModalPayloadKind::Warning => ("⚠️", egui::Color32::YELLOW),
                     super::ModalPayloadKind::Error => ("❗", egui::Color32::RED),
@@ -111,14 +107,6 @@ impl Ui {
         self.file_dialog.update(ui);
         if let Some(path) = self.file_dialog.take_picked() {
             match self.file_dialog.user_data::<FileDialogOp>() {
-                Some(FileDialogOp::AddFont) => {
-                    let result = try_add_fallback_font(ui, &path);
-                    if let Err(e) = result {
-                        modal.error("Failed to add fallback font", e.to_string());
-                    } else if let Some(path_as_str) = path.to_str() {
-                        core.cfg.fallback_font_paths.push(path_as_str.to_owned());
-                    }
-                }
                 Some(FileDialogOp::LoadMusicFolder) => crate::app::open_folder(core, path),
                 None => eprintln!("BUG: No operation!"),
             }
@@ -161,11 +149,6 @@ impl Ui {
                     .clicked()
                 {
                     self.focus_on = Some(core.selected_song);
-                }
-                if ui.button("🗛 Add fallback font").clicked() {
-                    self.file_dialog.pick_file();
-                    self.file_dialog
-                        .set_user_data::<FileDialogOp>(FileDialogOp::AddFont);
                 }
                 ui.separator();
                 ui.label(concat!("🐸 mpvfrog ", env!("CARGO_PKG_VERSION")));
@@ -359,7 +342,7 @@ impl Ui {
                 .iter()
                 .position(|&i| i == playlist_idx)
         {
-            out.state.offset.y = filtlist_idx as f32 * (row_h + 3.0);
+            out.state.offset().y = filtlist_idx as f32 * (row_h + 3.0);
             out.state.store(ui.ctx(), out.id);
         }
         if self.filter_changed || core.song_change {
@@ -381,7 +364,7 @@ impl Ui {
             if y < 0. {
                 y = 0.;
             }
-            out.state.offset.y = y;
+            out.state.offset().y = y;
             out.state.store(ui.ctx(), out.id);
         }
         ui.separator();
@@ -697,27 +680,4 @@ impl PlaylistBehavior {
             Self::RepeatPlaylist => "Repeat playlist",
         }
     }
-}
-
-pub(crate) fn try_add_fallback_font(ctx: &Context, path: &Path) -> anyhow::Result<()> {
-    let data = std::fs::read(path)?;
-    let data = egui::FontData::from_owned(data);
-    ab_glyph::FontRef::try_from_slice_and_index(&data.font, data.index)?;
-    let filename = path.file_name().context("Couldn't get file name of font")?;
-    let name = filename.to_string_lossy();
-    ctx.add_font(FontInsert::new(
-        &name,
-        data,
-        vec![
-            InsertFontFamily {
-                family: egui::FontFamily::Proportional,
-                priority: FontPriority::Lowest,
-            },
-            InsertFontFamily {
-                family: egui::FontFamily::Monospace,
-                priority: FontPriority::Lowest,
-            },
-        ],
-    ));
-    Ok(())
 }
