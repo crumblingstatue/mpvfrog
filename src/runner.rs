@@ -333,29 +333,31 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
                             .err_popup("Volume set error", &mut app.modal);
                     }
                 });
-                let play_pause_label = if app.paused_or_stopped() {
-                    "▶"
-                } else {
-                    "⏸"
-                };
+
                 if let Some(name) = app.currently_playing_name() {
-                    ui.add(egui::Label::new(name).wrap_mode(egui::TextWrapMode::Extend));
+                    ui.add(egui::Label::new(name).wrap_mode(egui::TextWrapMode::Truncate));
                 }
                 ui.add_space(4.0);
-                ui.horizontal(|ui| {
-                    ui.add_space(38.0);
-                    if ui.button(app::ui::ICO_PREV).clicked() {
-                        app.core.play_prev(&mut app.modal);
-                    }
-                    if ui.button(play_pause_label).clicked() {
-                        app.core.play_or_toggle_pause(&mut app.modal);
-                    }
-                    if ui.button("⏹").clicked() {
-                        app.core.stop_music();
-                    }
-                    if ui.button(app::ui::ICO_NEXT).clicked() {
-                        app.core.play_next(&mut app.modal);
-                    }
+                egui::Aligned::new(egui::Align2::CENTER_TOP).show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        if ui.button(app::ui::ICO_PREV).clicked() {
+                            app.core.play_prev(&mut app.modal);
+                        }
+                        let play_pause_label = if app.paused_or_stopped() {
+                            "▶"
+                        } else {
+                            "⏸"
+                        };
+                        if ui.button(play_pause_label).clicked() {
+                            app.core.play_or_toggle_pause(&mut app.modal);
+                        }
+                        if ui.button("⏹").clicked() {
+                            app.core.stop_music();
+                        }
+                        if ui.button(app::ui::ICO_NEXT).clicked() {
+                            app.core.play_next(&mut app.modal);
+                        }
+                    });
                 });
             });
             if quit {
