@@ -419,7 +419,12 @@ impl Ui {
                     }
                 }
             });
-            if ui.checkbox(&mut core.cfg.video, "video").clicked() {
+            if ui
+                .selectable_label(core.cfg.video, "📽️")
+                .on_hover_text("video")
+                .clicked()
+            {
+                core.cfg.video ^= true;
                 core.mpv_handler
                     .ipc(|b| b.set_video(core.cfg.video))
                     .err_popup("Video set error", modal);

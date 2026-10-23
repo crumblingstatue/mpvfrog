@@ -314,7 +314,12 @@ fn update_tray_window(win: &mut CtxMenuWin, app: &mut App) -> Option<TrayUpdateM
                         if ui.button("Quit").clicked() {
                             quit = true;
                         }
-                        if ui.checkbox(&mut app.core.cfg.video, "video").clicked() {
+                        if ui
+                            .selectable_label(app.core.cfg.video, "📽️")
+                            .on_hover_text("video")
+                            .clicked()
+                        {
+                            app.core.cfg.video ^= true;
                             app.core
                                 .mpv_handler
                                 .ipc(|b| b.set_video(app.core.cfg.video))
