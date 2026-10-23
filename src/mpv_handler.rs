@@ -3,7 +3,7 @@
 use {
     crate::{
         app::ModalPopup,
-        config::ArgType,
+        config::{ArgType, CustomDemuxerEntry},
         ipc::{self, IpcEvent},
         logln,
         util::str_ext::trim_lines,
@@ -73,7 +73,7 @@ pub struct MpvHandler {
     pub demux_term: Term,
     /// Name of the demuxer command. This should be synchronized with the term, so the tab
     /// shows the same name as the command that produced the term output.
-    pub demux_cmd_name: String,
+    pub demuxer_name: String,
     inner: Option<MpvHandlerInner>,
     pub active_pty_input: ActivePtyInput,
 }
@@ -84,6 +84,7 @@ pub enum ActivePtyInput {
 }
 
 pub struct CustomDemuxer {
+    name: String,
     cmd: String,
     args: Vec<OsString>,
 }
@@ -98,7 +99,7 @@ impl MpvHandler {
         self.stop_music();
         self.mpv_term.reset();
         self.demux_term.reset();
-        self.demux_cmd_name.clear();
+        self.demuxer_name.clear();
         let (pty, pts) = pty_process::blocking::open()?;
         let pty = Arc::new(pty);
         let mut mpv_command = PtyCommand::new(mpv_cmd);
@@ -108,7 +109,7 @@ impl MpvHandler {
         let mut demux = None;
         if let Some(demuxer) = custom_demuxer {
             logln!("Demuxer: {}, args: {:?}", demuxer.cmd, demuxer.args);
-            self.demux_cmd_name = demuxer.cmd.clone();
+            self.demuxer_name = demuxer.name.clone();
             let mut demux_child = PtyCommand::new(demuxer.cmd)
                 .args(demuxer.args)
                 .stdout(Stdio::piped())
@@ -328,17 +329,19 @@ impl Default for MpvHandler {
         Self {
             mpv_term: Term::new(80),
             demux_term: Term::new(80),
-            demux_cmd_name: String::new(),
+            demuxer_name: String::new(),
             inner: None,
             active_pty_input: ActivePtyInput::Mpv,
         }
     }
 }
 impl CustomDemuxer {
-    pub(crate) fn from_config_cmd(reader_cmd: &crate::config::Command, song_path: &OsStr) -> Self {
+    pub(crate) fn from_entry(entry: &CustomDemuxerEntry, song_path: &OsStr) -> Self {
         Self {
-            cmd: reader_cmd.name.clone(),
-            args: reader_cmd
+            name: entry.name.clone(),
+            cmd: entry.reader_cmd.name.clone(),
+            args: entry
+                .reader_cmd
                 .args
                 .iter()
                 .map(|arg| config_cmd_arg_to_os_string(arg, song_path))

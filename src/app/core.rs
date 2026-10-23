@@ -86,10 +86,7 @@ impl Core {
             Some(en) => {
                 mpv_args.remove(0);
                 mpv_args.extend(en.extra_mpv_args.iter().map(<_ as AsRef<OsStr>>::as_ref));
-                Some(CustomDemuxer::from_config_cmd(
-                    &en.reader_cmd,
-                    path.as_ref(),
-                ))
+                Some(CustomDemuxer::from_entry(en, path.as_ref()))
             }
             None => None,
         };
