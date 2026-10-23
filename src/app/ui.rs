@@ -407,7 +407,7 @@ impl Ui {
                 match core.mpv_handler.ipc(|b| b.observed.speed) {
                     Some(mut speed) => {
                         ui.style_mut().spacing.slider_width = 160.0;
-                        let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0));
+                        let re = ui.add(egui::Slider::new(&mut speed, 0.3..=2.0).max_decimals(2));
                         if re.changed() {
                             core.mpv_handler
                                 .ipc(|b| b.set_speed(speed))
@@ -415,7 +415,7 @@ impl Ui {
                         }
                     }
                     None => {
-                        ui.add(egui::Slider::new(&mut core.cfg.speed, 0.3..=2.0));
+                        ui.add(egui::Slider::new(&mut core.cfg.speed, 0.3..=2.0).max_decimals(2));
                     }
                 }
             });
