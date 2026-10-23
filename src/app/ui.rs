@@ -282,7 +282,6 @@ impl Ui {
             .id_salt("song_scroll")
             .scroll_source(ScrollSource::ALL);
         if let Some(mut y) = self.playlist_scroll_to_y {
-            eprintln!("Scrolling to {y}");
             // Avoid scrolling negative ("glitches" scroll area for a frame)
             if y < 0. {
                 y = 0.;
