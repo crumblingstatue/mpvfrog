@@ -309,6 +309,13 @@ impl MpvHandler {
             None => None,
         }
     }
+
+    pub(crate) fn toggle_mute(&mut self) {
+        let Some(inner) = &mut self.inner else {
+            return;
+        };
+        let _ = inner.ipc_bridge.toggle_mute();
+    }
 }
 
 pub struct TimeInfo {

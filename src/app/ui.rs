@@ -385,9 +385,15 @@ impl Ui {
                 }
             });
             ui.group(|ui| {
-                ui.label("🔈");
-                match core.mpv_handler.ipc(|b| b.observed.volume) {
-                    Some(mut vol) => {
+                match core
+                    .mpv_handler
+                    .ipc(|b| (b.observed.volume, b.observed.mute))
+                {
+                    Some((mut vol, mute)) => {
+                        let label = if mute { "🔇" } else { volume_label(vol) };
+                        if ui.label(label).clicked() {
+                            core.mpv_handler.toggle_mute();
+                        }
                         ui.style_mut().spacing.slider_width = 160.0;
                         let re = ui.add(egui::Slider::new(&mut vol, 0..=150));
                         if re.changed() {
@@ -397,6 +403,7 @@ impl Ui {
                         }
                     }
                     None => {
+                        ui.label(volume_label(core.cfg.volume));
                         ui.add(egui::Slider::new(&mut core.cfg.volume, 0..=150));
                     }
                 }
@@ -662,6 +669,16 @@ impl Ui {
                 std::array::from_fn(|i| ThemeColor::Custom(theme[i])),
             ));
         }
+    }
+}
+
+fn volume_label(vol: u8) -> &'static str {
+    match vol {
+        0 => "🔇",
+        1..40 => "🔈",
+        40..80 => "🔉",
+        80..120 => "🔊",
+        120.. => "📣",
     }
 }
 

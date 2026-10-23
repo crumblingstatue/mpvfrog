@@ -42,6 +42,7 @@ pub struct Properties {
     pub playlist_pos: u64,
     pub playlist_count: u64,
     pub seekable: bool,
+    pub mute: bool,
 }
 
 impl Bridge {
@@ -67,6 +68,7 @@ impl Bridge {
         this.observe_property::<property::PlaylistPos>()?;
         this.observe_property::<property::PlaylistCount>()?;
         this.observe_property::<property::Seekable>()?;
+        this.observe_property::<property::Mute>()?;
         Ok(this)
     }
     pub fn observe_property<T: Property>(&mut self) -> anyhow::Result<()> {
@@ -79,6 +81,10 @@ impl Bridge {
         // to fire a pause event anymore when it gets paused.
         self.observed.paused ^= true;
         self.set_property::<property::Pause>(self.observed.paused)?;
+        Ok(())
+    }
+    pub fn toggle_mute(&mut self) -> anyhow::Result<()> {
+        self.set_property::<property::Mute>(!self.observed.mute)?;
         Ok(())
     }
     fn write_command<C: Command>(&mut self, command: C) -> anyhow::Result<()> {
@@ -161,6 +167,7 @@ impl Bridge {
             property::PlaylistCount::NAME => self.observed.playlist_count = data.as_u64()?,
             property::PlaylistPos::NAME => self.observed.playlist_pos = data.as_u64()?,
             property::Seekable::NAME => self.observed.seekable = data.as_bool()?,
+            property::Mute::NAME => self.observed.mute = data.as_bool()?,
             name => logln!("Unhandled property: {} = {}", name, data),
         }
         Some(())

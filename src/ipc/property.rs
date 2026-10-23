@@ -72,6 +72,7 @@ decl_properties! {
     Volume, "volume", f64;
     Speed, "speed", f64;
     Pause, "pause", bool;
+    Mute, "mute", bool;
     TimePos, "time-pos", f64;
     Duration, "duration", f64;
     Video, "vid", Option<&'static str>;
