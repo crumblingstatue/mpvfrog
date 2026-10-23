@@ -61,6 +61,7 @@ pub struct Ui {
     /// Which filtered entry is selected (up and down keys while filter box is focused)
     selected_filtered_entry: Option<usize>,
     pub quit_requested: bool,
+    playlist_scroll_to_y: Option<f32>,
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -275,76 +276,73 @@ impl Ui {
 
     fn central_panel_ui(&mut self, core: &mut Core, ui: &mut egui::Ui, modal: &mut ModalPopup) {
         let row_h = ui.text_style_height(&egui::TextStyle::Body);
-        let mut scroll_to_y = None;
-        let mut out = ScrollArea::vertical()
+        let mut scroll_area = ScrollArea::vertical()
             .max_height(200.0)
             .auto_shrink([false; 2])
             .id_salt("song_scroll")
-            .scroll_source(ScrollSource::ALL)
-            .show_rows(ui, row_h, self.filtered_entries.len(), |ui, range| {
-                if self.filtered_entries.is_empty() {
-                    let not_shown_count = core.playlist.len();
-                    ui.label(format!("<No results> ({not_shown_count} not shown)"));
-                }
-                for &i in &self.filtered_entries[range] {
-                    let Some(item) = &core.playlist.get(i) else {
-                        ui.label("<oob index error>");
-                        break;
-                    };
-                    let path = &item.path;
-                    let re =
-                        ui.selectable_label(core.selected_song == i, path.display().to_string());
-                    let mut play_with: Option<CustomDemuxerEntry> = None;
-                    re.context_menu(|ui| {
-                        ui.menu_button("Play as", |ui| {
-                            for demux in &core.cfg.custom_demuxers {
-                                if ui.button(&demux.name).clicked() {
-                                    play_with = Some(demux.clone());
-                                }
+            .scroll_source(ScrollSource::ALL);
+        if let Some(mut y) = self.playlist_scroll_to_y {
+            eprintln!("Scrolling to {y}");
+            // Avoid scrolling negative ("glitches" scroll area for a frame)
+            if y < 0. {
+                y = 0.;
+            }
+            scroll_area = scroll_area.vertical_scroll_offset(y);
+            self.playlist_scroll_to_y = None;
+        }
+        scroll_area.show_rows(ui, row_h, self.filtered_entries.len(), |ui, range| {
+            if self.filtered_entries.is_empty() {
+                let not_shown_count = core.playlist.len();
+                ui.label(format!("<No results> ({not_shown_count} not shown)"));
+            }
+            for &i in &self.filtered_entries[range] {
+                let Some(item) = &core.playlist.get(i) else {
+                    ui.label("<oob index error>");
+                    break;
+                };
+                let path = &item.path;
+                let re = ui.selectable_label(core.selected_song == i, path.display().to_string());
+                let mut play_with: Option<CustomDemuxerEntry> = None;
+                re.context_menu(|ui| {
+                    ui.menu_button("Play as", |ui| {
+                        for demux in &core.cfg.custom_demuxers {
+                            if ui.button(&demux.name).clicked() {
+                                play_with = Some(demux.clone());
                             }
-                        });
-                        if ui.button("Mix with current").clicked() {
-                            let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
-                            core.mpv_handler
-                                .ipc(|b| b.add_audio(full_path.as_os_str().to_str().unwrap()))
-                                .err_popup("Failed to add track", modal);
-                            // FIXME: Due to a bug(?) in mpv/libavfilter, more often than not
-                            // there is a desync unless we seek to 0 first.
-                            core.mpv_handler.ipc(|br| br.seek(0.));
-                            crate::logln!(
-                                "Note: There might be desync when seeking with mixed tracks"
-                            );
-                        }
-                        if ui.button("Copy full path").clicked() {
-                            let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
-                            ui.ctx().copy_text(full_path.to_string_lossy().into_owned());
                         }
                     });
-                    if let Some(demux) = play_with
-                        && let Some(path) = core.path_of_song_at_playlist_index(i)
-                    {
-                        core.play_song_with_demuxer(&path, Some(demux), modal);
+                    if ui.button("Mix with current").clicked() {
+                        let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
+                        core.mpv_handler
+                            .ipc(|b| b.add_audio(full_path.as_os_str().to_str().unwrap()))
+                            .err_popup("Failed to add track", modal);
+                        // FIXME: Due to a bug(?) in mpv/libavfilter, more often than not
+                        // there is a desync unless we seek to 0 first.
+                        core.mpv_handler.ipc(|br| br.seek(0.));
+                        crate::logln!("Note: There might be desync when seeking with mixed tracks");
                     }
-                    if self.focus_on.is_some_and(|idx| idx == i) {
-                        re.scroll_to_me(Some(Align::Center));
-                        self.focus_on = None;
+                    if ui.button("Copy full path").clicked() {
+                        let full_path = core.cfg.music_folder.as_ref().unwrap().join(path);
+                        ui.ctx().copy_text(full_path.to_string_lossy().into_owned());
                     }
-                    if re.clicked() {
-                        core.selected_song = i;
-                        core.play_selected_song(modal);
-                        break;
-                    }
+                });
+                if let Some(demux) = play_with
+                    && let Some(path) = core.path_of_song_at_playlist_index(i)
+                {
+                    core.play_song_with_demuxer(&path, Some(demux), modal);
                 }
-            });
-        if let Some(playlist_idx) = self.focus_on
-            && let Some(filtlist_idx) = self
-                .filtered_entries
-                .iter()
-                .position(|&i| i == playlist_idx)
-        {
-            out.state.offset().y = filtlist_idx as f32 * (row_h + 3.0);
-            out.state.store(ui.ctx(), out.id);
-        }
+                if self.focus_on.is_some_and(|idx| idx == i) {
+                    re.scroll_to_me(Some(Align::Center));
+                    self.focus_on = None;
+                }
+                if re.clicked() {
+                    core.selected_song = i;
+                    core.play_selected_song(modal);
+                    break;
+                }
+            }
+        });
+
         if self.filter_changed || core.song_change {
             if let Some(i) = self
                 .filtered_entries
@@ -354,18 +352,10 @@ impl Ui {
                 // Try to nudge the position a little bit towards the center
                 // so it's not at the very top
                 let y_off = row_h * 2.0;
-                scroll_to_y = Some(i as f32 * (row_h + 3.0) - y_off);
+                self.playlist_scroll_to_y = Some(i as f32 * (row_h + 3.0) - y_off);
             } else {
-                scroll_to_y = Some(0.0);
+                self.playlist_scroll_to_y = Some(0.0);
             }
-        }
-        if let Some(mut y) = scroll_to_y {
-            // Avoid scrolling negative ("glitches" scroll area for a frame)
-            if y < 0. {
-                y = 0.;
-            }
-            out.state.offset().y = y;
-            out.state.store(ui.ctx(), out.id);
         }
         ui.separator();
         ui.horizontal(|ui| {
