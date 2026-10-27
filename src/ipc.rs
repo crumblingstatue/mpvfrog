@@ -5,6 +5,7 @@ pub mod property;
 
 use {
     crate::{logln, util::result_ext::LogErrExt as _},
+    anyhow::Context,
     command::{AudioAdd, AudioRemove, Command, ObserveProperty, SetProperty},
     interprocess::local_socket::{
         GenericFilePath, Stream as LocalSocketStream, ToFsName, traits::Stream as _,
@@ -12,6 +13,7 @@ use {
     property::{PropValue, Property},
     std::{
         collections::{HashMap, VecDeque},
+        env::VarError,
         io::{BufRead as _, BufReader, Write},
         marker::PhantomData,
     },
@@ -45,10 +47,17 @@ pub struct Properties {
     pub mute: bool,
 }
 
+pub fn sock_path() -> Result<String, VarError> {
+    std::env::var("XDG_RUNTIME_DIR").map(|s| s + "/mpvfrog.sock")
+}
+
 impl Bridge {
     pub fn connect() -> anyhow::Result<Self> {
         let ipc_stream = LocalSocketStream::connect(
-            "/tmp/mpvfrog.sock".to_fs_name::<GenericFilePath>().unwrap(),
+            sock_path()
+                .context("Couldn't resolve XDG_RUNTIME_DIR")?
+                .to_fs_name::<GenericFilePath>()
+                .unwrap(),
         )?;
         ipc_stream.set_nonblocking(true)?;
         let mut this = Self {

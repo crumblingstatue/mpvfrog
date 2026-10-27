@@ -2,7 +2,7 @@ use {
     super::{ModalPopup, PlaylistBehavior, playlist::Playlist},
     crate::{
         config::{Config, CustomDemuxerEntry, PredicateSliceExt},
-        ipc::Bridge,
+        ipc::{Bridge, sock_path},
         logln,
         mpv_handler::{CustomDemuxer, MpvHandler},
         util::result_ext::ResultModalExt,
@@ -73,9 +73,11 @@ impl Core {
 
         let vol_arg = format!("--volume={}", self.cfg.volume);
         let speed_arg = format!("--speed={}", self.cfg.speed);
+        let sock_path = sock_path().unwrap();
+        let sock_arg = format!("--input-ipc-server={sock_path}");
         let mut mpv_args = vec![
             path.as_ref(),
-            "--input-ipc-server=/tmp/mpvfrog.sock".as_ref(),
+            sock_arg.as_ref(),
             vol_arg.as_ref(),
             speed_arg.as_ref(),
         ];
