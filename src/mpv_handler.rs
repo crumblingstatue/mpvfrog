@@ -132,6 +132,12 @@ impl MpvHandler {
                             if let Err(e) = result {
                                 logln!("Failed to read mpv pty: {e}");
                             }
+                            // If the status is success, we assume mpv just
+                            // played a very short media, and exit before we could establish IPC connection.
+                            if status.success() {
+                                self.mpv_term.feed(&stderr);
+                                return Ok(());
+                            }
                             let mut term = Term::new(80);
                             term.feed(&stderr);
                             let stderr = trim_lines(term.contents_to_string());
