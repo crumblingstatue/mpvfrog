@@ -136,7 +136,7 @@ impl Core {
         if self.mpv_handler.active() {
             self.mpv_handler
                 .ipc(Bridge::toggle_pause)
-                .err_popup("Play error", modal);
+                .err_popup("IPC error", modal);
         } else {
             self.play_selected_song(modal);
         }
