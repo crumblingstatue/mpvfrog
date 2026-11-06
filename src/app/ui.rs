@@ -140,7 +140,7 @@ impl Ui {
                     ui.label("Scan max depth");
                     ui.add(egui::DragValue::new(&mut core.cfg.scan_max_depth).range(1..=50));
                 });
-                if ui.button("🖳 Mpv console").clicked() {
+                if ui.button("🖥️ Mpv console").clicked() {
                     self.windows.mpv_console.open ^= true;
                 }
                 if ui
