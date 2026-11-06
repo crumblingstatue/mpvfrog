@@ -3,6 +3,7 @@
 use {
     crate::{
         app::{self, App, tray::EventFlags},
+        config::Config,
         rect_math::{Rect, Vec2, rect_ensure_within},
         util::result_ext::ResultModalExt as _,
     },
@@ -11,7 +12,7 @@ use {
         sf2g::{
             cpp::FBox,
             graphics::{Color, FloatRect, RenderTarget, RenderWindow, View},
-            system::Vector2i,
+            system::{Vector2, Vector2i},
             window::{Event, Key, Scancode, Style, VideoMode},
         },
     },
@@ -25,13 +26,27 @@ struct CtxMenuWin {
 }
 
 pub fn run(
-    w: u32,
-    h: u32,
     title: &str,
     mut instance_listener: Option<existing_instance::Listener>,
     args: crate::Args,
 ) {
-    let mut rw = RenderWindow::new((w, h), title, Style::RESIZE, &Default::default()).unwrap();
+    let cfg = match Config::load_if_exists() {
+        Some(result) => match result {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                eprintln!("Fatal: Failed to load config: {e}");
+                return;
+            }
+        },
+        None => Config::default(),
+    };
+    let mut rw = RenderWindow::new(
+        (cfg.window_size[0], cfg.window_size[1]),
+        title,
+        Style::RESIZE,
+        &Default::default(),
+    )
+    .unwrap();
     let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
     let mut sf_egui = SfEgui::new(&rw);
@@ -39,7 +54,7 @@ pub fn run(
     sf_egui
         .context()
         .add_font_provider(sys_font_provider.clone());
-    let mut app = match App::new(sf_egui.context(), &args) {
+    let mut app = match App::new(sf_egui.context(), &args, cfg) {
         Ok(app) => app,
         Err(e) => {
             eprintln!("Failed to start mpvfrog: {e:?}");
@@ -219,6 +234,8 @@ pub fn run(
             break;
         }
     }
+    let Vector2 { x, y } = rw.size();
+    app.core.cfg.window_size = [x, y];
     app.save(sf_egui.context());
 }
 
