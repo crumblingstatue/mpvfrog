@@ -142,6 +142,8 @@ impl Ui {
                             .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside),
                     )
                     .ui(ui, |ui| {
+                        egui::gui_zoom::zoom_menu_buttons(ui);
+                        ui.separator();
                         ui.checkbox(&mut core.cfg.follow_symlinks, "Follow symlinks")
                             .on_hover_text("Follow symbolic links when reading a directory");
                         ui.checkbox(&mut core.cfg.skip_hidden, "Skip hidden entries")
