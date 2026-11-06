@@ -85,6 +85,7 @@ impl App {
             Some(result) => result.context("Failed to load config")?,
             None => Config::default(),
         };
+        ctx.set_zoom_factor(cfg.egui_zoom_factor);
         let mut core = Core {
             cfg,
             playlist: Playlist::default(),
@@ -184,8 +185,9 @@ impl App {
         self.bg_update();
     }
 
-    pub fn save(&mut self) {
+    pub fn save(&mut self, egui_ctx: &Context) {
         self.core.save_mpv_values_to_cfg();
+        self.core.cfg.egui_zoom_factor = egui_ctx.zoom_factor();
         let vec = serde_json::to_vec_pretty(&self.core.cfg).unwrap();
         std::fs::write(Config::path(), vec).unwrap();
     }

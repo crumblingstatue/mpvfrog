@@ -37,6 +37,12 @@ pub struct Config {
     pub fallback_font_paths: Vec<String>,
     #[serde(default = "default_scan_max_depth")]
     pub scan_max_depth: u8,
+    #[serde(default = "default_zoom_factor")]
+    pub egui_zoom_factor: f32,
+}
+
+fn default_zoom_factor() -> f32 {
+    1.0
 }
 
 fn default_scan_max_depth() -> u8 {
@@ -56,6 +62,7 @@ impl Default for Config {
             skip_hidden: false,
             fallback_font_paths: Vec::new(),
             scan_max_depth: default_scan_max_depth(),
+            egui_zoom_factor: default_zoom_factor(),
         }
     }
 }

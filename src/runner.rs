@@ -219,7 +219,7 @@ pub fn run(
             break;
         }
     }
-    app.save();
+    app.save(sf_egui.context());
 }
 
 fn skip_taskbar_for_window_x11(rw: &RenderWindow) -> anyhow::Result<()> {
