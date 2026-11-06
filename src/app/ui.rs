@@ -119,7 +119,7 @@ impl Ui {
         ui.horizontal_centered(|ui| {
             ui.menu_button(crate::APP_LABEL, |ui| {
                 if ui
-                    .add(Button::new("🗁 Open music folder...").shortcut_text("Ctrl+O"))
+                    .add(Button::new("📂 Open music folder...").shortcut_text("Ctrl+O"))
                     .clicked()
                 {
                     self.file_dialog.pick_directory();
