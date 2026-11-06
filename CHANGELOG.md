@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.1] - 2026-11-06
+
+- Fix initial ui size being wrong if zoom factor is not 1.0
+
 ## [0.4.0] - 2026-11-06
 
 ## Added
