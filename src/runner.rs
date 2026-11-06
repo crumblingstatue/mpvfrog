@@ -49,7 +49,7 @@ pub fn run(
     .unwrap();
     let mut tray_popup_win = None;
     rw.set_framerate_limit(60);
-    let mut sf_egui = SfEgui::new(&rw);
+    let mut sf_egui = SfEgui::default();
     let sys_font_provider = std::sync::Arc::new(egui_system_font_frog::SystemFontProvider::new());
     sf_egui
         .context()
@@ -61,6 +61,9 @@ pub fn run(
             return;
         }
     };
+    // HAX: Run a single pass to update egui zoom factor before first resize event.
+    // This is required to calculate initial screen rect properly.
+    let _ = sf_egui.run(&mut rw, |_rw, _ui| {});
     let mut win_vis_state = WindowVisState::Visible;
     'mainloop: loop {
         let mut event_flags;
@@ -140,7 +143,7 @@ pub fn run(
                 }
                 rw.set_position((put_rect.pos.x, put_rect.pos.y).into());
                 rw.set_vertical_sync_enabled(true);
-                let sf_egui = SfEgui::new(&rw);
+                let sf_egui = SfEgui::default();
                 sf_egui
                     .context()
                     .add_font_provider(sys_font_provider.clone());
