@@ -21,7 +21,7 @@ interprocess = { version = "2.2", default-features = false }
 anyhow = "1.0.79"
 zbus = "5"
 crossbeam-channel = "0.5.12"
-x11rb = "0.13"
+x11rb = "0.14"
 egui-file-dialog.git = "https://github.com/mukilan/egui-file-dialog.git"
 egui-file-dialog.rev = "ba313e380d415cc2e26741b2a92fe4fa466679d6"
 egui_colors = "0.14.0"
