@@ -126,23 +126,6 @@ impl Ui {
                     self.file_dialog
                         .set_user_data(FileDialogOp::LoadMusicFolder);
                 }
-                if ui.button("🎶 Custom demuxers...").clicked() {
-                    self.windows.custom_demuxers.open ^= true;
-                }
-                if ui.button("💎 Color theme config").clicked() {
-                    self.windows.color_theme.open ^= true;
-                }
-                ui.checkbox(&mut core.cfg.follow_symlinks, "Follow symlinks")
-                    .on_hover_text("Follow symbolic links when reading a directory");
-                ui.checkbox(&mut core.cfg.skip_hidden, "Skip hidden entries")
-                    .on_hover_text("Skip hidden files/directories");
-                ui.horizontal(|ui| {
-                    ui.label("Scan max depth");
-                    ui.add(egui::DragValue::new(&mut core.cfg.scan_max_depth).range(1..=50));
-                });
-                if ui.button("🖥️ Mpv console").clicked() {
-                    self.windows.mpv_console.open ^= true;
-                }
                 if ui
                     .button("🔍 Focus song")
                     .on_hover_text("Focus currently playing song in playlist")
@@ -150,6 +133,35 @@ impl Ui {
                 {
                     self.focus_on = Some(core.selected_song);
                 }
+                if ui.button("🖥️ Mpv console").clicked() {
+                    self.windows.mpv_console.open ^= true;
+                }
+                egui::menu::SubMenuButton::new("⚙️ Preferences...")
+                    .config(
+                        egui::menu::MenuConfig::default()
+                            .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside),
+                    )
+                    .ui(ui, |ui| {
+                        ui.checkbox(&mut core.cfg.follow_symlinks, "Follow symlinks")
+                            .on_hover_text("Follow symbolic links when reading a directory");
+                        ui.checkbox(&mut core.cfg.skip_hidden, "Skip hidden entries")
+                            .on_hover_text("Skip hidden files/directories");
+                        ui.horizontal(|ui| {
+                            ui.label("Scan max depth");
+                            ui.add(
+                                egui::DragValue::new(&mut core.cfg.scan_max_depth).range(1..=50),
+                            );
+                        });
+                        ui.separator();
+                        if ui.button("🎶 Custom demuxers...").clicked() {
+                            self.windows.custom_demuxers.open ^= true;
+                            ui.close();
+                        }
+                        if ui.button("💎 Color theme config").clicked() {
+                            self.windows.color_theme.open ^= true;
+                            ui.close();
+                        }
+                    });
                 ui.separator();
                 ui.label(concat!("🐸 mpvfrog ", env!("CARGO_PKG_VERSION")));
                 ui.separator();
