@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0] - 2026-11-06
+
+## Added
+- Update egui to 0.37, featuring color emoji and fallback font detection
+- Forward hardware volume up and volume down keys to mpv
+- Ui scaling (zoom in/out)
+- Remember window size on exit
+
+## Fixed
+- Properly track whether mpv is paused or not
+
+## Changed
+- Put preferences into a new "Preferences" submenu
+- Video toggle checkbox is now a graphical button
+- Mpv socket is put in `$XDG_RUNTIME_DIR` rather than `/tmp`
+
 ## [0.3.1] - 2026-06-18
 
 ## Fixed
