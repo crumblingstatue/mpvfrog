@@ -19,7 +19,7 @@ thiserror = "2"
 enum-kinds = "0.5.1"
 interprocess = { version = "2.2", default-features = false }
 anyhow = "1.0.79"
-zbus = "5"
+zbus = "6"
 crossbeam-channel = "0.5.12"
 x11rb = "0.14"
 egui-file-dialog.git = "https://github.com/mukilan/egui-file-dialog.git"

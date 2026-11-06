@@ -107,7 +107,7 @@ impl App {
         let mut ui: ui::Ui = Default::default();
         ui.recalc_filt_entries(&core);
         ui.apply_colorix_theme(core.cfg.theme.as_ref(), ctx);
-        let tray_handle = match AppTray::establish() {
+        let tray_handle = match zbus::block_on(AppTray::establish()) {
             Ok(handle) => Some(handle),
             Err(e) => {
                 eprintln!("Failed to establish tray connection: {e}");
@@ -261,16 +261,19 @@ impl App {
                 .sender
                 .send(AppToTrayMsg::UpdateHoverText(buf))
                 .unwrap();
-            trhandle
-                .conn
-                .emit_signal(
-                    None::<BusName>,
-                    "/StatusNotifierItem",
-                    "org.kde.StatusNotifierItem",
-                    "NewToolTip",
-                    &(),
-                )
-                .unwrap();
+            zbus::block_on(async {
+                trhandle
+                    .conn
+                    .emit_signal(
+                        None::<BusName>,
+                        "/StatusNotifierItem",
+                        "org.kde.StatusNotifierItem",
+                        "NewToolTip",
+                        &(),
+                    )
+                    .await
+            })
+            .unwrap();
         }
     }
 
